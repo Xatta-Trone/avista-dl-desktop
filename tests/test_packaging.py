@@ -48,7 +48,7 @@ def test_nuitka_build_uses_clean_environment_and_required_includes():
 
     assert '"build_env"' in script
     assert '"requirements_lock.txt"' in script
-    assert "Nuitka ordered-set zstandard" in script
+    assert '"Nuitka", "ordered-set", "zstandard"' in script
     assert '"--mode=standalone"' in script
     assert '"--enable-plugin=pyside6"' in script
     assert '"--windows-console-mode=$ConsoleMode"' in script
@@ -58,6 +58,18 @@ def test_nuitka_build_uses_clean_environment_and_required_includes():
     assert '"--output-filename=$AppName.exe"' in script
     assert "app\\__version__.py" in script
     assert "Image.open" in script
+    assert "Invoke-CheckedCommand" in script
+    assert "Packaging imports verified" in script
+
+
+def test_locked_cuda_torch_packages_are_compatible_and_available():
+    requirements = (PROJECT_ROOT / "requirements_lock.txt").read_text(
+        encoding="utf-8"
+    )
+
+    assert "torch==2.9.1+cu126" in requirements
+    assert "torchvision==0.24.1+cu126" in requirements
+    assert "torchaudio==2.9.1+cu126" in requirements
 
 
 def test_file_association_installer_and_documentation_are_complete():

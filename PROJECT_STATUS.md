@@ -325,6 +325,7 @@ MambaAttention, FT-Transformer, AutoInt, and TabResNet have real saved-artifact 
   - Nuitka and Inno Setup build versions are parsed from `app/__version__.py`; packaging scripts no longer contain an independent release version.
   - `.github/workflows/windows-release.yml` builds the Windows installer on `windows-latest` for manual dispatches and `v*` tags, caches pip downloads, installs Inno Setup, runs only packaging/resource/version tests, uploads `AVISTA_Setup.exe`, and publishes it to tagged GitHub Releases.
   - The Inno Setup output and release artifact use the stable filename `installer/AVISTA_Setup.exe`.
+  - GitHub Actions packaging uses a matched CUDA 12.6 trio: PyTorch 2.9.1, TorchVision 0.24.1, and TorchAudio 2.9.1. The build script fails immediately on native command errors and verifies PySide6/Torch/TabPFN imports before invoking Nuitka.
 - The app was launched successfully from the project `.venv`.
 
 ## 5. Implemented Files
@@ -451,10 +452,10 @@ This run covered development and Nuitka resource resolution, command-line `.avis
 Latest GitHub Actions packaging verification:
 
 ```text
-16 passed
+17 passed
 ```
 
-This run covered the packaging/resource tests, `.avista` command-line loading, centralized version metadata, required GitHub Actions triggers and Windows runner, pip caching, Inno Setup installation, focused test selection, standalone build invocation, exact installer artifact path, and tagged release publication. Workflow YAML and PowerShell syntax parsing passed.
+This run covered the packaging/resource tests, `.avista` command-line loading, centralized version metadata, compatible CUDA package pins, fail-fast build commands, required GitHub Actions triggers and Windows runner, pip caching, Inno Setup installation, focused test selection, standalone build invocation, exact installer artifact path, and tagged release publication. Workflow YAML and PowerShell syntax parsing passed.
 
 Latest focused centralized-version verification:
 

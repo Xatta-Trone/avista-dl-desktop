@@ -110,6 +110,12 @@ once or sign out and back in after installation.
 ## Torch And TabPFN Troubleshooting
 
 - Build only from `build_env`; user-site packages can hide missing includes.
+- Keep Torch, TorchVision, and TorchAudio on a matched release trio. The
+  current CUDA 12.6 lock uses `torch==2.9.1+cu126`,
+  `torchvision==0.24.1+cu126`, and `torchaudio==2.9.1+cu126`.
+- If pip reports no matching TorchAudio distribution, do not continue to
+  Nuitka. The build script now treats every native command failure as fatal
+  and verifies required imports before compilation.
 - Keep `--include-package=torch`, `torchvision`, `torchaudio`, and `tabpfn`.
 - Keep package-data includes for TabPFN, Matplotlib, and QtAwesome.
 - Review `dist\nuitka-compilation-report.xml` for omitted dynamic imports.

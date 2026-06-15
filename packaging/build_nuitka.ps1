@@ -34,6 +34,19 @@ while ($VersionParts.Count -lt 4) {
 }
 $WindowsVersion = ($VersionParts[0..3] -join ".")
 
+function Invoke-CheckedCommand {
+    param(
+        [string]$FilePath,
+        [string[]]$Arguments,
+        [string]$FailureMessage
+    )
+
+    & $FilePath @Arguments
+    if ($LASTEXITCODE -ne 0) {
+        throw "$FailureMessage Exit code: $LASTEXITCODE."
+    }
+}
+
 function Remove-BuildPath {
     param([string]$Path)
 
@@ -59,22 +72,34 @@ foreach ($directory in @($DistDir, $InstallerDir, $ReleaseDir)) {
 }
 
 if (-not (Test-Path -LiteralPath $BuildPython)) {
-    & $PythonExecutable -m venv $BuildEnv
-    if ($LASTEXITCODE -ne 0) {
-        throw "Could not create build_env with $PythonExecutable."
-    }
+    Invoke-CheckedCommand $PythonExecutable @(
+        "-m", "venv", $BuildEnv
+    ) "Could not create build_env with $PythonExecutable."
 }
 
-& $BuildPython -m pip install --upgrade pip setuptools wheel
-& $BuildPython -m pip install -r $Requirements
-& $BuildPython -m pip install Nuitka ordered-set zstandard
+Invoke-CheckedCommand $BuildPython @(
+    "-m", "pip", "install", "--upgrade", "pip", "setuptools", "wheel"
+) "Could not upgrade build tooling."
+Invoke-CheckedCommand $BuildPython @(
+    "-m", "pip", "install", "-r", $Requirements
+) "Could not install requirements_lock.txt."
+Invoke-CheckedCommand $BuildPython @(
+    "-m", "pip", "install", "Nuitka", "ordered-set", "zstandard"
+) "Could not install Nuitka build dependencies."
+Invoke-CheckedCommand $BuildPython @(
+    "-c",
+    "import PySide6, qtawesome, torch, torchvision, torchaudio, tabpfn; print('Packaging imports verified')"
+) "Required packaging imports are unavailable."
 
 if (-not (Test-Path -LiteralPath $LogoIco)) {
     if (-not (Test-Path -LiteralPath $LogoPng)) {
         throw "Neither logo.ico nor logo.png exists under app\assets."
     }
-    & $BuildPython -c "from PIL import Image; Image.open(r'$LogoPng').convert('RGBA').save(r'$LogoIco', sizes=[(16,16),(24,24),(32,32),(48,48),(64,64),(128,128),(256,256)])"
-    if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $LogoIco)) {
+    Invoke-CheckedCommand $BuildPython @(
+        "-c",
+        "from PIL import Image; Image.open(r'$LogoPng').convert('RGBA').save(r'$LogoIco', sizes=[(16,16),(24,24),(32,32),(48,48),(64,64),(128,128),(256,256)])"
+    ) "Could not generate app\assets\logo.ico from logo.png."
+    if (-not (Test-Path -LiteralPath $LogoIco)) {
         throw "Could not generate app\assets\logo.ico from logo.png."
     }
 }

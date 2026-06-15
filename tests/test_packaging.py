@@ -70,6 +70,7 @@ def test_locked_cuda_torch_packages_are_compatible_and_available():
     assert "torch==2.9.1+cu126" in requirements
     assert "torchvision==0.24.1+cu126" in requirements
     assert "torchaudio==2.9.1+cu126" in requirements
+    assert "numpy==1.26.4" in requirements
 
 
 def test_file_association_installer_and_documentation_are_complete():
@@ -112,6 +113,7 @@ def test_github_windows_release_workflow_builds_and_publishes_installer():
     assert "runs-on: windows-latest" in workflow
     assert "actions/checkout@v6" in workflow
     assert "actions/setup-python@v6" in workflow
+    assert 'python-version: "3.12"' in workflow
     assert "cache: pip" in workflow
     assert "choco install innosetup" in workflow
     assert "./packaging/build_nuitka.ps1" in workflow

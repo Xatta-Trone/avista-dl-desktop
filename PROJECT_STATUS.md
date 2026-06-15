@@ -325,7 +325,7 @@ MambaAttention, FT-Transformer, AutoInt, and TabResNet have real saved-artifact 
   - Nuitka and Inno Setup build versions are parsed from `app/__version__.py`; packaging scripts no longer contain an independent release version.
   - `.github/workflows/windows-release.yml` builds the Windows installer on `windows-latest` for manual dispatches and `v*` tags, caches pip downloads, installs Inno Setup, runs only packaging/resource/version tests, uploads `AVISTA_Setup.exe`, and publishes it to tagged GitHub Releases.
   - The Inno Setup output and release artifact use the stable filename `installer/AVISTA_Setup.exe`.
-  - GitHub Actions packaging uses a matched CUDA 12.6 trio: PyTorch 2.9.1, TorchVision 0.24.1, and TorchAudio 2.9.1. The build script fails immediately on native command errors and verifies PySide6/Torch/TabPFN imports before invoking Nuitka.
+  - GitHub Actions packaging uses Python 3.12, NumPy 1.26.4, Captum 0.8.0, and a matched CUDA 12.6 trio: PyTorch 2.9.1, TorchVision 0.24.1, and TorchAudio 2.9.1. Python 3.12 and NumPy 1.26.4 avoid Captum's NumPy-below-2.0 resolver conflict. The build script fails immediately on native command errors and verifies PySide6/Torch/TabPFN imports before invoking Nuitka.
 - The app was launched successfully from the project `.venv`.
 
 ## 5. Implemented Files

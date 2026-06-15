@@ -8,7 +8,8 @@ TabPFN, AVISTA assets, and the bundled TabPFN checkpoint.
 ## Prerequisites
 
 - Windows 10 or Windows 11 x64.
-- Official 64-bit CPython 3.13 available through the `py` launcher.
+- Official 64-bit CPython 3.12 available through the `py` launcher. The
+  release build uses Python 3.12 because Captum requires NumPy below 2.0.
 - Visual Studio 2022 Build Tools with Desktop development with C++ and the
   English language pack.
 - Inno Setup 6 from <https://jrsoftware.org/isdl.php>. Install the standard
@@ -113,6 +114,8 @@ once or sign out and back in after installation.
 - Keep Torch, TorchVision, and TorchAudio on a matched release trio. The
   current CUDA 12.6 lock uses `torch==2.9.1+cu126`,
   `torchvision==0.24.1+cu126`, and `torchaudio==2.9.1+cu126`.
+- Keep `numpy==1.26.4` while Captum 0.8.0 is packaged; Captum requires NumPy
+  below 2.0, and NumPy 1.26.4 has a Windows wheel for Python 3.12.
 - If pip reports no matching TorchAudio distribution, do not continue to
   Nuitka. The build script now treats every native command failure as fatal
   and verifies required imports before compilation.
@@ -153,7 +156,7 @@ git push origin v1.0.0
 Tags matching `v*` build the installer, create a GitHub Release, generate
 release notes, and attach `AVISTA_Setup.exe`.
 
-The workflow uses `windows-latest`, Python 3.13, pip caching, Chocolatey Inno
+The workflow uses `windows-latest`, Python 3.12, pip caching, Chocolatey Inno
 Setup installation, the focused packaging/resource tests, and the same
 `packaging\build_nuitka.ps1` used locally.
 

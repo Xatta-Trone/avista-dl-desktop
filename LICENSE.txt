@@ -1,0 +1,14 @@
+AVISTA Proprietary License
+
+Copyright (c) 2026 AVISTA Developers. All rights reserved.
+
+Permission is granted to install and use AVISTA for authorized educational,
+research, and internal evaluation purposes. Redistribution, sublicensing,
+commercial distribution, reverse engineering beyond rights granted by
+applicable law, and removal of attribution notices require prior written
+permission from the copyright holders.
+
+AVISTA is provided "as is", without warranty of any kind. In no event shall
+the copyright holders be liable for claims or damages arising from its use.
+
+Third-party components remain subject to their respective licenses.

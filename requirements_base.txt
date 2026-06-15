@@ -1,0 +1,8 @@
+pandas
+numpy
+PySide6
+qtawesome
+psutil
+openpyxl
+pyarrow
+joblib

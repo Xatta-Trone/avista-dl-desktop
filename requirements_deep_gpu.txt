@@ -1,0 +1,7 @@
+# Install GPU-enabled PyTorch separately. Do not install plain torch first.
+#
+# CUDA 12.6:
+# pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
+#
+# Fallback CUDA 11.8:
+# pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118

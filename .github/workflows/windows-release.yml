@@ -1,0 +1,97 @@
+name: Build Windows Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows-installer:
+    runs-on: windows-latest
+    timeout-minutes: 360
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          lfs: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: |
+            requirements_base.txt
+            requirements_lock.txt
+
+      - name: Verify bundled assets
+        shell: pwsh
+        run: |
+          $assets = @(
+            "app/assets/logo.png",
+            "app/assets/logo.ico",
+            "app/assets/tabpfn-v2.5-classifier-v2.5_default.ckpt"
+          )
+          foreach ($asset in $assets) {
+            if (-not (Test-Path -LiteralPath $asset)) {
+              throw "Required packaged asset is missing: $asset"
+            }
+          }
+
+      - name: Install focused test dependencies
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pytest
+          python -m pip install -r requirements_base.txt
+          python -m pip install matplotlib scipy scikit-learn imbalanced-learn
+
+      - name: Run packaging and resource tests
+        shell: pwsh
+        run: |
+          python -m pytest `
+            tests/test_resources.py `
+            tests/test_main.py `
+            tests/test_packaging.py `
+            tests/test_version_metadata.py `
+            -q
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup --no-progress --yes
+
+      - name: Build AVISTA standalone and installer
+        shell: pwsh
+        run: |
+          ./packaging/build_nuitka.ps1 `
+            -Configuration Release `
+            -PythonExecutable python `
+            -Clean
+
+      - name: Verify installer output
+        shell: pwsh
+        run: |
+          if (-not (Test-Path -LiteralPath "installer/AVISTA_Setup.exe")) {
+            throw "installer/AVISTA_Setup.exe was not created."
+          }
+
+      - name: Upload Windows installer artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: AVISTA_Setup
+          path: installer/AVISTA_Setup.exe
+          if-no-files-found: error
+          archive: false
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v3
+        with:
+          files: installer/AVISTA_Setup.exe
+          generate_release_notes: true
+          fail_on_unmatched_files: true

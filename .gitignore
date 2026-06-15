@@ -1,0 +1,71 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pyre/
+.hypothesis/
+
+# Test and coverage output
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.tox/
+.nox/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+build_env/
+
+# Packaging and build output
+dist/
+installer/
+release/
+build/
+*.build/
+*.dist/
+*.onefile-build/
+*.egg-info/
+*.whl
+
+# Runtime logs and generated application output
+/logs/
+/outputs/
+install_log.txt
+*.log
+
+# Local AVISTA projects and managed project data
+*.avista
+*.xtab
+project_config.json
+/data/
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+~$*
+
+# IDE and editor settings
+.idea/
+.vscode/
+*.code-workspace
+*.user
+*.suo
+
+# Operating system metadata
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Local environment files
+.env
+.env.*
+!.env.example

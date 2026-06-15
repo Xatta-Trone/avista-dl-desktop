@@ -1,0 +1,28 @@
+pandas
+numpy
+PySide6
+qtawesome
+psutil
+openpyxl
+pyarrow
+joblib
+
+# Covers Logistic Regression, Random Forest, Extra Trees, Gradient Boosting,
+# Hist Gradient Boosting, SVM, KNN, GaussianNB, Decision Tree, and AdaBoost.
+scikit-learn
+
+# Covers XGBClassifier.
+xgboost
+
+imbalanced-learn
+scipy
+statsmodels
+matplotlib
+seaborn
+shap
+captum
+
+# Covers TabPFNClassifier.
+tabpfn
+
+# PyTorch GPU should be installed separately using requirements_deep_gpu.txt instructions.

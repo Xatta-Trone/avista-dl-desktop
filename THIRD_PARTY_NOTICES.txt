@@ -1,0 +1,29 @@
+AVISTA Third-Party Notices
+
+AVISTA distributions include third-party open-source software, including
+CPython, Qt/PySide6, QtAwesome, NumPy, pandas, SciPy, scikit-learn,
+Matplotlib, Joblib, imbalanced-learn, XGBoost, LightGBM, PyTorch,
+TorchVision, TorchAudio, TabPFN, psutil, and their dependencies.
+
+Each component remains licensed by its respective copyright holders under
+its own license terms. Building or distributing AVISTA does not alter those
+terms. Release maintainers must preserve license files emitted in the Nuitka
+standalone distribution and review the Nuitka compilation license report
+before public distribution.
+
+Primary project license references:
+
+- Python: https://docs.python.org/3/license.html
+- Qt/PySide: https://www.qt.io/licensing
+- NumPy: https://numpy.org/doc/stable/license.html
+- pandas: https://github.com/pandas-dev/pandas/blob/main/LICENSE
+- SciPy: https://github.com/scipy/scipy/blob/main/LICENSE.txt
+- scikit-learn: https://github.com/scikit-learn/scikit-learn/blob/main/COPYING
+- Matplotlib: https://matplotlib.org/stable/project/license.html
+- XGBoost: https://github.com/dmlc/xgboost/blob/master/LICENSE
+- LightGBM: https://github.com/microsoft/LightGBM/blob/master/LICENSE
+- PyTorch: https://github.com/pytorch/pytorch/blob/main/LICENSE
+- TabPFN: https://github.com/PriorLabs/TabPFN/blob/main/LICENSE
+- Nuitka: https://nuitka.net/doc/License.html
+
+This notice is informational and is not a substitute for legal review.

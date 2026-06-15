@@ -113,6 +113,7 @@ $NuitkaArgs = @(
     "--windows-console-mode=$ConsoleMode",
     "--windows-icon-from-ico=$LogoIco",
     "--include-data-dir=$(Join-Path $ProjectRoot 'app\assets')=app/assets",
+    "--module-parameter=torch-disable-jit=no",
     "--include-package=app",
     "--include-package=torch",
     "--include-package=torchvision",

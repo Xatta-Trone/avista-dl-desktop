@@ -120,6 +120,9 @@ once or sign out and back in after installation.
   Nuitka. The build script now treats every native command failure as fatal
   and verifies required imports before compilation.
 - Keep `--include-package=torch`, `torchvision`, `torchaudio`, and `tabpfn`.
+- Keep `--module-parameter=torch-disable-jit=no` explicit. AVISTA does not
+  directly require TorchScript today, but retaining JIT preserves normal
+  Torch and TabPFN runtime behavior in the standalone package.
 - Keep package-data includes for TabPFN, Matplotlib, and QtAwesome.
 - Review `dist\nuitka-compilation-report.xml` for omitted dynamic imports.
 - Confirm the checkpoint exists at

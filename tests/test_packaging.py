@@ -54,6 +54,7 @@ def test_nuitka_build_uses_clean_environment_and_required_includes():
     assert '"--windows-console-mode=$ConsoleMode"' in script
     assert '"--include-data-dir=' in script
     assert '"--include-package=torch"' in script
+    assert '"--module-parameter=torch-disable-jit=no"' in script
     assert '"--include-package=tabpfn"' in script
     assert '"--output-filename=$AppName.exe"' in script
     assert "app\\__version__.py" in script

@@ -1,0 +1,100 @@
+<mxfile host="app.diagrams.net" agent="Codex">
+  <diagram id="avista-system-architecture" name="Figure 7.4 AVISTA System Architecture">
+    <mxGraphModel dx="1562" dy="829" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontSize=26;fontStyle=1;fontColor=#0F172A;align=center;verticalAlign=middle;fontFamily=Arial;" value="Figure 7.4 — AVISTA System Architecture" vertex="1">
+          <mxGeometry height="40" width="880" x="260" y="30" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontSize=14;fontColor=#334155;align=center;verticalAlign=middle;fontFamily=Arial;" value="Integrated desktop platform for reproducible tabular machine learning workflows" vertex="1">
+          <mxGeometry height="26" width="770" x="315" y="72" as="geometry" />
+        </mxCell>
+        <mxCell id="container" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F7F9FC;strokeColor=#D0D7DE;strokeWidth=2;arcSize=2;" value="" vertex="1">
+          <mxGeometry height="700" width="1220" x="90" y="120" as="geometry" />
+        </mxCell>
+        <mxCell id="project-layer" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#0F6CBD;strokeWidth=2;fontFamily=Arial;fontSize=15;fontColor=#0F172A;fontStyle=1;align=center;verticalAlign=middle;spacing=10;" value="Project Management Layer&#xa;.avista project files, metadata, project portability, persistent analytical state" vertex="1">
+          <mxGeometry height="70" width="1020" x="190" y="155" as="geometry" />
+        </mxCell>
+        <mxCell id="data-layer" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#0F6CBD;strokeWidth=2;fontFamily=Arial;fontSize=15;fontColor=#0F172A;fontStyle=1;align=center;verticalAlign=middle;spacing=10;" value="Data Management Layer&#xa;dataset import, managed project data, bounded previews, tabular data access" vertex="1">
+          <mxGeometry height="70" width="1020" x="190" y="245" as="geometry" />
+        </mxCell>
+        <mxCell id="configuration-layer" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#00A6A6;strokeWidth=2;fontFamily=Arial;fontSize=15;fontColor=#0F172A;fontStyle=1;align=center;verticalAlign=middle;spacing=10;" value="Configuration Layer&#xa;feature selection, target configuration, label encoding, split and imbalance settings" vertex="1">
+          <mxGeometry height="70" width="1020" x="190" y="335" as="geometry" />
+        </mxCell>
+        <mxCell id="validation-layer" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#00A6A6;strokeWidth=2;fontFamily=Arial;fontSize=15;fontColor=#0F172A;fontStyle=1;align=center;verticalAlign=middle;spacing=10;" value="Validation Layer&#xa;environment validation, GPU diagnostics, dependency checks, edge-case validation" vertex="1">
+          <mxGeometry height="70" width="1020" x="190" y="425" as="geometry" />
+        </mxCell>
+        <mxCell id="ml-engine" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#0F6CBD;strokeWidth=2;fontFamily=Arial;fontSize=15;fontColor=#0F172A;fontStyle=1;align=center;verticalAlign=middle;spacing=10;" value="Machine Learning Engine&#xa;model registry, traditional ML models, deep tabular models, optional dependency handling" vertex="1">
+          <mxGeometry height="70" width="1020" x="190" y="515" as="geometry" />
+        </mxCell>
+        <mxCell id="training-layer" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#0F6CBD;strokeWidth=2;fontFamily=Arial;fontSize=15;fontColor=#0F172A;fontStyle=1;align=center;verticalAlign=middle;spacing=10;" value="Training and Monitoring Layer&#xa;training workers, real-time progress, saved artifacts, evaluation outputs" vertex="1">
+          <mxGeometry height="70" width="1020" x="190" y="605" as="geometry" />
+        </mxCell>
+        <mxCell id="reporting-layer" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#00A6A6;strokeWidth=2;fontFamily=Arial;fontSize=15;fontColor=#0F172A;fontStyle=1;align=center;verticalAlign=middle;spacing=10;" value="Reporting Layer&#xa;diagnostic outputs, model comparison, Markdown export, PDF export" vertex="1">
+          <mxGeometry height="70" width="490" x="190" y="695" as="geometry" />
+        </mxCell>
+        <mxCell id="deployment-layer" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#00A6A6;strokeWidth=2;fontFamily=Arial;fontSize=15;fontColor=#0F172A;fontStyle=1;align=center;verticalAlign=middle;spacing=10;" value="Deployment Layer&#xa;Nuitka standalone build, installer workflow, assets, file association" vertex="1">
+          <mxGeometry height="70" width="490" x="720" y="695" as="geometry" />
+        </mxCell>
+        <mxCell id="SIa9rAEgNZjmymCABADb-1" edge="1" parent="1" source="left-label" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="container">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="125" y="565" />
+              <mxPoint x="180" y="565" />
+              <mxPoint x="180" y="100" />
+              <mxPoint x="700" y="100" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="left-label" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0F172A;strokeColor=#0F172A;fontFamily=Arial;fontSize=13;fontColor=#FFFFFF;fontStyle=1;align=center;verticalAlign=middle;" value="Persistent Project State" vertex="1">
+          <mxGeometry height="250" width="70" x="90" y="295" as="geometry" />
+        </mxCell>
+        <mxCell id="right-label" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0F172A;strokeColor=#0F172A;fontFamily=Arial;fontSize=13;fontColor=#FFFFFF;fontStyle=1;align=center;verticalAlign=middle;" value="Generated Artifacts" vertex="1">
+          <mxGeometry height="250" width="45" x="1240" y="485" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow-project-data" edge="1" parent="1" source="project-layer" style="endArrow=block;html=1;rounded=0;strokeColor=#0F6CBD;strokeWidth=2;" target="data-layer" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow-data-config" edge="1" parent="1" source="data-layer" style="endArrow=block;html=1;rounded=0;strokeColor=#0F6CBD;strokeWidth=2;" target="configuration-layer" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow-config-validation" edge="1" parent="1" source="configuration-layer" style="endArrow=block;html=1;rounded=0;strokeColor=#00A6A6;strokeWidth=2;" target="validation-layer" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow-validation-ml" edge="1" parent="1" source="validation-layer" style="endArrow=block;html=1;rounded=0;strokeColor=#00A6A6;strokeWidth=2;" target="ml-engine" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow-ml-training" edge="1" parent="1" source="ml-engine" style="endArrow=block;html=1;rounded=0;strokeColor=#0F6CBD;strokeWidth=2;" target="training-layer" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow-training-reporting" edge="1" parent="1" source="training-layer" style="endArrow=block;html=1;rounded=0;strokeColor=#00A6A6;strokeWidth=2;" target="reporting-layer" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="535" y="695" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow-training-deployment" edge="1" parent="1" source="training-layer" style="endArrow=block;html=1;rounded=0;strokeColor=#00A6A6;strokeWidth=2;" target="deployment-layer" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="965" y="695" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="feedback-arrow" edge="1" parent="1" style="endArrow=block;startArrow=block;html=1;rounded=1;strokeColor=#94A3B8;strokeWidth=2;fontFamily=Arial;fontSize=12;fontColor=#334155;edgeStyle=orthogonalEdgeStyle;" value="metadata and artifacts retained across workflow">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1270" y="190" />
+              <mxPoint x="1270" y="640" />
+            </Array>
+            <mxPoint x="1210" y="190" as="sourcePoint" />
+            <mxPoint x="1210" y="640" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="input-note" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF4FF;strokeColor=#0F6CBD;strokeWidth=1;fontFamily=Arial;fontSize=13;fontColor=#0F172A;align=center;verticalAlign=middle;" value="Inputs: tabular dataset, feature/target choices, runtime environment, model settings" vertex="1">
+          <mxGeometry height="40" width="405" x="250" y="795" as="geometry" />
+        </mxCell>
+        <mxCell id="output-note" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6FFFB;strokeColor=#00A6A6;strokeWidth=1;fontFamily=Arial;fontSize=13;fontColor=#0F172A;align=center;verticalAlign=middle;" value="Outputs: trained models, metrics, figures, reports, portable project artifacts" vertex="1">
+          <mxGeometry height="40" width="405" x="745" y="795" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

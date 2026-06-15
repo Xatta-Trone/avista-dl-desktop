@@ -1,0 +1,91 @@
+<mxfile host="app.diagrams.net" modified="2026-06-15T00:00:00.000Z" agent="Codex" version="24.7.17" type="device">
+  <diagram id="avista-report-generation-workflow" name="Figure 7.16 Report Generation Workflow">
+    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="820" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <mxCell id="title" value="Figure 7.16 — AVISTA Report Generation Workflow" style="text;html=1;strokeColor=none;fillColor=none;fontSize=26;fontStyle=1;fontColor=#0F172A;align=center;verticalAlign=middle;fontFamily=Arial;" vertex="1" parent="1">
+          <mxGeometry x="250" y="30" width="900" height="42" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="subtitle" value="Transformation of training outputs into standardized Markdown and PDF reports" style="text;html=1;strokeColor=none;fillColor=none;fontSize=14;fontColor=#334155;align=center;verticalAlign=middle;fontFamily=Arial;" vertex="1" parent="1">
+          <mxGeometry x="300" y="72" width="800" height="28" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="container" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F7F9FC;strokeColor=#D0D7DE;strokeWidth=2;arcSize=2;" vertex="1" parent="1">
+          <mxGeometry x="105" y="120" width="1190" height="620" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="training-results" value="Training Results&#xa;trained models, predictions, metrics, histories, saved artifacts" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#0F6CBD;strokeWidth=2;fontFamily=Arial;fontSize=15;fontColor=#0F172A;fontStyle=1;align=center;verticalAlign=middle;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="230" y="155" width="940" height="70" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="aggregation" value="Result Aggregation&#xa;model summaries, fold summaries, standardized metric tables" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#00A6A6;strokeWidth=2;fontFamily=Arial;fontSize=15;fontColor=#0F172A;fontStyle=1;align=center;verticalAlign=middle;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="230" y="245" width="940" height="70" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="visualization" value="Visualization Generation&#xa;ROC curves, precision-recall curves, confusion matrices, training curves" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#0F6CBD;strokeWidth=2;fontFamily=Arial;fontSize=15;fontColor=#0F172A;fontStyle=1;align=center;verticalAlign=middle;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="230" y="335" width="940" height="70" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="assembly" value="Report Assembly&#xa;project metadata, dataset metadata, model outputs, diagnostic figures" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#00A6A6;strokeWidth=2;fontFamily=Arial;fontSize=15;fontColor=#0F172A;fontStyle=1;align=center;verticalAlign=middle;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="230" y="425" width="940" height="70" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="markdown" value="Markdown Export&#xa;editable, human-readable analytical report" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#0F6CBD;strokeWidth=2;fontFamily=Arial;fontSize=15;fontColor=#0F172A;fontStyle=1;align=center;verticalAlign=middle;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="230" y="535" width="420" height="75" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="pdf" value="PDF Export&#xa;fixed-format report for review, archiving, and dissemination" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#0F6CBD;strokeWidth=2;fontFamily=Arial;fontSize=15;fontColor=#0F172A;fontStyle=1;align=center;verticalAlign=middle;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="750" y="535" width="420" height="75" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="report-output" value="Standardized Reproducible Reports&#xa;consolidated evidence for review, documentation, and decision support" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6FFFB;strokeColor=#00A6A6;strokeWidth=2;fontFamily=Arial;fontSize=15;fontColor=#0F172A;fontStyle=1;align=center;verticalAlign=middle;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="230" y="660" width="940" height="55" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="arrow1" value="" style="endArrow=block;html=1;rounded=0;strokeColor=#0F6CBD;strokeWidth=2;" edge="1" parent="1" source="training-results" target="aggregation">
+          <mxGeometry width="50" height="50" relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="arrow2" value="" style="endArrow=block;html=1;rounded=0;strokeColor=#00A6A6;strokeWidth=2;" edge="1" parent="1" source="aggregation" target="visualization">
+          <mxGeometry width="50" height="50" relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="arrow3" value="" style="endArrow=block;html=1;rounded=0;strokeColor=#0F6CBD;strokeWidth=2;" edge="1" parent="1" source="visualization" target="assembly">
+          <mxGeometry width="50" height="50" relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="arrow4a" value="" style="endArrow=block;html=1;rounded=0;strokeColor=#00A6A6;strokeWidth=2;" edge="1" parent="1" source="assembly" target="markdown">
+          <mxGeometry width="50" height="50" relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="arrow4b" value="" style="endArrow=block;html=1;rounded=0;strokeColor=#00A6A6;strokeWidth=2;" edge="1" parent="1" source="assembly" target="pdf">
+          <mxGeometry width="50" height="50" relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="arrow5a" value="" style="endArrow=block;html=1;rounded=0;strokeColor=#0F6CBD;strokeWidth=2;" edge="1" parent="1" source="markdown" target="report-output">
+          <mxGeometry width="50" height="50" relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="arrow5b" value="" style="endArrow=block;html=1;rounded=0;strokeColor=#0F6CBD;strokeWidth=2;" edge="1" parent="1" source="pdf" target="report-output">
+          <mxGeometry width="50" height="50" relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="left-note" value="Model Evidence" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0F172A;strokeColor=#0F172A;fontFamily=Arial;fontSize=13;fontColor=#FFFFFF;fontStyle=1;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="135" y="155" width="65" height="250" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="right-note" value="Report Artifacts" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0F172A;strokeColor=#0F172A;fontFamily=Arial;fontSize=13;fontColor=#FFFFFF;fontStyle=1;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="1200" y="425" width="65" height="290" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="footer" value="Stored training outputs are converted into reproducible human-readable reports without requiring model retraining." style="text;html=1;strokeColor=none;fillColor=none;fontSize=13;fontColor=#334155;align=center;verticalAlign=middle;fontFamily=Arial;" vertex="1" parent="1">
+          <mxGeometry x="250" y="765" width="900" height="28" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

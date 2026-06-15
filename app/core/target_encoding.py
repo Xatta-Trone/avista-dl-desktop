@@ -32,20 +32,20 @@ def load_or_fit_target_encoder(
             metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
             if metadata.get("target_column") == target_column:
                 encoder = joblib.load(encoder_path)
-                encoder.transform(np.asarray(target))
+                encoder.transform(_normalized_target_values(target))
         except (OSError, ValueError, TypeError, json.JSONDecodeError):
             encoder = None
 
     if encoder is None:
         encoder = LabelEncoder()
-        encoder.fit(np.asarray(target))
+        encoder.fit(_normalized_target_values(target))
     return encoder
 
 
 def encode_target(encoder: LabelEncoder, target: pd.Series | np.ndarray) -> pd.Series:
     """Encode target values while preserving pandas alignment metadata."""
 
-    values = encoder.transform(np.asarray(target))
+    values = encoder.transform(_normalized_target_values(target))
     if isinstance(target, pd.Series):
         return pd.Series(values, index=target.index, name=target.name, dtype=np.int64)
     return pd.Series(values, dtype=np.int64)
@@ -100,3 +100,18 @@ def _json_scalar(value: Any) -> Any:
     if hasattr(value, "item"):
         return value.item()
     return value
+
+
+def _normalized_target_values(target: pd.Series | np.ndarray) -> np.ndarray:
+    """Return string labels accepted by sklearn encoders for mixed-type targets."""
+
+    return pd.Series(target).map(_display_label).to_numpy(dtype=str)
+
+
+def _display_label(value: Any) -> str:
+    try:
+        if pd.isna(value):
+            return "null"
+    except (TypeError, ValueError):
+        pass
+    return str(_json_scalar(value))

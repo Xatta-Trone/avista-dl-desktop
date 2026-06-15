@@ -1,0 +1,87 @@
+<mxfile host="app.diagrams.net" modified="2026-06-15T00:00:00.000Z" agent="Codex" version="24.7.17" type="device">
+  <diagram id="overall-training-workflow-avista" name="Figure 7.13 Overall Training Workflow">
+    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="850" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <mxCell id="title" value="Figure 7.13 — Overall Training Workflow in AVISTA" style="text;html=1;strokeColor=none;fillColor=none;fontSize=26;fontStyle=1;fontColor=#0F172A;align=center;verticalAlign=middle;fontFamily=Arial;" vertex="1" parent="1">
+          <mxGeometry x="250" y="30" width="900" height="42" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="subtitle" value="Controlled progression from validated project configuration to report-ready analytical outputs" style="text;html=1;strokeColor=none;fillColor=none;fontSize=14;fontColor=#334155;align=center;verticalAlign=middle;fontFamily=Arial;" vertex="1" parent="1">
+          <mxGeometry x="300" y="72" width="800" height="28" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="container" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F7F9FC;strokeColor=#D0D7DE;strokeWidth=2;arcSize=2;" vertex="1" parent="1">
+          <mxGeometry x="100" y="120" width="1200" height="640" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="project" value="Project Configuration&#xa;.avista metadata, selected features, target, model settings" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#0F6CBD;strokeWidth=2;fontFamily=Arial;fontSize=15;fontColor=#0F172A;fontStyle=1;align=center;verticalAlign=middle;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="230" y="155" width="940" height="70" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="validation" value="Data Validation&#xa;edge-case checks, split artifacts, class coverage, training readiness" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#00A6A6;strokeWidth=2;fontFamily=Arial;fontSize=15;fontColor=#0F172A;fontStyle=1;align=center;verticalAlign=middle;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="230" y="245" width="940" height="70" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="initialization" value="Model Initialization&#xa;registry lookup, parameter loading, prepared training artifacts" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#0F6CBD;strokeWidth=2;fontFamily=Arial;fontSize=15;fontColor=#0F172A;fontStyle=1;align=center;verticalAlign=middle;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="230" y="335" width="940" height="70" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="training" value="Training Execution&#xa;traditional ML fitting, deep learning optimization, cross-validation where enabled" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#0F6CBD;strokeWidth=2;fontFamily=Arial;fontSize=15;fontColor=#0F172A;fontStyle=1;align=center;verticalAlign=middle;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="230" y="425" width="940" height="70" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="evaluation" value="Evaluation&#xa;holdout metrics, predictions, probabilities, confusion matrices, classification reports" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#00A6A6;strokeWidth=2;fontFamily=Arial;fontSize=15;fontColor=#0F172A;fontStyle=1;align=center;verticalAlign=middle;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="230" y="515" width="940" height="70" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="aggregation" value="Result Aggregation&#xa;model summaries, fold aggregation, diagnostic figures, persisted outputs" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#00A6A6;strokeWidth=2;fontFamily=Arial;fontSize=15;fontColor=#0F172A;fontStyle=1;align=center;verticalAlign=middle;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="230" y="605" width="940" height="70" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="reporting" value="Report Generation&#xa;Markdown/PDF exports, comparison tables, reproducibility metadata" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#0F6CBD;strokeWidth=2;fontFamily=Arial;fontSize=15;fontColor=#0F172A;fontStyle=1;align=center;verticalAlign=middle;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="230" y="695" width="940" height="50" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="arrow1" value="" style="endArrow=block;html=1;rounded=0;strokeColor=#0F6CBD;strokeWidth=2;" edge="1" parent="1" source="project" target="validation">
+          <mxGeometry width="50" height="50" relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="arrow2" value="" style="endArrow=block;html=1;rounded=0;strokeColor=#00A6A6;strokeWidth=2;" edge="1" parent="1" source="validation" target="initialization">
+          <mxGeometry width="50" height="50" relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="arrow3" value="" style="endArrow=block;html=1;rounded=0;strokeColor=#0F6CBD;strokeWidth=2;" edge="1" parent="1" source="initialization" target="training">
+          <mxGeometry width="50" height="50" relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="arrow4" value="" style="endArrow=block;html=1;rounded=0;strokeColor=#0F6CBD;strokeWidth=2;" edge="1" parent="1" source="training" target="evaluation">
+          <mxGeometry width="50" height="50" relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="arrow5" value="" style="endArrow=block;html=1;rounded=0;strokeColor=#00A6A6;strokeWidth=2;" edge="1" parent="1" source="evaluation" target="aggregation">
+          <mxGeometry width="50" height="50" relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="arrow6" value="" style="endArrow=block;html=1;rounded=0;strokeColor=#0F6CBD;strokeWidth=2;" edge="1" parent="1" source="aggregation" target="reporting">
+          <mxGeometry width="50" height="50" relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="left-note" value="Readiness Gate" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0F172A;strokeColor=#0F172A;fontFamily=Arial;fontSize=13;fontColor=#FFFFFF;fontStyle=1;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="130" y="245" width="70" height="160" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="right-note" value="Persistent Outputs" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0F172A;strokeColor=#0F172A;fontFamily=Arial;fontSize=13;fontColor=#FFFFFF;fontStyle=1;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="1200" y="515" width="70" height="230" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="footer" value="Training uses saved project configuration and validated artifacts to preserve repeatable execution across model families." style="text;html=1;strokeColor=none;fillColor=none;fontSize=13;fontColor=#334155;align=center;verticalAlign=middle;fontFamily=Arial;" vertex="1" parent="1">
+          <mxGeometry x="260" y="775" width="880" height="28" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

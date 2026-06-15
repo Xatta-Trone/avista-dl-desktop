@@ -94,6 +94,7 @@ MambaAttention, FT-Transformer, AutoInt, and TabResNet have real saved-artifact 
 - Generic preprocessing implemented with imputation, one-hot encoding, optional scaling, target encoding, and joblib artifact persistence.
 - Classification target encoding is centralized for saved split training:
   - one `LabelEncoder` is fitted or reused for the confirmed target.
+  - mixed-type classification target labels are normalized to display strings before encoder fit/transform so sklearn never receives heterogeneous raw label types.
   - encoded and original train/balanced-train/validation/test targets are saved separately.
   - the encoder and encoded-to-original JSON mapping are saved under `outputs/data_split`.
   - imbalance handling and model fitting use encoded integer targets.
@@ -408,7 +409,7 @@ Result:
 207 passed
 ```
 
-This includes backend tests and PySide6 GUI smoke tests for AVISTA branding, Font Awesome icon loading, redesigned Project Setup cards, hidden Project Setup environment controls, sidebar icons, About content, `.avista` project creation/loading, legacy `.xtab` migration, command-line project loading, data preview, split validation, centralized string-target encoding, XGBoost encoded-target training, decoded reports and probability columns, target-change invalidation, saved-artifact edge checks, typed Model Selection parameters including the single TabPFN estimator control, active-environment optional dependency checks and installation status, saved-split Training readiness, cross-validation, cancellation, evaluation reports, model-specific outputs, and publication-quality PNG/PDF plotting exports.
+This includes backend tests and PySide6 GUI smoke tests for AVISTA branding, Font Awesome icon loading, redesigned Project Setup cards, hidden Project Setup environment controls, sidebar icons, About content, `.avista` project creation/loading, legacy `.xtab` migration, command-line project loading, data preview, split validation, centralized string and mixed-type target encoding, XGBoost encoded-target training, decoded reports and probability columns, target-change invalidation, saved-artifact edge checks, typed Model Selection parameters including the single TabPFN estimator control, active-environment optional dependency checks and installation status, saved-split Training readiness, cross-validation, cancellation, evaluation reports, model-specific outputs, and publication-quality PNG/PDF plotting exports.
 
 Latest focused Environment verification:
 
@@ -482,6 +483,14 @@ Latest focused Data Split & Imbalance page verification:
 
 This run covered saved split artifacts, string-target encoding, saved split reloads, redesigned subsection cards, no-target empty state behavior, compact success notification dismissal, improved table styling, primary confirm button styling, invalid split totals, balanced training distribution display, train-only balancing class sets, target-change refresh, and stale saved-target rejection.
 
+Latest focused Data Split target-encoding verification:
+
+```text
+2 passed, 82 deselected
+```
+
+This run covered string and mixed-type classification target encoding through the Data Split page, including saved label mappings and balanced encoded artifacts.
+
 Latest focused Data Split icon/rendering verification:
 
 ```text
@@ -493,10 +502,10 @@ This run covered Data Split page loading, safe Font Awesome icon names, error an
 Latest focused Data Split UI verification:
 
 ```text
-18 passed
+19 passed
 ```
 
-This run covered saved split artifacts, redesigned cards, no-target state, compact notifications, table styling, safe icons, polished combo/spin input styling with Font Awesome angle spin and combo controls, invalid split totals, train-only balancing behavior, target-change refresh, and stale saved-target rejection.
+This run covered saved split artifacts, redesigned cards, no-target state, compact notifications, table styling, safe icons, polished combo/spin input styling with Font Awesome angle spin and combo controls, invalid split totals, string and mixed-type target encoding, train-only balancing behavior, target-change refresh, and stale saved-target rejection.
 
 Latest focused Model Selection verification:
 

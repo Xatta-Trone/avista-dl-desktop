@@ -2140,6 +2140,59 @@ def test_data_split_page_encodes_string_targets_and_saves_mapping(tmp_path):
     assert app is not None
 
 
+def test_data_split_page_encodes_mixed_type_targets(tmp_path):
+    import json
+
+    import joblib
+    import numpy as np
+    import pandas as pd
+    from PySide6.QtWidgets import QApplication
+
+    from app.core.project_config import ProjectConfig
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+    window = MainWindow()
+    window.config = ProjectConfig(
+        project_name="mixed-target",
+        project_dir=str(tmp_path),
+        input_file=str(tmp_path / "data.csv"),
+        output_dir=str(tmp_path / "outputs"),
+        feature_columns=["feature"],
+        target_column="target",
+        task_type="classification",
+        split_method="random",
+    )
+    window.dataframe = pd.DataFrame(
+        {
+            "feature": range(60),
+            "target": ["A", 1] * 30,
+        }
+    )
+
+    page = window.data_split_imbalance_page
+    page.confirm_split_and_imbalance()
+
+    output_dir = tmp_path / "outputs" / "data_split"
+    mapping = json.loads(
+        (output_dir / "target_label_mapping.json").read_text(encoding="utf-8")
+    )
+    encoder = joblib.load(output_dir / "target_label_encoder.joblib")
+    encoded = np.load(output_dir / "y_train_balanced_encoded.npy")
+    original = np.load(
+        output_dir / "y_train_balanced_original.npy",
+        allow_pickle=True,
+    )
+
+    assert mapping == {"0": "1", "1": "A"}
+    assert encoder.classes_.tolist() == ["1", "A"]
+    assert encoded.dtype.kind in {"i", "u"}
+    assert np.array_equal(encoder.inverse_transform(encoded), original)
+    assert "Error:" not in page.feedback_label.text()
+    window.close()
+    assert app is not None
+
+
 def test_column_target_change_invalidates_saved_encoder_and_split(tmp_path):
     import pandas as pd
     from PySide6.QtCore import Qt

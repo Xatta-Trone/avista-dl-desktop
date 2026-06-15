@@ -1,0 +1,103 @@
+<mxfile host="app.diagrams.net" modified="2026-06-15T00:00:00.000Z" agent="Codex" version="24.7.17" type="device">
+  <diagram id="training-execution-architecture" name="Figure 7.14 Training Execution Architecture">
+    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="760" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <mxCell id="title" value="Figure 7.14 — Training Execution Architecture" style="text;html=1;strokeColor=none;fillColor=none;fontSize=26;fontStyle=1;fontColor=#0F172A;align=center;verticalAlign=middle;fontFamily=Arial;" vertex="1" parent="1">
+          <mxGeometry x="250" y="30" width="900" height="42" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="subtitle" value="Asynchronous worker-based processing separates training execution from user interface operations" style="text;html=1;strokeColor=none;fillColor=none;fontSize=14;fontColor=#334155;align=center;verticalAlign=middle;fontFamily=Arial;" vertex="1" parent="1">
+          <mxGeometry x="285" y="72" width="830" height="28" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="container" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F7F9FC;strokeColor=#D0D7DE;strokeWidth=2;arcSize=2;" vertex="1" parent="1">
+          <mxGeometry x="100" y="125" width="1200" height="555" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="ui" value="User Interface Layer&#xa;training request, status display, progress indicators, result presentation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#0F6CBD;strokeWidth=2;fontFamily=Arial;fontSize=15;fontColor=#0F172A;fontStyle=1;align=center;verticalAlign=middle;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="170" y="260" width="250" height="120" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="controller" value="Training Controller&#xa;readiness checks, execution coordination, run state management" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#00A6A6;strokeWidth=2;fontFamily=Arial;fontSize=15;fontColor=#0F172A;fontStyle=1;align=center;verticalAlign=middle;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="460" y="260" width="250" height="120" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="worker" value="Worker Thread&#xa;background execution, progress signals, logs, completion or failure events" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#0F6CBD;strokeWidth=2;fontFamily=Arial;fontSize=15;fontColor=#0F172A;fontStyle=1;align=center;verticalAlign=middle;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="750" y="260" width="250" height="120" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="engine" value="Model Engine&#xa;model initialization, fitting, evaluation, artifact persistence" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#00A6A6;strokeWidth=2;fontFamily=Arial;fontSize=15;fontColor=#0F172A;fontStyle=1;align=center;verticalAlign=middle;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="260" width="210" height="120" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="request-arrow1" value="start request" style="endArrow=block;html=1;rounded=0;strokeColor=#0F6CBD;strokeWidth=2;fontFamily=Arial;fontSize=12;fontColor=#334155;" edge="1" parent="1" source="ui" target="controller">
+          <mxGeometry width="50" height="50" relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="request-arrow2" value="dispatch job" style="endArrow=block;html=1;rounded=0;strokeColor=#00A6A6;strokeWidth=2;fontFamily=Arial;fontSize=12;fontColor=#334155;" edge="1" parent="1" source="controller" target="worker">
+          <mxGeometry width="50" height="50" relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="request-arrow3" value="execute model" style="endArrow=block;html=1;rounded=0;strokeColor=#0F6CBD;strokeWidth=2;fontFamily=Arial;fontSize=12;fontColor=#334155;" edge="1" parent="1" source="worker" target="engine">
+          <mxGeometry width="50" height="50" relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="return-arrow1" value="progress, logs, status" style="endArrow=block;html=1;rounded=0;strokeColor=#94A3B8;strokeWidth=2;dashed=1;fontFamily=Arial;fontSize=12;fontColor=#334155;" edge="1" parent="1" source="worker" target="controller">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="875" y="425"/>
+              <mxPoint x="585" y="425"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="return-arrow2" value="state updates" style="endArrow=block;html=1;rounded=0;strokeColor=#94A3B8;strokeWidth=2;dashed=1;fontFamily=Arial;fontSize=12;fontColor=#334155;" edge="1" parent="1" source="controller" target="ui">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="585" y="470"/>
+              <mxPoint x="295" y="470"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="return-arrow3" value="artifacts and metrics" style="endArrow=block;html=1;rounded=0;strokeColor=#94A3B8;strokeWidth=2;dashed=1;fontFamily=Arial;fontSize=12;fontColor=#334155;" edge="1" parent="1" source="engine" target="worker">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1145" y="425"/>
+              <mxPoint x="875" y="425"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="top-note" value="Synchronous coordination path" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF4FF;strokeColor=#0F6CBD;strokeWidth=1;fontFamily=Arial;fontSize=13;fontColor=#0F172A;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="390" y="170" width="280" height="42" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="bottom-note" value="Asynchronous feedback path" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F8FAFC;strokeColor=#94A3B8;strokeWidth=1;dashed=1;fontFamily=Arial;fontSize=13;fontColor=#0F172A;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="730" y="520" width="280" height="42" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="artifact-store" value="Project Output Store&#xa;trained models, metrics, curves, logs, reports" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6FFFB;strokeColor=#00A6A6;strokeWidth=2;fontFamily=Arial;fontSize=14;fontColor=#0F172A;fontStyle=1;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="500" y="600" width="400" height="55" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="artifact-arrow" value="persist outputs" style="endArrow=block;html=1;rounded=0;strokeColor=#00A6A6;strokeWidth=2;fontFamily=Arial;fontSize=12;fontColor=#334155;" edge="1" parent="1" source="engine" target="artifact-store">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1145" y="600"/>
+              <mxPoint x="700" y="600"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="footer" value="Long-running model fitting is isolated from interface operations while progress and results are returned through structured feedback signals." style="text;html=1;strokeColor=none;fillColor=none;fontSize=13;fontColor=#334155;align=center;verticalAlign=middle;fontFamily=Arial;" vertex="1" parent="1">
+          <mxGeometry x="220" y="700" width="960" height="28" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

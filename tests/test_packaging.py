@@ -51,7 +51,7 @@ def test_pyinstaller_build_uses_clean_environment_and_required_includes():
 
     assert '"build_env"' in script
     assert '"requirements_lock.txt"' in script
-    assert '"PyInstaller==6.17.1"' in script
+    assert '"PyInstaller==6.17.0"' in script
     assert '"-m", "PyInstaller"' in script
     assert '"--noconfirm"' in script
     assert '"--clean"' in script
@@ -82,7 +82,7 @@ def test_locked_cuda_torch_packages_are_compatible_and_available():
     assert "torchvision==0.24.1+cu126" in requirements
     assert "torchaudio==2.9.1+cu126" in requirements
     assert "numpy==1.26.4" in requirements
-    assert "pyinstaller==6.17.1" in requirements
+    assert "pyinstaller==6.17.0" in requirements
 
 
 def test_file_association_installer_and_documentation_are_complete():

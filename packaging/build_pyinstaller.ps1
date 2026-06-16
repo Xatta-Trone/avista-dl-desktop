@@ -133,7 +133,7 @@ Invoke-CheckedCommand $BuildPython @(
     "-m", "pip", "install", "-r", $Requirements
 ) "Could not install requirements_lock.txt."
 Invoke-CheckedCommand $BuildPython @(
-    "-m", "pip", "install", "PyInstaller==6.17.1"
+    "-m", "pip", "install", "PyInstaller==6.17.0"
 ) "Could not install PyInstaller build dependency."
 Invoke-CheckedCommand $BuildPython @(
     "-c",

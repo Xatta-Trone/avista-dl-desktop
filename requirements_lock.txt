@@ -1,6 +1,6 @@
 --extra-index-url https://download.pytorch.org/whl/cu126
 
-pyinstaller==6.17.1
+pyinstaller==6.17.0
 PySide6==6.8.0.2
 QtAwesome==1.4.2
 pandas==3.0.3

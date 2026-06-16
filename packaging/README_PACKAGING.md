@@ -146,6 +146,11 @@ Manual build:
 5. After completion, download the `AVISTA_Setup` artifact. It contains
    `AVISTA_Setup.exe`.
 
+To publish a manually dispatched build to an existing tagged GitHub Release,
+enter the tag in the `release_tag` workflow input, for example `v1.0.0`.
+The workflow creates the release if it does not exist and uploads
+`AVISTA_Setup.exe` with overwrite enabled for reruns.
+
 Tagged release:
 
 ```powershell
@@ -158,7 +163,9 @@ release notes, and attach `AVISTA_Setup.exe`.
 
 The workflow uses `windows-latest`, Python 3.12, pip caching, Chocolatey Inno
 Setup installation, the focused packaging/resource tests, and the same
-`packaging\build_pyinstaller.ps1` used locally.
+`packaging\build_pyinstaller.ps1` used locally. Release publishing uses
+GitHub CLI so tagged pushes and manual `release_tag` dispatches follow the
+same upload path.
 
 GitHub-hosted Windows runners do not provide an NVIDIA GPU. GPU training and
 CUDA execution cannot be tested during the release build. CUDA-enabled

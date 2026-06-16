@@ -129,6 +129,7 @@ def test_github_windows_release_workflow_builds_and_publishes_installer():
 
     assert 'tags:' in workflow and '"v*"' in workflow
     assert "workflow_dispatch:" in workflow
+    assert "release_tag:" in workflow
     assert "runs-on: windows-latest" in workflow
     assert "actions/checkout@v6" in workflow
     assert "actions/setup-python@v6" in workflow
@@ -142,5 +143,11 @@ def test_github_windows_release_workflow_builds_and_publishes_installer():
     assert "installer/AVISTA_Setup.exe" in workflow
     assert "actions/upload-artifact@v7" in workflow
     assert "archive: false" in workflow
-    assert "softprops/action-gh-release@v3" in workflow
+    assert "Resolve release tag" in workflow
+    assert "github.ref_type" in workflow
+    assert "github.ref_name" in workflow
+    assert "inputs.release_tag" in workflow
+    assert "gh release create" in workflow
+    assert "gh release upload" in workflow
+    assert "--clobber" in workflow
     assert "OutputBaseFilename=AVISTA_Setup" in installer

@@ -5,6 +5,11 @@ on:
     tags:
       - "v*"
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Optional existing tag to publish the installer to, for example v1.0.0"
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -88,10 +93,56 @@ jobs:
           if-no-files-found: error
           archive: false
 
-      - name: Create GitHub Release
-        if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v3
-        with:
-          files: installer/AVISTA_Setup.exe
-          generate_release_notes: true
-          fail_on_unmatched_files: true
+      - name: Resolve release tag
+        id: release_tag
+        shell: pwsh
+        run: |
+          $tag = ""
+          if ("${{ github.ref_type }}" -eq "tag" -and "${{ github.ref_name }}".StartsWith("v")) {
+            $tag = "${{ github.ref_name }}"
+          }
+          elseif ("${{ github.event_name }}" -eq "workflow_dispatch") {
+            $tag = "${{ inputs.release_tag }}"
+          }
+
+          if ([string]::IsNullOrWhiteSpace($tag)) {
+            "publish=false" >> $env:GITHUB_OUTPUT
+            "tag=" >> $env:GITHUB_OUTPUT
+            Write-Host "No release tag resolved. Installer remains available as a workflow artifact."
+          }
+          elseif (-not $tag.StartsWith("v")) {
+            throw "Release tags must start with 'v'. Received: $tag"
+          }
+          else {
+            "publish=true" >> $env:GITHUB_OUTPUT
+            "tag=$tag" >> $env:GITHUB_OUTPUT
+            Write-Host "Resolved release tag: $tag"
+          }
+
+      - name: Publish installer to GitHub Release
+        if: steps.release_tag.outputs.publish == 'true'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.release_tag.outputs.tag }}
+        run: |
+          if (-not (Test-Path -LiteralPath "installer/AVISTA_Setup.exe")) {
+            throw "installer/AVISTA_Setup.exe was not created."
+          }
+
+          gh release view $env:RELEASE_TAG *> $null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create $env:RELEASE_TAG `
+              --title $env:RELEASE_TAG `
+              --generate-notes
+            if ($LASTEXITCODE -ne 0) {
+              throw "Could not create GitHub Release for $env:RELEASE_TAG."
+            }
+          }
+
+          gh release upload $env:RELEASE_TAG `
+            installer/AVISTA_Setup.exe `
+            --clobber
+          if ($LASTEXITCODE -ne 0) {
+            throw "Could not upload AVISTA_Setup.exe to GitHub Release $env:RELEASE_TAG."
+          }

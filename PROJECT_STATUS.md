@@ -319,7 +319,7 @@ MambaAttention, FT-Transformer, AutoInt, and TabResNet have real saved-artifact 
 - Windows packaging workflow added:
   - `requirements_lock.txt` pins the release build stack, including CUDA 12.6 PyTorch, TabPFN, Qt, scientific packages, and PyInstaller.
   - `packaging/build_pyinstaller.ps1` creates a dedicated `build_env`, explicitly installs the pinned PyInstaller build dependency, builds a console-free release or console-enabled debug onedir folder from `packaging/avista_pyinstaller.spec`, includes assets and dynamic ML packages, writes Windows version metadata, and stages `dist`, `installer`, and `release` outputs.
-  - Missing `logo.ico` files are generated from the bundled PNG with Pillow before compilation.
+  - Missing or invalid `logo.ico` files are generated from the bundled PNG with Pillow before compilation using standard square Windows icon sizes.
   - `packaging/avista_installer.iss` installs under Program Files, creates Start Menu and optional desktop shortcuts, registers `.avista` project files, and removes AVISTA registry entries on uninstall.
   - Packaging documentation covers prerequisites, builds, installer testing, command-line and double-click project opening, CUDA driver expectations, CPU fallback, and Torch/TabPFN troubleshooting.
   - Release documents now include `LICENSE.txt`, `THIRD_PARTY_NOTICES.txt`, and `CHANGELOG.md`.
@@ -446,10 +446,10 @@ This run covered development and packaged resource resolution; packaged asset ex
 Latest packaging/resource-only verification:
 
 ```text
-12 passed
+14 passed
 ```
 
-This run covered development and packaged resource resolution, command-line `.avista` loading, required logo/icon/checkpoint assets, runtime logo/checkpoint/package inventory, clean build-environment configuration, explicit PyInstaller build dependencies, ICO fallback generation, and Inno Setup file association declarations. PowerShell syntax parsing passed.
+This run covered development and packaged resource resolution, command-line `.avista` loading, required logo/icon/checkpoint assets, runtime logo/checkpoint/package inventory, clean build-environment configuration, explicit PyInstaller build dependencies, ICO validation and fallback generation, and Inno Setup file association declarations. PowerShell syntax parsing passed.
 
 Latest GitHub Actions packaging verification:
 

@@ -64,6 +64,7 @@ def test_version_consumers_do_not_hard_code_release_number():
         "app/core/runtime_verification.py",
         "packaging/build_pyinstaller.ps1",
         "packaging/avista_pyinstaller.spec",
+        "packaging/create_logo_icon.py",
         "packaging/avista_installer.iss",
     )
 

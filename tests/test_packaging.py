@@ -18,6 +18,7 @@ def test_required_packaged_assets_exist():
 
     assert logo.is_file() and logo.stat().st_size > 0
     assert icon.is_file() and icon.stat().st_size > 0
+    assert icon.read_bytes()[:4] == b"\x00\x00\x01\x00"
     assert checkpoint.is_file() and checkpoint.stat().st_size > 0
 
 
@@ -60,8 +61,14 @@ def test_pyinstaller_build_uses_clean_environment_and_required_includes():
     assert "AVISTA_PYINSTALLER_CONSOLE" in script
     assert "AVISTA_VERSION_FILE" in script
     assert "app\\__version__.py" in script
-    assert "Image.open" in script
+    assert "Test-ValidIconFile" in script
+    assert "create_logo_icon.py" in script
     assert "VSVersionInfo" in script
+    icon_generator = (
+        PROJECT_ROOT / "packaging" / "create_logo_icon.py"
+    ).read_text(encoding="utf-8")
+    assert "Image.open" in icon_generator
+    assert "format=\"ICO\"" in icon_generator
     assert "Invoke-CheckedCommand" in script
     assert "Packaging imports verified" in script
     assert "Analysis(" in spec

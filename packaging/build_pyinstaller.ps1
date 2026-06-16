@@ -20,6 +20,7 @@ $Requirements = Join-Path $ProjectRoot "requirements_lock.txt"
 $VersionSource = Join-Path $ProjectRoot "app\__version__.py"
 $LogoPng = Join-Path $ProjectRoot "app\assets\logo.png"
 $LogoIco = Join-Path $ProjectRoot "app\assets\logo.ico"
+$LogoIconGenerator = Join-Path $PSScriptRoot "create_logo_icon.py"
 $SpecFile = Join-Path $PSScriptRoot "avista_pyinstaller.spec"
 $VersionInfoFile = Join-Path $DistDir "avista_version_info.txt"
 
@@ -108,6 +109,37 @@ VSVersionInfo(
     Set-Content -LiteralPath $Path -Value $versionInfo -Encoding UTF8
 }
 
+function Test-ValidIconFile {
+    param([string]$Path)
+
+    if (-not (Test-Path -LiteralPath $Path)) {
+        return $false
+    }
+    $bytes = [System.IO.File]::ReadAllBytes($Path)
+    return (
+        $bytes.Length -ge 6 -and
+        $bytes[0] -eq 0 -and
+        $bytes[1] -eq 0 -and
+        $bytes[2] -eq 1 -and
+        $bytes[3] -eq 0 -and
+        ($bytes[4] -ne 0 -or $bytes[5] -ne 0)
+    )
+}
+
+function New-LogoIcon {
+    if (-not (Test-Path -LiteralPath $LogoPng)) {
+        throw "logo.png does not exist under app\assets."
+    }
+    Invoke-CheckedCommand $BuildPython @(
+        $LogoIconGenerator,
+        $LogoPng,
+        $LogoIco
+    ) "Could not generate app\assets\logo.ico from logo.png."
+    if (-not (Test-ValidIconFile $LogoIco)) {
+        throw "Generated app\assets\logo.ico is not a valid ICO file."
+    }
+}
+
 if ($Clean) {
     Remove-BuildPath $BuildEnv
     Remove-BuildPath $BuildWorkDir
@@ -140,17 +172,8 @@ Invoke-CheckedCommand $BuildPython @(
     "import PySide6, qtawesome, torch, torchvision, torchaudio, tabpfn; print('Packaging imports verified')"
 ) "Required packaging imports are unavailable."
 
-if (-not (Test-Path -LiteralPath $LogoIco)) {
-    if (-not (Test-Path -LiteralPath $LogoPng)) {
-        throw "Neither logo.ico nor logo.png exists under app\assets."
-    }
-    Invoke-CheckedCommand $BuildPython @(
-        "-c",
-        "from PIL import Image; Image.open(r'$LogoPng').convert('RGBA').save(r'$LogoIco', sizes=[(16,16),(24,24),(32,32),(48,48),(64,64),(128,128),(256,256)])"
-    ) "Could not generate app\assets\logo.ico from logo.png."
-    if (-not (Test-Path -LiteralPath $LogoIco)) {
-        throw "Could not generate app\assets\logo.ico from logo.png."
-    }
+if (-not (Test-ValidIconFile $LogoIco)) {
+    New-LogoIcon
 }
 
 Write-VersionInfoFile $VersionInfoFile $AppVersion $WindowsVersionTuple $AppName

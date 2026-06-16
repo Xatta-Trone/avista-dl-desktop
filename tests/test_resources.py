@@ -32,7 +32,7 @@ def test_app_resource_path_resolves_pyinstaller_bundle(tmp_path, monkeypatch):
     assert resolved == resource.resolve()
 
 
-def test_app_resource_path_resolves_nuitka_standalone_asset(tmp_path, monkeypatch):
+def test_app_resource_path_resolves_packaged_standalone_asset(tmp_path, monkeypatch):
     executable = tmp_path / "AVISTA.exe"
     executable.write_bytes(b"exe")
     asset = tmp_path / "app" / "assets" / "logo.png"

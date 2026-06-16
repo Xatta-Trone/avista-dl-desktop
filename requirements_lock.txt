@@ -1,7 +1,6 @@
 --extra-index-url https://download.pytorch.org/whl/cu126
 
-Nuitka==4.1.2
-ordered-set==4.1.0
+pyinstaller==6.17.1
 PySide6==6.8.0.2
 QtAwesome==1.4.2
 pandas==3.0.3
@@ -28,4 +27,3 @@ captum==0.8.0
 nvidia-ml-py==13.610.43
 safetensors==0.8.0
 huggingface-hub==1.19.0
-zstandard==0.25.0

@@ -20,7 +20,7 @@ The GUI can create or load projects, inspect and repair GPU environments with us
 
 The Data Split & Imbalance page uses AVISTA-style subsection cards, compact distribution and coverage tables, a primary confirm action, and auto-dismissing compact success notifications. Warnings remain separate from successful save and load notifications, and errors remain visually distinct.
 
-MambaAttention, FT-Transformer, AutoInt, and TabResNet have real saved-artifact training with live curves and PyTorch state-dict persistence. TabPFN 2.5 now has capped saved-artifact training, optional cross-validation, decoded evaluation exports, subprocess isolation, and safe serialization fallback. A comprehensive Report page now combines saved model outputs into Markdown, PDF, CSV, and comparison figures without retraining. A Nuitka standalone and Inno Setup Windows packaging workflow is implemented. XAI and robustness analysis are not implemented yet.
+MambaAttention, FT-Transformer, AutoInt, and TabResNet have real saved-artifact training with live curves and PyTorch state-dict persistence. TabPFN 2.5 now has capped saved-artifact training, optional cross-validation, decoded evaluation exports, subprocess isolation, and safe serialization fallback. A comprehensive Report page now combines saved model outputs into Markdown, PDF, CSV, and comparison figures without retraining. A PyInstaller onedir and Inno Setup Windows packaging workflow is implemented. XAI and robustness analysis are not implemented yet.
 
 ## 4. Completed Phases
 
@@ -317,17 +317,17 @@ MambaAttention, FT-Transformer, AutoInt, and TabResNet have real saved-artifact 
 - Missing model metrics, histories, curves, confusion matrices, and feature importance outputs are represented as `Not available` without aborting report generation.
 - SHAP, tree visualization/rule extraction, forest summaries, and other advanced XAI outputs remain deferred.
 - Windows packaging workflow added:
-  - `requirements_lock.txt` pins the release build stack, including CUDA 12.6 PyTorch, TabPFN, Qt, scientific packages, and Nuitka.
-  - `packaging/build_nuitka.ps1` creates a dedicated `build_env`, explicitly installs Nuitka, ordered-set, and zstandard, builds a console-free release or console-enabled debug standalone folder, includes assets and dynamic ML packages, generates compilation/license reports, and stages `dist`, `installer`, and `release` outputs.
+  - `requirements_lock.txt` pins the release build stack, including CUDA 12.6 PyTorch, TabPFN, Qt, scientific packages, and PyInstaller.
+  - `packaging/build_pyinstaller.ps1` creates a dedicated `build_env`, explicitly installs the pinned PyInstaller build dependency, builds a console-free release or console-enabled debug onedir folder from `packaging/avista_pyinstaller.spec`, includes assets and dynamic ML packages, writes Windows version metadata, and stages `dist`, `installer`, and `release` outputs.
   - Missing `logo.ico` files are generated from the bundled PNG with Pillow before compilation.
   - `packaging/avista_installer.iss` installs under Program Files, creates Start Menu and optional desktop shortcuts, registers `.avista` project files, and removes AVISTA registry entries on uninstall.
   - Packaging documentation covers prerequisites, builds, installer testing, command-line and double-click project opening, CUDA driver expectations, CPU fallback, and Torch/TabPFN troubleshooting.
   - Release documents now include `LICENSE.txt`, `THIRD_PARTY_NOTICES.txt`, and `CHANGELOG.md`.
-  - Nuitka and Inno Setup build versions are parsed from `app/__version__.py`; packaging scripts no longer contain an independent release version.
+  - PyInstaller and Inno Setup build versions are parsed from `app/__version__.py`; packaging scripts no longer contain an independent release version.
   - `.github/workflows/windows-release.yml` builds the Windows installer on `windows-latest` for manual dispatches and `v*` tags, caches pip downloads, installs Inno Setup, runs only packaging/resource/version tests, uploads `AVISTA_Setup.exe`, and publishes it to tagged GitHub Releases.
   - The Inno Setup output and release artifact use the stable filename `installer/AVISTA_Setup.exe`.
-  - GitHub Actions packaging uses Python 3.12, NumPy 1.26.4, Captum 0.8.0, and a matched CUDA 12.6 trio: PyTorch 2.9.1, TorchVision 0.24.1, and TorchAudio 2.9.1. Python 3.12 and NumPy 1.26.4 avoid Captum's NumPy-below-2.0 resolver conflict. The build script fails immediately on native command errors and verifies PySide6/Torch/TabPFN imports before invoking Nuitka.
-  - Nuitka explicitly receives `--module-parameter=torch-disable-jit=no` so standalone builds retain normal Torch/TabPFN JIT-capable runtime behavior and avoid the options-nanny ambiguity warning.
+  - GitHub Actions packaging uses Python 3.12, NumPy 1.26.4, Captum 0.8.0, and a matched CUDA 12.6 trio: PyTorch 2.9.1, TorchVision 0.24.1, and TorchAudio 2.9.1. Python 3.12 and NumPy 1.26.4 avoid Captum's NumPy-below-2.0 resolver conflict. The build script fails immediately on native command errors and verifies PySide6/Torch/TabPFN imports before invoking PyInstaller.
+  - The PyInstaller spec collects AVISTA assets, QtAwesome, Matplotlib, TabPFN package data, and dynamic ML imports for Torch, XGBoost, LightGBM, sklearn, imbalanced-learn, and Matplotlib.
 - The app was launched successfully from the project `.venv`.
 
 ## 5. Implemented Files
@@ -441,7 +441,7 @@ Latest focused packaging verification:
 13 passed, 82 deselected
 ```
 
-This run covered development, Nuitka, and PyInstaller resource resolution; packaged asset existence; `.avista` command-line loading; runtime package/checkpoint inventory; dedicated build-environment and Nuitka options; installer association/uninstall declarations; and required release documents. PowerShell syntax parsing also passed.
+This run covered development and packaged resource resolution; packaged asset existence; `.avista` command-line loading; runtime package/checkpoint inventory; dedicated build-environment and PyInstaller options; installer association/uninstall declarations; and required release documents. PowerShell syntax parsing also passed.
 
 Latest packaging/resource-only verification:
 
@@ -449,7 +449,7 @@ Latest packaging/resource-only verification:
 12 passed
 ```
 
-This run covered development and Nuitka resource resolution, command-line `.avista` loading, required logo/icon/checkpoint assets, runtime logo/checkpoint/package inventory, clean build-environment configuration, explicit Nuitka build dependencies, ICO fallback generation, and Inno Setup file association declarations. PowerShell syntax parsing passed.
+This run covered development and packaged resource resolution, command-line `.avista` loading, required logo/icon/checkpoint assets, runtime logo/checkpoint/package inventory, clean build-environment configuration, explicit PyInstaller build dependencies, ICO fallback generation, and Inno Setup file association declarations. PowerShell syntax parsing passed.
 
 Latest GitHub Actions packaging verification:
 
@@ -585,7 +585,7 @@ This run covered centered half-width ROC/PR/training previews, the 900-pixel cap
 - Cancellation is cooperative and cannot interrupt an estimator while its current `fit()` call is executing.
 - MambaAttention, FT-Transformer, AutoInt, TabResNet, and TabPFN 2.5 training are implemented.
 - No XAI page or XAI computation is implemented yet.
-- The packaging workflow is implemented, but a full standalone build and installer smoke test remain pending on a Windows build host with Visual Studio 2022 C++ Build Tools and Inno Setup 6.
+- The packaging workflow is implemented, but a full standalone build and installer smoke test remain pending on a Windows build host with Inno Setup 6.
 - Inno Setup 6 is not installed on the current development machine.
 
 ## 9. Next Immediate Task

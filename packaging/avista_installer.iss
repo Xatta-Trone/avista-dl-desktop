@@ -1,8 +1,8 @@
 #ifndef MyAppName
-  #error MyAppName must be supplied by build_nuitka.ps1 from app/__version__.py
+  #error MyAppName must be supplied by build_pyinstaller.ps1 from app/__version__.py
 #endif
 #ifndef MyAppVersion
-  #error MyAppVersion must be supplied by build_nuitka.ps1 from app/__version__.py
+  #error MyAppVersion must be supplied by build_pyinstaller.ps1 from app/__version__.py
 #endif
 #define MyAppPublisher "AVISTA Developers"
 #define MyAppExeName "AVISTA.exe"

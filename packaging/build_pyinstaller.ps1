@@ -11,6 +11,7 @@ $ErrorActionPreference = "Stop"
 $ProjectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $BuildEnv = Join-Path $ProjectRoot "build_env"
 $BuildPython = Join-Path $BuildEnv "Scripts\python.exe"
+$BuildWorkDir = Join-Path $ProjectRoot "build\pyinstaller"
 $DistDir = Join-Path $ProjectRoot "dist"
 $InstallerDir = Join-Path $ProjectRoot "installer"
 $ReleaseDir = Join-Path $ProjectRoot "release"
@@ -19,6 +20,8 @@ $Requirements = Join-Path $ProjectRoot "requirements_lock.txt"
 $VersionSource = Join-Path $ProjectRoot "app\__version__.py"
 $LogoPng = Join-Path $ProjectRoot "app\assets\logo.png"
 $LogoIco = Join-Path $ProjectRoot "app\assets\logo.ico"
+$SpecFile = Join-Path $PSScriptRoot "avista_pyinstaller.spec"
+$VersionInfoFile = Join-Path $DistDir "avista_version_info.txt"
 
 $VersionText = Get-Content -LiteralPath $VersionSource -Raw
 $VersionMatch = [regex]::Match($VersionText, '(?m)^__version__\s*=\s*"([^"]+)"')
@@ -33,6 +36,7 @@ while ($VersionParts.Count -lt 4) {
     $VersionParts += "0"
 }
 $WindowsVersion = ($VersionParts[0..3] -join ".")
+$WindowsVersionTuple = ($VersionParts[0..3] -join ", ")
 
 function Invoke-CheckedCommand {
     param(
@@ -60,14 +64,59 @@ function Remove-BuildPath {
     }
 }
 
+function Write-VersionInfoFile {
+    param(
+        [string]$Path,
+        [string]$Version,
+        [string]$VersionTuple,
+        [string]$ApplicationName
+    )
+
+    $versionInfo = @"
+# UTF-8
+VSVersionInfo(
+  ffi=FixedFileInfo(
+    filevers=($VersionTuple),
+    prodvers=($VersionTuple),
+    mask=0x3f,
+    flags=0x0,
+    OS=0x40004,
+    fileType=0x1,
+    subtype=0x0,
+    date=(0, 0)
+  ),
+  kids=[
+    StringFileInfo([
+      StringTable(
+        '040904B0',
+        [
+          StringStruct('CompanyName', '$ApplicationName Developers'),
+          StringStruct('FileDescription', 'Automated Vehicle Infrastructure-Sensitive Tabular Analysis'),
+          StringStruct('FileVersion', '$Version'),
+          StringStruct('InternalName', '$ApplicationName'),
+          StringStruct('OriginalFilename', '$ApplicationName.exe'),
+          StringStruct('ProductName', '$ApplicationName'),
+          StringStruct('ProductVersion', '$Version'),
+          StringStruct('LegalCopyright', 'Copyright 2026 AVISTA Developers')
+        ]
+      )
+    ]),
+    VarFileInfo([VarStruct('Translation', [1033, 1200])])
+  ]
+)
+"@
+    Set-Content -LiteralPath $Path -Value $versionInfo -Encoding UTF8
+}
+
 if ($Clean) {
     Remove-BuildPath $BuildEnv
+    Remove-BuildPath $BuildWorkDir
     Remove-BuildPath $DistDir
     Remove-BuildPath $InstallerDir
     Remove-BuildPath $ReleaseDir
 }
 
-foreach ($directory in @($DistDir, $InstallerDir, $ReleaseDir)) {
+foreach ($directory in @($BuildWorkDir, $DistDir, $InstallerDir, $ReleaseDir)) {
     New-Item -ItemType Directory -Path $directory -Force | Out-Null
 }
 
@@ -84,8 +133,8 @@ Invoke-CheckedCommand $BuildPython @(
     "-m", "pip", "install", "-r", $Requirements
 ) "Could not install requirements_lock.txt."
 Invoke-CheckedCommand $BuildPython @(
-    "-m", "pip", "install", "Nuitka", "ordered-set", "zstandard"
-) "Could not install Nuitka build dependencies."
+    "-m", "pip", "install", "PyInstaller==6.17.1"
+) "Could not install PyInstaller build dependency."
 Invoke-CheckedCommand $BuildPython @(
     "-c",
     "import PySide6, qtawesome, torch, torchvision, torchaudio, tabpfn; print('Packaging imports verified')"
@@ -104,63 +153,41 @@ if (-not (Test-Path -LiteralPath $LogoIco)) {
     }
 }
 
-$ConsoleMode = if ($Configuration -eq "Debug") { "force" } else { "disable" }
-$NuitkaArgs = @(
-    "-m", "nuitka",
-    (Join-Path $ProjectRoot "main.py"),
-    "--mode=standalone",
-    "--enable-plugin=pyside6",
-    "--windows-console-mode=$ConsoleMode",
-    "--windows-icon-from-ico=$LogoIco",
-    "--include-data-dir=$(Join-Path $ProjectRoot 'app\assets')=app/assets",
-    "--module-parameter=torch-disable-jit=no",
-    "--include-package=app",
-    "--include-package=torch",
-    "--include-package=torchvision",
-    "--include-package=torchaudio",
-    "--include-package=tabpfn",
-    "--include-package=xgboost",
-    "--include-package=lightgbm",
-    "--include-package=sklearn",
-    "--include-package=imblearn",
-    "--include-package=matplotlib",
-    "--include-package-data=qtawesome",
-    "--include-package-data=matplotlib",
-    "--include-package-data=tabpfn",
-    "--output-dir=$DistDir",
-    "--output-filename=$AppName.exe",
-    "--company-name=$AppName",
-    "--product-name=$AppName",
-    "--file-description=Automated Vehicle Infrastructure-Sensitive Tabular Analysis",
-    "--file-version=$WindowsVersion",
-    "--product-version=$WindowsVersion",
-    "--copyright=Copyright 2026 AVISTA Developers",
-    "--msvc=latest",
-    "--assume-yes-for-downloads",
-    "--report=$(Join-Path $DistDir 'nuitka-compilation-report.xml')",
-    "--report-template=LicenseReport:$(Join-Path $DistDir 'nuitka-license-report.txt')"
+Write-VersionInfoFile $VersionInfoFile $AppVersion $WindowsVersionTuple $AppName
+
+$env:AVISTA_PYINSTALLER_CONSOLE = if ($Configuration -eq "Debug") { "1" } else { "0" }
+$env:AVISTA_VERSION_FILE = $VersionInfoFile
+$PyInstallerArgs = @(
+    "-m", "PyInstaller",
+    $SpecFile,
+    "--noconfirm",
+    "--clean",
+    "--distpath", $DistDir,
+    "--workpath", $BuildWorkDir
 )
 
 Push-Location $ProjectRoot
 try {
-    & $BuildPython @NuitkaArgs
+    & $BuildPython @PyInstallerArgs
     if ($LASTEXITCODE -ne 0) {
-        throw "Nuitka build failed with exit code $LASTEXITCODE."
+        throw "PyInstaller build failed with exit code $LASTEXITCODE."
     }
 }
 finally {
     Pop-Location
+    Remove-Item Env:\AVISTA_PYINSTALLER_CONSOLE -ErrorAction SilentlyContinue
+    Remove-Item Env:\AVISTA_VERSION_FILE -ErrorAction SilentlyContinue
 }
 
-$BuiltExe = Get-ChildItem -Path $DistDir -Recurse -Filter "AVISTA.exe" |
-    Select-Object -First 1
-if (-not $BuiltExe) {
-    throw "Nuitka completed but AVISTA.exe was not found under $DistDir."
+$BuiltAppDir = Join-Path $DistDir $AppName
+$BuiltExe = Join-Path $BuiltAppDir "$AppName.exe"
+if (-not (Test-Path -LiteralPath $BuiltExe)) {
+    throw "PyInstaller completed but $BuiltExe was not found."
 }
 
 Remove-BuildPath $ReleaseAppDir
 New-Item -ItemType Directory -Path $ReleaseAppDir -Force | Out-Null
-Copy-Item -Path (Join-Path $BuiltExe.Directory.FullName "*") -Destination $ReleaseAppDir -Recurse -Force
+Copy-Item -Path (Join-Path $BuiltAppDir "*") -Destination $ReleaseAppDir -Recurse -Force
 
 foreach ($document in @(
     "LICENSE.txt",

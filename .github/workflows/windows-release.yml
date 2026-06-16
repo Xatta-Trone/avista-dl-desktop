@@ -68,7 +68,7 @@ jobs:
       - name: Build AVISTA standalone and installer
         shell: pwsh
         run: |
-          ./packaging/build_nuitka.ps1 `
+          ./packaging/build_pyinstaller.ps1 `
             -Configuration Release `
             -PythonExecutable python `
             -Clean

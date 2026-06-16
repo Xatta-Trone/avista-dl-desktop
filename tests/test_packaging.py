@@ -41,26 +41,36 @@ def test_runtime_verification_reports_versions_packages_and_checkpoint():
     assert info["logo_exists"] is True
 
 
-def test_nuitka_build_uses_clean_environment_and_required_includes():
-    script = (PROJECT_ROOT / "packaging" / "build_nuitka.ps1").read_text(
+def test_pyinstaller_build_uses_clean_environment_and_required_includes():
+    script = (PROJECT_ROOT / "packaging" / "build_pyinstaller.ps1").read_text(
+        encoding="utf-8"
+    )
+    spec = (PROJECT_ROOT / "packaging" / "avista_pyinstaller.spec").read_text(
         encoding="utf-8"
     )
 
     assert '"build_env"' in script
     assert '"requirements_lock.txt"' in script
-    assert '"Nuitka", "ordered-set", "zstandard"' in script
-    assert '"--mode=standalone"' in script
-    assert '"--enable-plugin=pyside6"' in script
-    assert '"--windows-console-mode=$ConsoleMode"' in script
-    assert '"--include-data-dir=' in script
-    assert '"--include-package=torch"' in script
-    assert '"--module-parameter=torch-disable-jit=no"' in script
-    assert '"--include-package=tabpfn"' in script
-    assert '"--output-filename=$AppName.exe"' in script
+    assert '"PyInstaller==6.17.1"' in script
+    assert '"-m", "PyInstaller"' in script
+    assert '"--noconfirm"' in script
+    assert '"--clean"' in script
+    assert '"--distpath", $DistDir' in script
+    assert '"--workpath", $BuildWorkDir' in script
+    assert "AVISTA_PYINSTALLER_CONSOLE" in script
+    assert "AVISTA_VERSION_FILE" in script
     assert "app\\__version__.py" in script
     assert "Image.open" in script
+    assert "VSVersionInfo" in script
     assert "Invoke-CheckedCommand" in script
     assert "Packaging imports verified" in script
+    assert "Analysis(" in spec
+    assert "COLLECT(" in spec
+    assert '"app/assets"' in spec
+    assert 'collect_submodules(package_name)' in spec
+    assert '"torch"' in spec
+    assert '"tabpfn"' in spec
+    assert 'collect_data_files(package_name)' in spec
 
 
 def test_locked_cuda_torch_packages_are_compatible_and_available():
@@ -72,6 +82,7 @@ def test_locked_cuda_torch_packages_are_compatible_and_available():
     assert "torchvision==0.24.1+cu126" in requirements
     assert "torchaudio==2.9.1+cu126" in requirements
     assert "numpy==1.26.4" in requirements
+    assert "pyinstaller==6.17.1" in requirements
 
 
 def test_file_association_installer_and_documentation_are_complete():
@@ -117,7 +128,7 @@ def test_github_windows_release_workflow_builds_and_publishes_installer():
     assert 'python-version: "3.12"' in workflow
     assert "cache: pip" in workflow
     assert "choco install innosetup" in workflow
-    assert "./packaging/build_nuitka.ps1" in workflow
+    assert "./packaging/build_pyinstaller.ps1" in workflow
     assert "tests/test_resources.py" in workflow
     assert "tests/test_main.py" in workflow
     assert "tests/test_version_metadata.py" in workflow

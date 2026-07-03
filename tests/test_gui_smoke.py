@@ -980,16 +980,19 @@ def test_column_config_confirms_modeling_subset(tmp_path):
     metadata = saved_config["preprocessing_options"]["label_encoding_metadata"]
     assert metadata["city"]["unique_count"] == 3
     assert metadata["city"]["missing_count"] == 0
+    assert saved_config["preprocessing_options"]["numerical_scaling_method"] == "none"
+    assert saved_config["preprocessing_options"]["scaled_numerical_columns"] == ["age"]
     assert "Modeling configuration saved successfully." in page.feedback_label.text()
     assert [label.text() for label in page.feedback_labels] == [
         "Modeling configuration saved successfully.",
         "Selected features: 2",
         "Target column: target",
         "Label-encoded columns: 1",
+        "Numerical scaling: None",
     ]
     assert all(not icon.pixmap().isNull() for icon in page.feedback_icons)
     assert not page.feedback_card.isHidden()
-    assert page.feedback_card.maximumHeight() == 136
+    assert page.feedback_card.maximumHeight() == 168
     feedback_margins = page.feedback_card.layout().contentsMargins()
     assert feedback_margins.top() == 8
     assert feedback_margins.bottom() == 8
@@ -1053,6 +1056,187 @@ def test_column_config_restores_only_eligible_label_encoding_columns(tmp_path):
     ] == [
         "city",
     ]
+    window.close()
+    assert app is not None
+
+
+def test_column_config_restores_numerical_scaling_selection(tmp_path):
+    import json
+
+    import pandas as pd
+    from PySide6.QtCore import Qt
+    from PySide6.QtWidgets import QApplication
+
+    from app.core.project_config import ProjectConfig
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+    window = MainWindow()
+    window.config = ProjectConfig(
+        project_name="scaling-restore",
+        project_dir=str(tmp_path),
+        input_file=str(tmp_path / "data.csv"),
+        output_dir=str(tmp_path / "outputs"),
+        feature_columns=["age", "score", "city"],
+        target_column="target",
+        preprocessing_options={
+            "numerical_scaling_method": "standard",
+            "scaled_numerical_columns": ["age"],
+        },
+    )
+    window.dataframe = pd.DataFrame(
+        {
+            "age": [20, 30],
+            "score": [1.5, 2.5],
+            "city": ["Austin", "Dallas"],
+            "target": ["no", "yes"],
+        }
+    )
+
+    page = window.column_config_page
+    page.refresh()
+
+    assert page.numerical_scaling_input.currentData() == "standard"
+    assert [
+        page.numerical_columns_list.item(index).text()
+        for index in range(page.numerical_columns_list.count())
+    ] == ["age", "score"]
+    assert (
+        page.numerical_columns_list.selectionMode()
+        == page.numerical_columns_list.SelectionMode.SingleSelection
+    )
+
+    age_item = page.numerical_columns_list.item(0)
+    score_item = page.numerical_columns_list.item(1)
+    assert age_item.flags() & Qt.ItemFlag.ItemIsSelectable
+    assert age_item.flags() & Qt.ItemFlag.ItemIsUserCheckable
+    assert age_item.checkState() == Qt.CheckState.Checked
+    assert score_item.checkState() == Qt.CheckState.Unchecked
+
+    page.numerical_columns_list.itemClicked.emit(score_item)
+
+    assert score_item.checkState() == Qt.CheckState.Unchecked
+    assert page.numerical_column_name.text() == "score"
+    assert "Count: 2" in page.numerical_summary_label.text()
+
+    score_item.setCheckState(Qt.CheckState.Checked)
+    assert age_item.checkState() == Qt.CheckState.Checked
+    assert score_item.checkState() == Qt.CheckState.Checked
+    page.confirm_modeling_columns()
+
+    saved_config = json.loads((tmp_path / "scaling-restore.avista").read_text(encoding="utf-8"))
+    assert saved_config["preprocessing_options"]["numerical_scaling_method"] == "standard"
+    assert saved_config["preprocessing_options"]["scaled_numerical_columns"] == ["age", "score"]
+
+    reloaded_window = MainWindow()
+    reloaded_window.config = ProjectConfig.load(tmp_path / "scaling-restore.avista")
+    reloaded_window.dataframe = window.dataframe
+    reloaded_page = reloaded_window.column_config_page
+    reloaded_page.refresh()
+    assert [
+        reloaded_page.numerical_columns_list.item(index).text()
+        for index in range(reloaded_page.numerical_columns_list.count())
+        if reloaded_page.numerical_columns_list.item(index).checkState()
+        == Qt.CheckState.Checked
+    ] == ["age", "score"]
+    reloaded_window.close()
+
+    page.numerical_columns_list.setCurrentItem(age_item)
+    page._numerical_column_clicked(age_item)
+
+    assert page.numerical_column_name.text() == "age"
+    assert "Count: 2" in page.numerical_summary_label.text()
+    assert "Missing values: 0" in page.numerical_summary_label.text()
+    assert page.numerical_histogram.figure.axes
+    assert page.numerical_histogram.figure.axes[0].patches
+    window.close()
+    assert app is not None
+
+
+def test_column_config_numerical_histogram_ignores_missing_and_non_finite_values(tmp_path):
+    import numpy as np
+    import pandas as pd
+    from PySide6.QtCore import Qt
+    from PySide6.QtWidgets import QApplication
+
+    from app.core.project_config import ProjectConfig
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+    window = MainWindow()
+    window.config = ProjectConfig(
+        project_name="scaling-preview",
+        project_dir=str(tmp_path),
+        input_file=str(tmp_path / "data.csv"),
+        output_dir=str(tmp_path / "outputs"),
+        feature_columns=["score", "empty_numeric"],
+        target_column="target",
+    )
+    window.dataframe = pd.DataFrame(
+        {
+            "score": [1.0, 2.5, np.nan, np.inf, 4.0],
+            "empty_numeric": [np.nan, np.inf, -np.inf, np.nan, np.inf],
+            "target": [0, 1, 0, 1, 0],
+        }
+    )
+
+    page = window.column_config_page
+    page.refresh()
+
+    score_item = page.numerical_columns_list.findItems("score", Qt.MatchFlag.MatchExactly)[0]
+    page._numerical_column_clicked(score_item)
+
+    assert page.numerical_column_name.text() == "score"
+    assert "Count: 3" in page.numerical_summary_label.text()
+    assert "Missing values: 1" in page.numerical_summary_label.text()
+    assert "Ignored 1 non-finite value(s)." == page.numerical_values_message.text()
+    assert page.numerical_histogram.figure.axes[0].patches
+
+    empty_item = page.numerical_columns_list.findItems(
+        "empty_numeric",
+        Qt.MatchFlag.MatchExactly,
+    )[0]
+    page._numerical_column_clicked(empty_item)
+
+    assert page.numerical_column_name.text() == "empty_numeric"
+    assert "Count: 0" in page.numerical_summary_label.text()
+    assert "No valid finite numeric values" in page.numerical_values_message.text()
+    assert not page.numerical_histogram.figure.axes[0].patches
+    window.close()
+    assert app is not None
+
+
+def test_column_config_numerical_histogram_theme_redraws(tmp_path):
+    import pandas as pd
+    from PySide6.QtCore import Qt
+    from PySide6.QtWidgets import QApplication
+
+    from app.core.project_config import ProjectConfig
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+    window = MainWindow()
+    window.config = ProjectConfig(
+        project_name="scaling-theme",
+        project_dir=str(tmp_path),
+        input_file=str(tmp_path / "data.csv"),
+        output_dir=str(tmp_path / "outputs"),
+        feature_columns=["score"],
+        target_column="target",
+    )
+    window.dataframe = pd.DataFrame(
+        {"score": [1.0, 2.0, 3.0, 4.0], "target": [0, 1, 0, 1]}
+    )
+
+    page = window.column_config_page
+    page.refresh()
+    score_item = page.numerical_columns_list.findItems("score", Qt.MatchFlag.MatchExactly)[0]
+    page._numerical_column_clicked(score_item)
+    page.apply_theme("dark")
+
+    axis = page.numerical_histogram.figure.axes[0]
+    assert axis.get_title() == "Histogram: score"
+    assert axis.patches
     window.close()
     assert app is not None
 

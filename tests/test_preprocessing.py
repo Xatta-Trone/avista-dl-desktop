@@ -1,11 +1,17 @@
+import json
+
 import pandas as pd
 import pytest
 
 from app.core.preprocessing import (
     PreprocessingArtifacts,
     build_preprocessing_pipeline,
+    fit_split_preprocessing,
+    invalidate_preprocessing_artifacts,
     load_artifacts,
     save_artifacts,
+    save_numerical_scaling_artifacts,
+    transform_split_features,
     transform_new_data,
 )
 from app.core.project_config import ProjectConfig
@@ -177,3 +183,146 @@ def test_regression_target_rejects_text(tmp_path):
 
     with pytest.raises(ValueError, match="Regression target must be numeric"):
         build_preprocessing_pipeline(df, config)
+
+
+def test_minmax_scaling_is_applied_only_to_numeric_columns(tmp_path):
+    df = pd.DataFrame(
+        {
+            "age": [10.0, 20.0, 30.0],
+            "city": ["Austin", "Dallas", "Austin"],
+            "score": [100.0, 200.0, 400.0],
+            "target": ["no", "yes", "no"],
+        }
+    )
+    config = make_config(
+        tmp_path,
+        preprocessing_options={
+            "numerical_scaling_method": "minmax",
+            "scaled_numerical_columns": ["age"],
+        },
+    )
+
+    X, _, artifacts = build_preprocessing_pipeline(df, config)
+
+    assert artifacts.numeric_scaling_method == "minmax"
+    assert artifacts.scaled_numeric_columns == ["age"]
+    assert X["age"].tolist() == [0.0, 0.5, 1.0]
+    assert X["score"].tolist() == [100.0, 200.0, 400.0]
+    assert "city_Austin" in X.columns
+
+
+def test_scaler_none_preserves_selected_columns_without_scaling(tmp_path):
+    df = pd.DataFrame(
+        {
+            "age": [10.0, 20.0, 30.0],
+            "city": ["Austin", "Dallas", "Austin"],
+            "score": [100.0, 200.0, 400.0],
+            "target": ["no", "yes", "no"],
+        }
+    )
+    config = make_config(
+        tmp_path,
+        preprocessing_options={
+            "numerical_scaling_method": "none",
+            "scaled_numerical_columns": ["age"],
+        },
+    )
+
+    X, _, artifacts = build_preprocessing_pipeline(df, config)
+
+    assert artifacts.scaler is None
+    assert artifacts.scaled_numeric_columns == ["age"]
+    assert X["age"].tolist() == [10.0, 20.0, 30.0]
+    assert X["score"].tolist() == [100.0, 200.0, 400.0]
+
+
+def test_split_preprocessing_fits_scaler_on_train_only(tmp_path):
+    train_df = pd.DataFrame(
+        {
+            "age": [10.0, 20.0, 30.0],
+            "city": ["Austin", "Dallas", "Austin"],
+            "score": [1.0, 2.0, 3.0],
+            "target": ["no", "yes", "no"],
+        },
+        index=[0, 1, 2],
+    )
+    validation_df = pd.DataFrame(
+        {
+            "age": [40.0],
+            "city": ["Austin"],
+            "score": [4.0],
+            "target": ["yes"],
+        },
+        index=[3],
+    )
+    config = make_config(
+        tmp_path,
+        preprocessing_options={
+            "numerical_scaling_method": "standard",
+            "scaled_numerical_columns": ["age", "score"],
+        },
+    )
+
+    artifacts = fit_split_preprocessing(train_df, config)
+    transformed_train = transform_split_features(train_df, artifacts)
+    transformed_validation = transform_split_features(validation_df, artifacts)
+
+    assert transformed_train["age"].mean() == pytest.approx(0.0, abs=1e-9)
+    assert transformed_train["score"].mean() == pytest.approx(0.0, abs=1e-9)
+    assert transformed_validation.loc[3, "age"] > 1.0
+    assert transformed_validation.loc[3, "score"] > 1.0
+    assert artifacts.target_column == "target"
+
+
+def test_numerical_scaling_artifacts_are_saved(tmp_path):
+    df = pd.DataFrame(
+        {
+            "age": [10.0, 20.0, 30.0],
+            "city": ["Austin", "Dallas", "Austin"],
+            "score": [1.0, 2.0, 3.0],
+            "target": ["no", "yes", "no"],
+        }
+    )
+    config = make_config(
+        tmp_path,
+        preprocessing_options={
+            "numerical_scaling_method": "standard",
+            "scaled_numerical_columns": ["age", "score"],
+        },
+    )
+
+    _, _, artifacts = build_preprocessing_pipeline(df, config)
+    scaler_path, metadata_path = save_numerical_scaling_artifacts(tmp_path, artifacts)
+
+    assert scaler_path is not None and scaler_path.exists()
+    assert metadata_path.exists()
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    assert metadata["numerical_scaling_method"] == "standard"
+    assert metadata["scaled_numerical_columns"] == ["age", "score"]
+
+
+def test_invalidate_preprocessing_artifacts_removes_saved_scaler_files(tmp_path):
+    df = pd.DataFrame(
+        {
+            "age": [10.0, 20.0, 30.0],
+            "city": ["Austin", "Dallas", "Austin"],
+            "score": [1.0, 2.0, 3.0],
+            "target": ["no", "yes", "no"],
+        }
+    )
+    config = make_config(
+        tmp_path,
+        preprocessing_options={
+            "numerical_scaling_method": "standard",
+            "scaled_numerical_columns": ["age", "score"],
+        },
+    )
+
+    _, _, artifacts = build_preprocessing_pipeline(df, config)
+    scaler_path, metadata_path = save_numerical_scaling_artifacts(tmp_path, artifacts)
+    assert scaler_path is not None and scaler_path.exists()
+    assert metadata_path.exists()
+
+    invalidate_preprocessing_artifacts(tmp_path)
+
+    assert not metadata_path.exists()

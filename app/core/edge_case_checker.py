@@ -43,6 +43,7 @@ def run_edge_case_checks(
     _check_dataset(df, report)
     _check_target(df, config, report)
     _check_features(df, config, report)
+    _check_numerical_scaling(df, config, report)
     _check_split(df, config, report)
     _check_split_class_coverage(df, config, report)
     _check_imbalance(df, config, report)
@@ -110,8 +111,10 @@ def run_saved_edge_case_checks(
     imbalance_metadata = _load_json_artifact(imbalance_path, "imbalance metadata", report)
     if split_metadata is not None:
         _check_saved_target(split_metadata, target_column, "split metadata", report)
+        _check_saved_features(split_metadata, feature_columns, "split metadata", report)
     if imbalance_metadata is not None:
         _check_saved_target(imbalance_metadata, target_column, "imbalance metadata", report)
+        _check_saved_features(imbalance_metadata, feature_columns, "imbalance metadata", report)
 
     arrays = _load_split_arrays(output_dir, report)
     if arrays:
@@ -201,6 +204,22 @@ def _check_saved_target(
             "artifacts",
             f"Saved {label} target '{saved_target}' does not match current target '{target_column}'.",
             "Confirm Data Split & Imbalance again for the current target column.",
+        )
+
+
+def _check_saved_features(
+    metadata: dict[str, Any],
+    feature_columns: list[str],
+    label: str,
+    report: EdgeCaseReport,
+) -> None:
+    saved_features = list(metadata.get("feature_columns") or [])
+    if saved_features and saved_features != list(feature_columns):
+        report.add(
+            FATAL,
+            "artifacts",
+            f"Saved {label} features do not match the current confirmed feature columns.",
+            "Confirm Column Configuration and Data Split & Imbalance again to recreate matching artifacts.",
         )
 
 
@@ -576,6 +595,75 @@ def _check_split(df: pd.DataFrame, config: Any, report: EdgeCaseReport) -> None:
                 "split",
                 "Time split selected but the date column is missing.",
                 "Select an existing date column or choose a different split method.",
+            )
+
+
+def _check_numerical_scaling(df: pd.DataFrame, config: Any, report: EdgeCaseReport) -> None:
+    options = dict(getattr(config, "preprocessing_options", {}) or {})
+    method = str(options.get("numerical_scaling_method", "none") or "none").strip().lower()
+    if method == "none":
+        return
+    selected_columns = list(options.get("scaled_numerical_columns", []) or [])
+    if not selected_columns:
+        report.add(
+            WARNING,
+            "preprocessing",
+            "Numerical scaling is enabled but no eligible numerical columns are selected.",
+            "Choose numeric feature columns or switch the scaling method to None.",
+        )
+        return
+    missing = [column for column in selected_columns if column not in df.columns]
+    if missing:
+        report.add(
+            ERROR,
+            "preprocessing",
+            f"Selected numerical scaling columns are missing from the dataset: {missing}.",
+            "Refresh Column Configuration and confirm the modeling columns again.",
+        )
+        return
+    non_numeric = [
+        column for column in selected_columns if not pd.api.types.is_numeric_dtype(df[column])
+    ]
+    if non_numeric:
+        report.add(
+            ERROR,
+            "preprocessing",
+            f"Selected numerical scaling columns are not numeric: {non_numeric}.",
+            "Restrict numerical scaling to true numeric feature columns.",
+        )
+    missing_values = [
+        column for column in selected_columns if missing_value_mask(df[column]).any()
+    ]
+    if missing_values:
+        report.add(
+            ERROR,
+            "preprocessing",
+            f"Selected numerical scaling columns contain missing values: {missing_values}.",
+            "Fill or correct these numeric feature values before splitting and scaling.",
+        )
+    infinite_columns = []
+    for column in selected_columns:
+        numeric = pd.to_numeric(df[column], errors="coerce")
+        finite = numeric[numeric.notna()]
+        if not finite.empty and not np.isfinite(finite.to_numpy(dtype=float)).all():
+            infinite_columns.append(column)
+    if infinite_columns:
+        report.add(
+            ERROR,
+            "preprocessing",
+            f"Selected numerical scaling columns contain infinite values: {infinite_columns}.",
+            "Replace infinite numeric values before scaling.",
+        )
+    if method == "standard":
+        constant_columns = [
+            column for column in selected_columns if df[column].nunique(dropna=True) <= 1
+        ]
+        if constant_columns:
+            report.add(
+                WARNING,
+                "preprocessing",
+                f"Constant numerical columns found for standardization: {constant_columns}.",
+                "Exclude constant numeric features or use no scaling for those columns.",
             )
         else:
             invalid_dates = int(pd.to_datetime(df[date_column], errors="coerce").isna().sum())

@@ -148,15 +148,15 @@ Manual build:
    `AVISTA_Setup.exe`.
 
 To publish a manually dispatched build to an existing tagged GitHub Release,
-enter the tag in the `release_tag` workflow input, for example `v1.0.1`.
+enter the tag in the `release_tag` workflow input, for example `v1.0.2`.
 The workflow creates the release if it does not exist and uploads
 `AVISTA_Setup.exe` with overwrite enabled for reruns.
 
 Tagged release:
 
 ```powershell
-git tag v1.0.1
-git push origin v1.0.1
+git tag v1.0.2
+git push origin v1.0.2
 ```
 
 Tags matching `v*` build the installer, create a GitHub Release, generate
@@ -192,7 +192,7 @@ Publish a new update by:
 
 1. Bumping `app\__version__.py`.
 2. Building `installer\AVISTA_Setup.exe`.
-3. Uploading the installer to a GitHub Release such as `v1.0.1`.
+3. Uploading the installer to a GitHub Release such as `v1.0.2`.
 4. Calculating the installer hash:
 
    ```powershell

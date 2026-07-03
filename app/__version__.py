@@ -1,4 +1,4 @@
 """Canonical AVISTA application identity and release version."""
 
 APP_NAME = "AVISTA"
-__version__ = "1.0.1"
+__version__ = "1.0.2"

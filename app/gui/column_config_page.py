@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import pandas as pd
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
@@ -26,6 +27,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from app.core.preprocessing import invalidate_preprocessing_artifacts
 from app.core.target_encoding import invalidate_target_artifacts
 from app.gui.icon_system import BACKGROUND, BORDER, PRIMARY, TEXT, icon
 from app.gui.theme import apply_matplotlib_theme
@@ -125,6 +127,70 @@ class TargetDistributionPlot(QWidget):
         self.canvas.draw_idle()
 
 
+class NumericalHistogramPlot(QWidget):
+    """Matplotlib histogram preview for selected numerical feature columns."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.figure = Figure(figsize=(7.5, 3.2), dpi=100)
+        self.canvas = FigureCanvasQTAgg(self.figure)
+        self.canvas.setMinimumHeight(240)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self.canvas)
+        self.series: pd.Series | None = None
+        self.set_series(None)
+
+    def set_series(self, series: pd.Series | None) -> None:
+        self.series = series
+        self.figure.clear()
+        axis = self.figure.add_subplot(111)
+        if series is None:
+            self._show_message(axis, "Select a numerical column")
+            return
+
+        numeric = pd.to_numeric(series, errors="coerce")
+        finite_values = numeric[np.isfinite(numeric.to_numpy(dtype=float, na_value=np.nan))].dropna()
+        if finite_values.empty:
+            self._show_message(axis, "No valid numeric values to display.")
+            return
+
+        bins = min(30, max(5, int(np.sqrt(len(finite_values)))))
+        axis.hist(
+            finite_values.to_numpy(dtype=float),
+            bins=bins,
+            color=PRIMARY,
+            edgecolor="#0B4F8A",
+            alpha=0.88,
+        )
+        axis.set_title(f"Histogram: {series.name}", fontweight="bold")
+        axis.set_xlabel(str(series.name))
+        axis.set_ylabel("Count")
+        axis.grid(axis="y", alpha=0.25, linestyle="--")
+        axis.set_axisbelow(True)
+        apply_matplotlib_theme(self.figure)
+        self.figure.tight_layout()
+        self.canvas.draw_idle()
+
+    def apply_theme(self) -> None:
+        self.set_series(self.series)
+
+    def _show_message(self, axis, message: str) -> None:
+        axis.text(
+            0.5,
+            0.5,
+            message,
+            ha="center",
+            va="center",
+            color="#5B6573",
+            transform=axis.transAxes,
+        )
+        axis.set_axis_off()
+        apply_matplotlib_theme(self.figure)
+        self.figure.tight_layout()
+        self.canvas.draw_idle()
+
+
 class ColumnConfigPage(QWidget):
     def __init__(self, main_window) -> None:
         super().__init__()
@@ -160,6 +226,26 @@ class ColumnConfigPage(QWidget):
         self.label_encoding_columns_list.itemClicked.connect(
             self._label_encoding_candidate_clicked
         )
+        self.numerical_scaling_input = QComboBox()
+        self.numerical_scaling_input.addItem("None", "none")
+        self.numerical_scaling_input.addItem("Min-Max Scaling", "minmax")
+        self.numerical_scaling_input.addItem("Standardization", "standard")
+        self.numerical_scaling_input.setMinimumHeight(38)
+        self.numerical_columns_list = QListWidget()
+        self.numerical_columns_list.setSelectionMode(
+            QAbstractItemView.SelectionMode.SingleSelection
+        )
+        self.numerical_columns_list.setMinimumHeight(150)
+        self.numerical_columns_list.itemClicked.connect(
+            self._numerical_column_clicked
+        )
+        self.numerical_column_name = QLabel("Select a numerical column")
+        self.numerical_column_name.setObjectName("numericalColumnName")
+        self.numerical_summary_label = QLabel("")
+        self.numerical_summary_label.setWordWrap(True)
+        self.numerical_histogram = NumericalHistogramPlot()
+        self.numerical_values_message = QLabel("")
+        self.numerical_values_message.setWordWrap(True)
         self.unique_column_name = QLabel("Select a candidate column")
         self.unique_column_name.setObjectName("uniqueColumnName")
         self.unique_summary_label = QLabel("")
@@ -182,6 +268,7 @@ class ColumnConfigPage(QWidget):
         controls_layout.addWidget(self._selection_card())
         controls_layout.addWidget(self._target_card())
         controls_layout.addWidget(self._encoding_card())
+        controls_layout.addWidget(self._numerical_scaling_card())
 
         self.confirm_button = QPushButton("Confirm Modeling Columns")
         self.confirm_button.setObjectName("primaryColumnConfigButton")
@@ -200,7 +287,7 @@ class ColumnConfigPage(QWidget):
         title = QLabel("Column Configuration")
         title.setObjectName("columnConfigTitle")
         subtitle = QLabel(
-            "Select modeling columns, choose the target, and configure categorical encoding."
+            "Select modeling columns, choose the target, and configure categorical encoding and numerical scaling."
         )
         subtitle.setObjectName("columnConfigSubtitle")
         content_layout.addWidget(title)
@@ -256,7 +343,13 @@ class ColumnConfigPage(QWidget):
             self._set_transfer_columns(columns, selected)
             self._refresh_target_options(configured_target)
             self._refresh_label_encoding_options(config.label_encoding_columns)
+            self._select_scaling_method(
+                (config.preprocessing_options or {}).get("numerical_scaling_method", "none")
+            )
             self._select_combo(self.target_input, config.target_column)
+            self._refresh_numerical_scaling_options(
+                (config.preprocessing_options or {}).get("scaled_numerical_columns")
+            )
         finally:
             self._refreshing = False
         self._update_target_plot()
@@ -329,13 +422,24 @@ class ColumnConfigPage(QWidget):
             column: self._column_encoding_metadata(df[column])
             for column in label_encoding_columns
         }
+        scaled_numerical_columns = self._checked_numerical_scaling_columns()
+        scaling_method = self.numerical_scaling_input.currentData() or "none"
 
         previous_target = config.target_column
+        previous_features = list(config.feature_columns or [])
+        previous_scaling_method = (
+            (config.preprocessing_options or {}).get("numerical_scaling_method", "none")
+        )
+        previous_scaled_numerical_columns = list(
+            (config.preprocessing_options or {}).get("scaled_numerical_columns", []) or []
+        )
         config.feature_columns = features
         config.target_column = target
         config.label_encoding_columns = label_encoding_columns
         config.preprocessing_options = dict(config.preprocessing_options or {})
         config.preprocessing_options["label_encoding_metadata"] = metadata
+        config.preprocessing_options["numerical_scaling_method"] = scaling_method
+        config.preprocessing_options["scaled_numerical_columns"] = scaled_numerical_columns
         subset_columns = list(features) + [target]
         data_dir = Path(config.project_dir) / "data"
         subset_path = data_dir / "modeling_subset.csv"
@@ -345,6 +449,13 @@ class ColumnConfigPage(QWidget):
                 previous_target,
                 target,
             )
+            if (
+                previous_target != target
+                or previous_features != features
+                or previous_scaling_method != scaling_method
+                or previous_scaled_numerical_columns != scaled_numerical_columns
+            ):
+                invalidate_preprocessing_artifacts(config.project_dir)
             data_dir.mkdir(parents=True, exist_ok=True)
             df.loc[:, subset_columns].to_csv(subset_path, index=False)
             config.save()
@@ -358,6 +469,7 @@ class ColumnConfigPage(QWidget):
                 f"Selected features: {len(features)}",
                 f"Target column: {target}",
                 f"Label-encoded columns: {len(label_encoding_columns)}",
+                f"Numerical scaling: {self.numerical_scaling_input.currentText()}",
             ]
         )
         self._show_status_message(
@@ -369,6 +481,7 @@ class ColumnConfigPage(QWidget):
         if self._refreshing:
             return
         self._refresh_label_encoding_options()
+        self._refresh_numerical_scaling_options()
         self._update_target_plot()
 
     def _update_target_plot(self) -> None:
@@ -453,6 +566,41 @@ class ColumnConfigPage(QWidget):
         layout.addLayout(row)
         return card
 
+    def _numerical_scaling_card(self) -> QWidget:
+        card, layout = self._card(
+            "numericalScalingCard",
+            "Numerical Feature Scaling",
+            "Choose one global scaler for eligible numeric features. Scaling is fitted on the training split only.",
+            "fa6s.sliders",
+        )
+        layout.addWidget(self.numerical_scaling_input)
+        explanation = QLabel(
+            "Min-Max Scaling rescales values to [0, 1].\n"
+            "Standardization converts values to zero mean and unit variance."
+        )
+        explanation.setWordWrap(True)
+        explanation.setObjectName("numericalScalingExplanation")
+        layout.addWidget(explanation)
+        row = QHBoxLayout()
+        row.setSpacing(16)
+        candidates = QVBoxLayout()
+        candidates.addWidget(QLabel("Eligible Numerical Columns"))
+        candidates.addWidget(self.numerical_columns_list)
+        row.addLayout(candidates, stretch=1)
+
+        preview = QFrame()
+        preview.setObjectName("numericalValuesPanel")
+        preview_layout = QVBoxLayout(preview)
+        preview_layout.setContentsMargins(16, 14, 16, 14)
+        preview_layout.setSpacing(8)
+        preview_layout.addWidget(self.numerical_column_name)
+        preview_layout.addWidget(self.numerical_summary_label)
+        preview_layout.addWidget(self.numerical_histogram)
+        preview_layout.addWidget(self.numerical_values_message)
+        row.addWidget(preview, stretch=1)
+        layout.addLayout(row)
+        return card
+
     def _card(
         self,
         object_name: str,
@@ -510,14 +658,14 @@ class ColumnConfigPage(QWidget):
     def _feedback_card(self) -> QFrame:
         card = QFrame()
         card.setObjectName("columnConfigFeedbackCard")
-        card.setMaximumHeight(136)
+        card.setMaximumHeight(168)
         card.hide()
         layout = QVBoxLayout(card)
         layout.setContentsMargins(12, 8, 12, 8)
         layout.setSpacing(4)
         self.feedback_icons: list[QLabel] = []
         self.feedback_labels: list[QLabel] = []
-        for _ in range(4):
+        for _ in range(5):
             row = QWidget()
             row_layout = QHBoxLayout(row)
             row_layout.setContentsMargins(0, 0, 0, 0)
@@ -554,6 +702,7 @@ class ColumnConfigPage(QWidget):
     def _refresh_after_selection_change(self) -> None:
         self._refresh_target_options()
         self._refresh_label_encoding_options()
+        self._refresh_numerical_scaling_options()
 
     def _set_transfer_columns(self, columns: list[str], selected: list[str]) -> None:
         self.available_columns_list.clear()
@@ -621,8 +770,62 @@ class ColumnConfigPage(QWidget):
             self.label_encoding_columns_list.addItem(item)
         self._clear_unique_preview()
 
+    def _refresh_numerical_scaling_options(
+        self,
+        preferred: list[str] | None = None,
+    ) -> None:
+        df = self.main_window.dataframe
+        previous_checked = self._checked_numerical_scaling_columns()
+        self.numerical_columns_list.clear()
+        if df is None:
+            self._clear_numerical_preview()
+            return
+        target = self.target_input.currentText()
+        selected = [
+            column
+            for column in self._all_items(self.selected_columns_list)
+            if column != target
+        ]
+        columns = self._eligible_numerical_columns(df, selected)
+        if not columns:
+            item = QListWidgetItem("No eligible numerical columns selected.")
+            item.setFlags(Qt.ItemFlag.NoItemFlags)
+            self.numerical_columns_list.addItem(item)
+            self._clear_numerical_preview()
+            return
+        options = dict(getattr(self.main_window.config, "preprocessing_options", {}) or {})
+        if preferred is not None:
+            checked_columns = set(preferred)
+        elif previous_checked:
+            checked_columns = set(previous_checked)
+        elif "scaled_numerical_columns" in options:
+            checked_columns = set(options.get("scaled_numerical_columns", []) or [])
+        else:
+            checked_columns = set(columns)
+        for column in columns:
+            item = QListWidgetItem(column)
+            item.setFlags(
+                item.flags()
+                | Qt.ItemFlag.ItemIsUserCheckable
+                | Qt.ItemFlag.ItemIsSelectable
+                | Qt.ItemFlag.ItemIsEnabled
+            )
+            item.setCheckState(
+                Qt.CheckState.Checked
+                if column in checked_columns
+                else Qt.CheckState.Unchecked
+            )
+            self.numerical_columns_list.addItem(item)
+        self._clear_numerical_preview()
+
     def _label_encoding_candidate_clicked(self, item: QListWidgetItem) -> None:
         self._show_unique_values(item.text())
+
+    def _numerical_column_clicked(self, item: QListWidgetItem) -> None:
+        if not item.flags() & Qt.ItemFlag.ItemIsEnabled:
+            self._clear_numerical_preview()
+            return
+        self._show_numerical_preview(item.text())
 
     def _show_unique_values(self, column: str) -> None:
         df = self.main_window.dataframe
@@ -661,6 +864,50 @@ class ColumnConfigPage(QWidget):
         self.unique_values_list.clear()
         self.unique_values_message.setText("")
 
+    def _show_numerical_preview(self, column: str) -> None:
+        df = self.main_window.dataframe
+        if df is None or column not in df.columns:
+            self._clear_numerical_preview()
+            return
+        series = df[column]
+        numeric = pd.to_numeric(series, errors="coerce")
+        finite_mask = np.isfinite(numeric.to_numpy(dtype=float, na_value=np.nan))
+        finite_values = numeric[finite_mask].dropna()
+        missing_count = int(series.isna().sum())
+        non_finite_count = int(len(series) - len(finite_values) - missing_count)
+        self.numerical_column_name.setText(column)
+        if finite_values.empty:
+            self.numerical_summary_label.setText(
+                f"Count: 0\nMissing values: {missing_count:,}"
+            )
+            self.numerical_histogram.set_series(series)
+            self.numerical_values_message.setText(
+                "No valid finite numeric values are available for this column."
+            )
+            return
+        self.numerical_summary_label.setText(
+            f"Count: {len(finite_values):,}\n"
+            f"Missing values: {missing_count:,}\n"
+            f"Mean: {finite_values.mean():,.4g}\n"
+            f"Standard deviation: {finite_values.std(ddof=1):,.4g}\n"
+            f"Min: {finite_values.min():,.4g}\n"
+            f"Max: {finite_values.max():,.4g}"
+        )
+        self.numerical_histogram.set_series(series)
+        self.numerical_values_message.setText(
+            (
+                f"Ignored {non_finite_count:,} non-finite value(s)."
+                if non_finite_count
+                else ""
+            )
+        )
+
+    def _clear_numerical_preview(self) -> None:
+        self.numerical_column_name.setText("Select a numerical column")
+        self.numerical_summary_label.setText("")
+        self.numerical_histogram.set_series(None)
+        self.numerical_values_message.setText("")
+
     def _column_encoding_metadata(self, series: pd.Series) -> dict[str, Any]:
         unique_values = series.drop_duplicates().tolist()
         return {
@@ -672,6 +919,38 @@ class ColumnConfigPage(QWidget):
             ],
             "preview_limit": MAX_UNIQUE_PREVIEW,
         }
+
+    def _eligible_numerical_columns(
+        self,
+        df: pd.DataFrame,
+        feature_columns: list[str],
+    ) -> list[str]:
+        excluded = set(getattr(self.main_window.config, "label_encoding_columns", []) or [])
+        return [
+            column
+            for column in feature_columns
+            if column in df.columns
+            and column not in excluded
+            and pd.api.types.is_numeric_dtype(df[column])
+        ]
+
+    def _checked_numerical_scaling_columns(self) -> list[str]:
+        return [
+            self.numerical_columns_list.item(index).text()
+            for index in range(self.numerical_columns_list.count())
+            if self.numerical_columns_list.item(index).flags()
+            & Qt.ItemFlag.ItemIsUserCheckable
+            and self.numerical_columns_list.item(index).checkState()
+            == Qt.CheckState.Checked
+        ]
+
+    def _select_scaling_method(self, value: str | None) -> None:
+        normalized = str(value or "none").strip().lower()
+        for index in range(self.numerical_scaling_input.count()):
+            if self.numerical_scaling_input.itemData(index) == normalized:
+                self.numerical_scaling_input.setCurrentIndex(index)
+                return
+        self.numerical_scaling_input.setCurrentIndex(0)
 
     def _is_categorical_or_text(self, series: pd.Series) -> bool:
         return bool(
@@ -785,19 +1064,22 @@ class ColumnConfigPage(QWidget):
             QWidget#modelingColumnsCard,
             QWidget#targetColumnCard,
             QWidget#encodingOptionsCard,
+            QWidget#numericalScalingCard,
             QWidget#columnConfigEmptyCard {{
                 background: #FFFFFF;
                 border: 1px solid {BORDER};
                 border-radius: 10px;
             }}
             QLabel#columnCardTitle,
-            QLabel#uniqueColumnName {{
+            QLabel#uniqueColumnName,
+            QLabel#numericalColumnName {{
                 color: {TEXT};
                 font-size: 16px;
                 font-weight: 700;
             }}
             QLabel#columnConfigEmptyMessage {{ color: #5B6573; font-size: 13px; }}
-            QFrame#uniqueValuesPanel {{
+            QFrame#uniqueValuesPanel,
+            QFrame#numericalValuesPanel {{
                 background: #F7F9FC;
                 border: 1px solid {BORDER};
                 border-radius: 8px;
@@ -834,3 +1116,4 @@ class ColumnConfigPage(QWidget):
 
     def apply_theme(self, theme_name: str | None = None) -> None:
         self.target_plot.apply_theme()
+        self.numerical_histogram.apply_theme()

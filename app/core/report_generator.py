@@ -173,6 +173,9 @@ def collect_report_summary(
         "validation_rows": rows["validation"],
         "test_rows": rows["test"],
         "imbalance_method": config.imbalance_method or "none",
+        "numerical_scaling_method": (
+            (config.preprocessing_options or {}).get("numerical_scaling_method") or "none"
+        ),
         "cv_enabled": bool(config.enable_cross_validation),
         "cv_folds": int(config.cv_folds),
         "models_trained": int(
@@ -498,6 +501,7 @@ def build_markdown_report(
         "",
         f"- Split method: {config.split_method or 'Not available'}",
         f"- Imbalance method: {summary['imbalance_method']}",
+        f"- Numerical scaling: {summary['numerical_scaling_method']}",
         "",
         "## Model Performance Summary",
         "",

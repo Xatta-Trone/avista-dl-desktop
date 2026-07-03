@@ -1271,6 +1271,9 @@ def _save_model_outputs(
             "cross_validation_enabled": bool(config.enable_cross_validation),
             "cv_folds": int(config.cv_folds),
             "random_state": int(config.random_state),
+            "numerical_scaling_method": (
+                (config.preprocessing_options or {}).get("numerical_scaling_method") or "none"
+            ),
         },
     )
     _write_json(
@@ -1287,6 +1290,9 @@ def _save_model_outputs(
             "validation_size": int(len(data["y_val"])),
             "test_size": int(len(data["y_test"])),
             "imbalance_method": config.imbalance_method,
+            "numerical_scaling_method": (
+                (config.preprocessing_options or {}).get("numerical_scaling_method") or "none"
+            ),
             "random_seed": int(config.random_seed),
             "split_method": config.split_method,
             "model_name": display_name,

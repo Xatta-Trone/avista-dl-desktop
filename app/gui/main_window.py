@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-from functools import partial
 from pathlib import Path
 from typing import Callable
 
 import pandas as pd
-from PySide6.QtCore import QProcess, QThread, QSize, Qt, QTimer
+from PySide6.QtCore import QObject, QProcess, QThread, QSize, Qt, QTimer, Signal
 from PySide6.QtGui import QAction, QActionGroup, QPixmap, QShowEvent
 from PySide6.QtWidgets import (
     QHBoxLayout,
@@ -41,6 +40,14 @@ from app.gui.update_dialog import UpdateAvailableDialog, UpdateDownloadDialog
 from app.gui.workers import UpdateCheckWorker, UpdateDownloadWorker
 
 
+class _UpdateSignalBridge(QObject):
+    """Relay worker-thread update signals to MainWindow on the GUI thread."""
+
+    check_finished = Signal(object, bool, object, object)
+    download_finished = Signal(str, object, object)
+    download_failed = Signal(str, object, object)
+
+
 class MainWindow(QMainWindow):
     """Application shell with left navigation and shared page state."""
 
@@ -57,6 +64,7 @@ class MainWindow(QMainWindow):
         self._startup_update_check_scheduled = False
         self._update_threads: list[QThread] = []
         self._update_workers: list[object] = []
+        self._update_signal_bridges: list[_UpdateSignalBridge] = []
         self._download_dialog: UpdateDownloadDialog | None = None
         self.theme_name = load_theme_setting()
 
@@ -180,31 +188,28 @@ class MainWindow(QMainWindow):
     def _start_update_check(self, *, manual: bool) -> None:
         thread = QThread(self)
         worker = UpdateCheckWorker(manual=manual)
+        bridge = _UpdateSignalBridge(self)
         worker.moveToThread(thread)
         thread.started.connect(worker.run)
         worker.finished.connect(
-            partial(
-                self._handle_update_check_finished,
-                manual=manual,
-                thread=thread,
-                worker=worker,
-            )
+            lambda result: bridge.check_finished.emit(result, manual, thread, worker)
         )
+        bridge.check_finished.connect(self._handle_update_check_finished)
         worker.finished.connect(worker.deleteLater)
         worker.finished.connect(thread.quit)
-        thread.finished.connect(partial(self._discard_update_worker, thread, worker))
+        thread.finished.connect(lambda: self._discard_update_worker(thread, worker, bridge))
         thread.finished.connect(thread.deleteLater)
         self._update_threads.append(thread)
         self._update_workers.append(worker)
+        self._update_signal_bridges.append(bridge)
         thread.start()
 
     def _handle_update_check_finished(
         self,
         result: UpdateCheckResult,
-        *,
-        manual: bool,
-        thread: QThread | object,
-        worker: object,
+        manual: bool = False,
+        thread: QThread | object | None = None,
+        worker: object | None = None,
     ) -> None:
         """Compatibility helper for focused tests and direct GUI calls."""
 
@@ -248,39 +253,42 @@ class MainWindow(QMainWindow):
         self._download_dialog.show()
         thread = QThread(self)
         worker = UpdateDownloadWorker(metadata)
+        bridge = _UpdateSignalBridge(self)
         worker.moveToThread(thread)
         thread.started.connect(worker.run)
         worker.progress.connect(self._download_dialog.update_progress)
         worker.finished.connect(
-            partial(
-                self._handle_update_download_finished,
-                thread=thread,
-                worker=worker,
+            lambda installer_path: bridge.download_finished.emit(
+                installer_path,
+                thread,
+                worker,
             )
         )
         worker.failed.connect(
-            partial(
-                self._handle_update_download_failed,
-                thread=thread,
-                worker=worker,
+            lambda message: bridge.download_failed.emit(
+                message,
+                thread,
+                worker,
             )
         )
+        bridge.download_finished.connect(self._handle_update_download_finished)
+        bridge.download_failed.connect(self._handle_update_download_failed)
         worker.finished.connect(worker.deleteLater)
         worker.failed.connect(worker.deleteLater)
         worker.finished.connect(thread.quit)
         worker.failed.connect(thread.quit)
-        thread.finished.connect(partial(self._discard_update_worker, thread, worker))
+        thread.finished.connect(lambda: self._discard_update_worker(thread, worker, bridge))
         thread.finished.connect(thread.deleteLater)
         self._update_threads.append(thread)
         self._update_workers.append(worker)
+        self._update_signal_bridges.append(bridge)
         thread.start()
 
     def _handle_update_download_finished(
         self,
         installer_path: str,
-        *,
-        thread: QThread,
-        worker: object,
+        thread: QThread | object | None = None,
+        worker: object | None = None,
     ) -> None:
         if self._download_dialog is not None:
             self._download_dialog.show_finished(installer_path)
@@ -310,20 +318,27 @@ class MainWindow(QMainWindow):
     def _handle_update_download_failed(
         self,
         message: str,
-        *,
-        thread: QThread,
-        worker: object,
+        thread: QThread | object | None = None,
+        worker: object | None = None,
     ) -> None:
         if self._download_dialog is not None:
             self._download_dialog.close()
             self._download_dialog = None
         QMessageBox.critical(self, "AVISTA Update Download Failed", message)
 
-    def _discard_update_worker(self, thread: QThread, worker: object) -> None:
+    def _discard_update_worker(
+        self,
+        thread: QThread,
+        worker: object,
+        bridge: _UpdateSignalBridge | None = None,
+    ) -> None:
         if thread in self._update_threads:
             self._update_threads.remove(thread)
         if worker in self._update_workers:
             self._update_workers.remove(worker)
+        if bridge is not None and bridge in self._update_signal_bridges:
+            self._update_signal_bridges.remove(bridge)
+            bridge.deleteLater()
 
     def create_about_dialog(self) -> AboutDialog:
         """Create the About dialog for display or focused GUI testing."""

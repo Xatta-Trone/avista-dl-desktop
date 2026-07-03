@@ -34,7 +34,12 @@ from PySide6.QtWidgets import (
 
 from app.core.imbalance import apply_imbalance_strategy
 from app.core.edge_case_checker import selected_column_missing_counts
-from app.core.preprocessing import build_preprocessing_pipeline, save_artifacts
+from app.core.preprocessing import (
+    fit_split_preprocessing,
+    save_artifacts,
+    save_numerical_scaling_artifacts,
+    transform_split_features,
+)
 from app.core.project_config import ProjectConfig
 from app.core.splitter import (
     build_class_coverage_report,
@@ -378,8 +383,24 @@ class DataSplitImbalancePage(QWidget):
         config.smote_ratio_preset = self._preset_key()
 
         try:
-            X, y, artifacts = self._build_latest_xy(config, df)
+            X, y = self._build_latest_xy(config, df)
             split = split_data_three_way(X, y, df, config)
+            train_df = df.loc[
+                split["train_index"],
+                config.feature_columns + [config.target_column],
+            ]
+            validation_df = df.loc[
+                split["validation_index"],
+                config.feature_columns + [config.target_column],
+            ]
+            test_df = df.loc[
+                split["test_index"],
+                config.feature_columns + [config.target_column],
+            ]
+            artifacts = fit_split_preprocessing(train_df, config)
+            split["X_train"] = transform_split_features(train_df, artifacts)
+            split["X_val"] = transform_split_features(validation_df, artifacts)
+            split["X_test"] = transform_split_features(test_df, artifacts)
             coverage = build_class_coverage_report(
                 y,
                 split["y_train"],
@@ -489,6 +510,7 @@ class DataSplitImbalancePage(QWidget):
         output_dir.mkdir(parents=True, exist_ok=True)
         indices = {
             "target_column": config.target_column,
+            "feature_columns": list(config.feature_columns or []),
             "task_type": config.task_type,
             "train_index": split["train_index"],
             "validation_index": split["validation_index"],
@@ -521,9 +543,11 @@ class DataSplitImbalancePage(QWidget):
             preprocessing_artifacts,
             output_dir / "preprocessing_artifact.joblib",
         )
+        save_numerical_scaling_artifacts(config.project_dir, preprocessing_artifacts)
 
         imbalance_config = {
             "target_column": config.target_column,
+            "feature_columns": list(config.feature_columns or []),
             "task_type": config.task_type,
             "original_train_distribution": _json_counts(split["y_train"]),
             "balanced_train_distribution": _json_counts(balanced_original),
@@ -764,6 +788,14 @@ class DataSplitImbalancePage(QWidget):
         if not saved_targets or saved_targets != {config.target_column}:
             self._clear_distribution_tables(self.after_distribution_tables)
             return "target_changed"
+        saved_feature_sets = {
+            tuple(item.get("feature_columns") or [])
+            for item in metadata
+            if item.get("feature_columns") is not None
+        }
+        if saved_feature_sets and saved_feature_sets != {tuple(config.feature_columns or [])}:
+            self._clear_distribution_tables(self.after_distribution_tables)
+            return "target_changed"
 
         required_files = list(SAVED_SPLIT_FILES)
         if str(config.task_type or "auto").strip().lower() != "regression":
@@ -805,20 +837,13 @@ class DataSplitImbalancePage(QWidget):
         self,
         config: ProjectConfig,
         df: pd.DataFrame,
-    ) -> tuple[pd.DataFrame, pd.Series, Any]:
+    ) -> tuple[pd.DataFrame, pd.Series]:
         target = config.target_column
         features = [column for column in (config.feature_columns or []) if column != target]
         config.feature_columns = features
-        X, processed_y, artifacts = build_preprocessing_pipeline(
-            df,
-            config,
-            encode_classification_target=False,
-        )
-        if str(config.task_type or "").strip().lower() == "classification":
-            y = df[target].copy()
-        else:
-            y = processed_y
-        return X, _normalize_target_values(y), artifacts
+        X = df.loc[:, features].copy()
+        y = df[target].copy()
+        return X, _normalize_target_values(y)
 
     def _recompute_before_distributions(self) -> None:
         config = self.main_window.config
@@ -830,7 +855,7 @@ class DataSplitImbalancePage(QWidget):
             return
 
         try:
-            X, y, _ = self._build_latest_xy(config, df)
+            X, y = self._build_latest_xy(config, df)
             split = split_data_three_way(X, y, df, config)
         except Exception as exc:
             self._clear_distribution_tables(self.before_distribution_tables)

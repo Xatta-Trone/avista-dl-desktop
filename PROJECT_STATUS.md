@@ -16,11 +16,17 @@ The app must work with arbitrary tabular datasets. Do not hard-code target, ID, 
 
 The project has a working modular backend and PySide6 desktop GUI. Core tabular ML pipeline components are implemented and tested for basic sklearn-compatible classification and regression training. The selectable model registry is classification-only and now contains built-in sklearn classifiers, lazy optional-package classifiers, and instantiable deep tabular architectures.
 
-The GUI can create or load projects, inspect and repair GPU environments with user confirmation, import large datasets with a paginated preview, select modeling and target columns, save label-encoding choices for categorical modeling columns, configure train/validation/test splits, apply train-class-only imbalance handling, select classification models and edit their saved parameters, restore matching saved split artifacts, run edge-case checks, and train sklearn-compatible models from confirmed saved artifacts through a `QThread` worker.
+The GUI can create or load projects, inspect and repair GPU environments with user confirmation, import large datasets with a paginated preview, select modeling and target columns, save label-encoding choices for categorical modeling columns, configure global numerical scaling for user-checked numeric features with selectable histogram inspection, configure train/validation/test splits, apply train-class-only imbalance handling, select classification models and edit their saved parameters, restore matching saved split artifacts, run edge-case checks, and train sklearn-compatible models from confirmed saved artifacts through a `QThread` worker.
 
 The Data Split & Imbalance page uses AVISTA-style subsection cards, compact distribution and coverage tables, a primary confirm action, and auto-dismissing compact success notifications. Warnings remain separate from successful save and load notifications, and errors remain visually distinct.
 
 MambaAttention, FT-Transformer, AutoInt, and TabResNet have real saved-artifact training with live curves and PyTorch state-dict persistence. TabPFN 2.5 now has capped saved-artifact training, optional cross-validation, decoded evaluation exports, subprocess isolation, and safe serialization fallback. A comprehensive Report page now combines saved model outputs into Markdown, PDF, CSV, and comparison figures without retraining. A PyInstaller onedir and Inno Setup Windows packaging workflow is implemented. AVISTA now has GitHub-hosted update metadata, background update checks, manual Help-menu update checking, installer download/hash validation, skip-version preferences, app-level update settings, install-directory preservation for update installers, and centralized Light/Dark theme support. XAI and robustness analysis are not implemented yet.
+
+Focused numerical-scaling verification passed on July 3, 2026: `19 passed` from `tests/test_preprocessing.py`, the relevant Column Configuration smoke slice in `tests/test_gui_smoke.py`, `tests/test_trainer_evaluator.py::test_train_saved_models_runs_cv_and_saves_requested_outputs`, and `tests/test_report_page.py::test_report_generation_creates_markdown_pdf_and_expected_figures`.
+
+Focused numerical-scaling UI inspection verification passed on July 3, 2026: `7 passed, 80 deselected` from `tests/test_gui_smoke.py -k "column_config"`, covering selectable numerical columns, histogram preview, missing/non-finite value handling, and theme redraw behavior.
+
+Focused checkbox-based numerical-scaling verification passed on July 3, 2026: `7 passed, 93 deselected` from `tests/test_gui_smoke.py -k "column_config"` and `13 passed` from `tests/test_preprocessing.py`, covering independent numerical scaling checkboxes, label-click inspection without toggling, project reload persistence, checked-column-only scaling, and histogram updates.
 
 ## 4. Completed Phases
 
@@ -75,6 +81,7 @@ MambaAttention, FT-Transformer, AutoInt, and TabResNet have real saved-artifact 
 - Available Columns and Selected Modeling Columns are both alphabetically sorted.
 - The target selector is restricted to selected modeling columns and includes a full-width matplotlib class-distribution chart with counts and percentages.
 - Label encoding now uses independent checkboxes plus a unique-values preview; the target is excluded and encoding metadata is saved with the project.
+- Numerical Feature Scaling mirrors the categorical inspection layout: eligible numeric feature columns have independent checkboxes on the left, label clicks select rows for inspection without toggling, and the right panel shows column statistics plus a themed matplotlib histogram. The scaler choice remains global, but it is applied only to checked numerical columns; unchecked numeric columns remain unchanged.
 - Column Configuration confirmation uses compact light success rows with a Font Awesome check icon on every message, including the saved modeling-subset path.
 - Column Configuration success notifications use a resettable five-second auto-dismiss timer.
 - The label-encoding preview sorts unique values by frequency and shows each value's row count and percentage, including an explicit Missing/Null entry.
@@ -102,7 +109,7 @@ MambaAttention, FT-Transformer, AutoInt, and TabResNet have real saved-artifact 
 - Data Import table headers show simplified type and missingness per column.
 - Common null markers such as `null`, `nan`, `N/A`, empty strings, and `""` are normalized and displayed as `null`.
 - Edge-case checker implemented with warning, error, and fatal levels.
-- Generic preprocessing implemented with imputation, one-hot encoding, optional scaling, target encoding, and joblib artifact persistence.
+- Generic preprocessing implemented with imputation, one-hot encoding, configurable numerical scaling, target encoding, and joblib artifact persistence.
 - Classification target encoding is centralized for saved split training:
   - one `LabelEncoder` is fitted or reused for the confirmed target.
   - mixed-type classification target labels are normalized to display strings before encoder fit/transform so sklearn never receives heterogeneous raw label types.
@@ -301,7 +308,7 @@ MambaAttention, FT-Transformer, AutoInt, and TabResNet have real saved-artifact 
 - All four supported torch models emit subprocess progress with epoch, total epochs, training loss, training accuracy, validation loss, validation macro-F1, and validation accuracy.
 - Torch subprocesses use Python unbuffered mode, flush each JSON line before per-epoch artifact I/O, and are parsed line-by-line before process completion.
 - All trainable torch models save `training_history.csv`, `training_curves.png`, and `training_curves.pdf`; history is flushed after each final-training epoch so partial history survives many subprocess failures.
-- Training consumes confirmed balanced-training, validation, test, split metadata, model settings, and preprocessing artifacts without recomputing splits.
+- Training consumes confirmed balanced-training, validation, test, split metadata, model settings, and preprocessing artifacts without recomputing splits. Numerical scaling is fit on the training subset only and reused for validation, test, reports, and downstream saved-model artifacts.
 - Per-model and per-fold progress reports the current model, fold, step, percentage, and timestamped log messages.
 - Cooperative cancellation stops between folds, models, and evaluation/saving steps.
 - Optional stratified cross-validation runs only on balanced training data, validates minimum class counts, saves fold metrics and mean/std summaries, and excludes validation/test data.
@@ -440,6 +447,14 @@ Latest focused update and packaging verification:
 ```
 
 This run covered semantic version comparison, update metadata parsing, HTTPS installer URL validation, update availability detection, skip-version behavior, manual check visibility for up-to-date installs, automatic startup popup policy, `QThread` worker use for update checks, SHA256 verification, GitHub metadata URL configuration, release workflow checks around `build_pyinstaller.ps1`, Inno Setup install-directory registry logic, centralized version metadata, and the About dialog with update preferences.
+
+Latest focused update-dialog thread-affinity verification:
+
+```text
+6 passed
+```
+
+This run covered startup/manual update dialog behavior, the Later button, and the update-check worker path after routing update result handling through a GUI-thread signal bridge so message boxes and dialogs are not touched from worker threads.
 
 Latest focused theme verification:
 

@@ -58,8 +58,9 @@ At the time this file was written:
   selected models, editable parameters, cross-validation options, and random
   state to `ProjectConfig`.
 - Column Configuration persists selected feature and target columns plus
-  user-selected categorical/text columns for future label encoding. Actual
-  label-encoding preprocessing is not implemented yet.
+  user-selected categorical/text columns for label encoding, plus a global
+  numerical scaling method (`None`, `Min-Max Scaling`, or
+  `Standardization`) and user-checked numeric feature columns for scaling.
 - Data splitting supports train/validation/test partitions and random,
   stratified, group, stratified-group, and time methods.
 - Imbalance handling supports none, random over/under sampling, SMOTE,
@@ -71,7 +72,8 @@ At the time this file was written:
   Missing-class conditions are informational warnings, not split errors.
 - Data Split & Imbalance success details use a green card. Warnings are shown
   separately in an orange card. Errors use a red card.
-- Saved split artifacts are target-aware and stale results are rejected.
+- Saved split artifacts are target-aware, feature-aware, and stale results are
+  rejected.
 - The selectable model registry contains 16 classification models across
   linear, tree, boosting, kernel/distance, naive Bayes, deep tabular, and
   foundation-model categories. No regression models are registered.
@@ -99,7 +101,10 @@ At the time this file was written:
   training/evaluation remain operational.
 - Deep training integration, XAI, robustness workflows, export/report pages,
   packaging, and real training cancellation remain unfinished.
-- The latest verified test baseline is `88 passed`.
+- The latest focused verification for numerical scaling is `19 passed`
+  (`tests/test_preprocessing.py`, the relevant Column Configuration smoke
+  slice, one saved-training regression test, and one report-generation test).
+  Check `PROJECT_STATUS.md` for the newest broader baseline.
 
 Always verify this summary against `PROJECT_STATUS.md`, which may be newer.
 

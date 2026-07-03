@@ -38,6 +38,12 @@ The classification registry includes sklearn, XGBoost, PyTorch tabular, and TabP
 
 The Report page generates one comprehensive saved-artifact report without retraining. It exports Markdown, a paginated PDF, a combined performance CSV, clean test-set ROC and precision-recall comparisons, deep-training curves, every trained model's test confusion matrix and classification report, feature importance, project metadata, and reproducibility details under `outputs/report`. Its interactive Model Diagnostic Report switches models and Train/Validation/Test splits immediately from saved artifacts.
 
+AVISTA checks GitHub-hosted update metadata after startup when automatic
+checks are enabled. Manual checks are available from **Help > Check for
+Updates**. Update preferences are stored outside project files in
+`%APPDATA%\AVISTA\settings.json`, and update activity is logged to
+`logs\update.log`.
+
 Latest verified test status: `207 passed`.
 
 See [PROJECT_STATUS.md](PROJECT_STATUS.md) for the authoritative implementation status and roadmap.
@@ -64,3 +70,19 @@ Open a project directly:
 ```
 
 Packaged Windows installers can associate `.avista` with `AVISTA.exe`. Legacy `.xtab` command-line files are accepted and migrated automatically.
+
+## Updates
+
+The updater reads:
+
+```text
+https://raw.githubusercontent.com/Xatta-Trone/avista-dl-desktop/main/updates.json
+```
+
+`latest_version` is compared with `app.__version__.__version__` using semantic
+version ordering. `installer_url` must use HTTPS. If `sha256` is provided,
+AVISTA verifies the downloaded installer before it can run.
+
+The Windows installer stores the selected install folder in
+`Software\AVISTA\InstallDir` and uses that value as the default for future
+updates, so custom locations such as `D:\AVISTA\` are preserved.

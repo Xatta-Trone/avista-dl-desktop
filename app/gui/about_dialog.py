@@ -6,7 +6,7 @@ from pathlib import Path
 
 from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QDesktopServices, QIcon, QPixmap
-from PySide6.QtWidgets import QDialog, QDialogButtonBox, QLabel, QVBoxLayout
+from PySide6.QtWidgets import QCheckBox, QDialog, QDialogButtonBox, QLabel, QVBoxLayout
 
 from app.__version__ import APP_NAME, __version__
 from app.branding import (
@@ -14,7 +14,9 @@ from app.branding import (
     DEVELOPERS,
     GITHUB_PROFILES,
 )
+from app.core.user_settings import load_user_settings
 from app.utils.resources import get_app_resource_path
+from app.gui.update_dialog import set_auto_update_check_enabled
 
 
 LOGO_RESOURCE = "app/assets/logo.png"
@@ -93,6 +95,11 @@ class AboutDialog(QDialog):
         self.github_label.linkActivated.connect(self.open_github_profile)
         self.github_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.github_label)
+
+        self.auto_update_check_box = QCheckBox("Check for updates automatically")
+        self.auto_update_check_box.setChecked(load_user_settings().auto_check_updates)
+        self.auto_update_check_box.toggled.connect(set_auto_update_check_enabled)
+        layout.addWidget(self.auto_update_check_box)
 
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
         buttons.rejected.connect(self.reject)

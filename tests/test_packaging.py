@@ -92,7 +92,10 @@ def test_locked_cuda_torch_packages_are_compatible_and_available():
     assert "pyinstaller==6.17.0" in requirements
 
 
-def test_file_association_installer_and_documentation_are_complete():
+def test_release_build_uses_build_pyinstaller_and_documents_file_association():
+    build_script = (PROJECT_ROOT / "packaging" / "build_pyinstaller.ps1").read_text(
+        encoding="utf-8"
+    )
     installer = (PROJECT_ROOT / "packaging" / "avista_installer.iss").read_text(
         encoding="utf-8"
     )
@@ -100,12 +103,25 @@ def test_file_association_installer_and_documentation_are_complete():
         PROJECT_ROOT / "packaging" / "file_association_notes.md"
     ).read_text(encoding="utf-8")
 
+    assert "avista_pyinstaller.spec" in build_script
+    assert "avista_installer.iss" in build_script
+    assert "AVISTA_Setup.exe" in build_script
+    assert "SkipInstaller" in build_script
     assert 'Subkey: "Software\\Classes\\.avista"' in installer
-    assert "AVISTA.Project" in installer
-    assert '""%1""' in installer
-    assert "ChangesAssociations=yes" in installer
-    assert "uninsdeletekey" in installer
+    assert "AVISTA.Project" in notes
     assert 'AVISTA.exe" "%1' in notes
+
+
+def test_installer_preserves_existing_install_directory():
+    installer = (PROJECT_ROOT / "packaging" / "avista_installer.iss").read_text(
+        encoding="utf-8"
+    )
+
+    assert "DefaultDirName={code:GetDefaultDirName}" in installer
+    assert 'Subkey: "Software\\AVISTA"; ValueType: string; ValueName: "InstallDir"' in installer
+    assert "RegQueryStringValue(HKCU, 'Software\\AVISTA', 'InstallDir'" in installer
+    assert "RegQueryStringValue(HKLM, 'Software\\AVISTA', 'InstallDir'" in installer
+    assert "ExpandConstant('{autopf}\\AVISTA')" in installer
 
 
 def test_installer_release_documents_exist():
@@ -123,9 +139,6 @@ def test_github_windows_release_workflow_builds_and_publishes_installer():
     workflow = (
         PROJECT_ROOT / ".github" / "workflows" / "windows-release.yml"
     ).read_text(encoding="utf-8")
-    installer = (PROJECT_ROOT / "packaging" / "avista_installer.iss").read_text(
-        encoding="utf-8"
-    )
 
     assert 'tags:' in workflow and '"v*"' in workflow
     assert "workflow_dispatch:" in workflow
@@ -150,4 +163,3 @@ def test_github_windows_release_workflow_builds_and_publishes_installer():
     assert "gh release create" in workflow
     assert "gh release upload" in workflow
     assert "--clobber" in workflow
-    assert "OutputBaseFilename=AVISTA_Setup" in installer

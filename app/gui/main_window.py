@@ -6,12 +6,14 @@ from pathlib import Path
 from typing import Callable
 
 import pandas as pd
-from PySide6.QtCore import QSize, Qt, QTimer
+from PySide6.QtCore import QProcess, QThread, QSize, Qt, QTimer
 from PySide6.QtGui import QPixmap, QShowEvent
 from PySide6.QtWidgets import (
     QHBoxLayout,
+    QApplication,
     QLabel,
     QMainWindow,
+    QMessageBox,
     QPushButton,
     QStackedWidget,
     QVBoxLayout,
@@ -20,6 +22,8 @@ from PySide6.QtWidgets import (
 
 from app.__version__ import APP_NAME
 from app.core.project_config import ProjectConfig
+from app.core.update_checker import UpdateCheckResult, log_update_message
+from app.core.user_settings import load_user_settings
 from app.gui.about_dialog import AboutDialog, application_icon, logo_path
 from app.gui.column_config_page import ColumnConfigPage
 from app.gui.data_import_page import DataImportPage
@@ -31,6 +35,8 @@ from app.gui.model_selection_page import ModelSelectionPage
 from app.gui.project_setup_page import ProjectSetupPage
 from app.gui.report_page import ReportPage
 from app.gui.training_page import TrainingPage
+from app.gui.update_dialog import UpdateAvailableDialog, UpdateDownloadDialog
+from app.gui.workers import UpdateCheckWorker, UpdateDownloadWorker
 
 
 class MainWindow(QMainWindow):
@@ -46,6 +52,10 @@ class MainWindow(QMainWindow):
         self.dataframe: pd.DataFrame | None = None
         self.environment_info: dict | None = None
         self._startup_environment_check_scheduled = False
+        self._startup_update_check_scheduled = False
+        self._update_threads: list[QThread] = []
+        self._update_workers: list[object] = []
+        self._download_dialog: UpdateDownloadDialog | None = None
 
         self.stack = QStackedWidget()
         self.nav_buttons: list[QPushButton] = []
@@ -83,6 +93,8 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.stack, stretch=1)
         self.setCentralWidget(root)
         help_menu = self.menuBar().addMenu("&Help")
+        update_action = help_menu.addAction("Check for Updates")
+        update_action.triggered.connect(self.check_for_updates_manually)
         about_action = help_menu.addAction(f"About {APP_NAME}")
         about_action.triggered.connect(self.show_about_dialog)
         if initial_config is not None:
@@ -103,11 +115,170 @@ class MainWindow(QMainWindow):
                 0,
                 self.environment_page.start_startup_environment_check,
             )
+        if not self._startup_update_check_scheduled:
+            self._startup_update_check_scheduled = True
+            QTimer.singleShot(1000, self.start_startup_update_check)
 
     def show_about_dialog(self) -> None:
         """Show AVISTA product and developer information."""
 
         self.create_about_dialog().exec()
+
+    def start_startup_update_check(self) -> None:
+        """Run one silent automatic update check after startup."""
+
+        if not load_user_settings().auto_check_updates:
+            return
+        self._start_update_check(manual=False)
+
+    def check_for_updates_manually(self) -> None:
+        """Run a user-requested update check."""
+
+        self._start_update_check(manual=True)
+
+    def _start_update_check(self, *, manual: bool) -> None:
+        thread = QThread(self)
+        worker = UpdateCheckWorker(manual=manual)
+        worker.moveToThread(thread)
+        thread.started.connect(worker.run)
+        worker.finished.connect(
+            lambda result, manual=manual, thread=thread, worker=worker: self._handle_update_check_finished(
+                result,
+                manual=manual,
+                thread=thread,
+                worker=worker,
+            )
+        )
+        worker.finished.connect(thread.quit)
+        thread.finished.connect(
+            lambda thread=thread, worker=worker: self._discard_update_worker(
+                thread,
+                worker,
+            )
+        )
+        thread.finished.connect(thread.deleteLater)
+        self._update_threads.append(thread)
+        self._update_workers.append(worker)
+        thread.start()
+
+    def _handle_update_check_finished(
+        self,
+        result: UpdateCheckResult,
+        *,
+        manual: bool,
+        thread: QThread,
+        worker: object,
+    ) -> None:
+        if result.error:
+            if manual:
+                QMessageBox.warning(
+                    self,
+                    "AVISTA Update Check",
+                    "Could not check for updates. Please check your internet connection.",
+                )
+            return
+        if not result.update_available or result.metadata is None:
+            if manual:
+                QMessageBox.information(
+                    self,
+                    "AVISTA Update Check",
+                    "AVISTA is up to date.",
+                )
+            return
+        if result.skipped and not manual:
+            return
+        dialog = UpdateAvailableDialog(
+            current_version=result.current_version,
+            metadata=result.metadata,
+            parent=self,
+        )
+        dialog.exec()
+        if dialog.choice == UpdateAvailableDialog.DOWNLOAD:
+            self._start_update_download(result.metadata)
+
+    def _start_update_download(self, metadata) -> None:
+        self._download_dialog = UpdateDownloadDialog(self)
+        self._download_dialog.show()
+        thread = QThread(self)
+        worker = UpdateDownloadWorker(metadata)
+        worker.moveToThread(thread)
+        thread.started.connect(worker.run)
+        worker.progress.connect(self._download_dialog.update_progress)
+        worker.finished.connect(
+            lambda path, thread=thread, worker=worker: self._handle_update_download_finished(
+                path,
+                thread=thread,
+                worker=worker,
+            )
+        )
+        worker.failed.connect(
+            lambda message, thread=thread, worker=worker: self._handle_update_download_failed(
+                message,
+                thread=thread,
+                worker=worker,
+            )
+        )
+        worker.finished.connect(thread.quit)
+        worker.failed.connect(thread.quit)
+        thread.finished.connect(
+            lambda thread=thread, worker=worker: self._discard_update_worker(
+                thread,
+                worker,
+            )
+        )
+        thread.finished.connect(thread.deleteLater)
+        self._update_threads.append(thread)
+        self._update_workers.append(worker)
+        thread.start()
+
+    def _handle_update_download_finished(
+        self,
+        installer_path: str,
+        *,
+        thread: QThread,
+        worker: object,
+    ) -> None:
+        if self._download_dialog is not None:
+            self._download_dialog.show_finished(installer_path)
+        response = QMessageBox.question(
+            self,
+            "Install AVISTA Update",
+            "AVISTA will close and launch the installer. Continue?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.Yes,
+        )
+        if response != QMessageBox.StandardButton.Yes:
+            log_update_message("Install launch cancelled by user.")
+            return
+        launched = QProcess.startDetached(installer_path, [])
+        log_update_message(
+            f"Install launch status: {'started' if launched else 'failed'}; path={installer_path}"
+        )
+        if launched:
+            QApplication.instance().quit()
+        else:
+            QMessageBox.critical(
+                self,
+                "AVISTA Update",
+                "Could not launch the downloaded installer.",
+            )
+
+    def _handle_update_download_failed(
+        self,
+        message: str,
+        *,
+        thread: QThread,
+        worker: object,
+    ) -> None:
+        if self._download_dialog is not None:
+            self._download_dialog.close()
+        QMessageBox.critical(self, "AVISTA Update Download Failed", message)
+
+    def _discard_update_worker(self, thread: QThread, worker: object) -> None:
+        if thread in self._update_threads:
+            self._update_threads.remove(thread)
+        if worker in self._update_workers:
+            self._update_workers.remove(worker)
 
     def create_about_dialog(self) -> AboutDialog:
         """Create the About dialog for display or focused GUI testing."""

@@ -20,7 +20,7 @@ The GUI can create or load projects, inspect and repair GPU environments with us
 
 The Data Split & Imbalance page uses AVISTA-style subsection cards, compact distribution and coverage tables, a primary confirm action, and auto-dismissing compact success notifications. Warnings remain separate from successful save and load notifications, and errors remain visually distinct.
 
-MambaAttention, FT-Transformer, AutoInt, and TabResNet have real saved-artifact training with live curves and PyTorch state-dict persistence. TabPFN 2.5 now has capped saved-artifact training, optional cross-validation, decoded evaluation exports, subprocess isolation, and safe serialization fallback. A comprehensive Report page now combines saved model outputs into Markdown, PDF, CSV, and comparison figures without retraining. A PyInstaller onedir and Inno Setup Windows packaging workflow is implemented. XAI and robustness analysis are not implemented yet.
+MambaAttention, FT-Transformer, AutoInt, and TabResNet have real saved-artifact training with live curves and PyTorch state-dict persistence. TabPFN 2.5 now has capped saved-artifact training, optional cross-validation, decoded evaluation exports, subprocess isolation, and safe serialization fallback. A comprehensive Report page now combines saved model outputs into Markdown, PDF, CSV, and comparison figures without retraining. A PyInstaller onedir and Inno Setup Windows packaging workflow is implemented. AVISTA now has GitHub-hosted update metadata, background update checks, manual Help-menu update checking, installer download/hash validation, skip-version preferences, app-level update settings, and install-directory preservation for update installers. XAI and robustness analysis are not implemented yet.
 
 ## 4. Completed Phases
 
@@ -46,6 +46,13 @@ MambaAttention, FT-Transformer, AutoInt, and TabResNet have real saved-artifact 
 - Startup environment results are saved to the active project's `logs/environment_info.json`, the repository-level `logs/environment_info.json` in development, or `%LOCALAPPDATA%\AVISTA\logs\environment_info.json` in packaged mode when no project is loaded.
 - Startup environment logging records check start, completion, and failure; GPU runtime repair remains an explicit user action and is never triggered by startup checks.
 - Startup runtime inventory records the AVISTA version, bundled executable path, PyTorch/CUDA/GPU details, XGBoost and TabPFN availability, and bundled checkpoint existence.
+- AVISTA checks GitHub-hosted `updates.json` once after startup when automatic checks are enabled, using a `QThread` worker so the GUI and project loading remain responsive.
+- Automatic update checks stay silent when AVISTA is up to date or the network check fails; manual **Help > Check for Updates** checks show an up-to-date message or a compact network warning.
+- Update availability compares `app.__version__.__version__` with metadata `latest_version` using semantic version comparison.
+- The update dialog shows current/latest versions, release date, release notes, Download and Install, Later, Skip This Version, and an automatic-update checkbox.
+- Update preferences are stored outside project files in `%APPDATA%\AVISTA\settings.json` with `skipped_update_version`, `last_update_check`, and `auto_check_updates`.
+- Update downloads run in a background worker, save the installer to the temp directory, verify SHA256 when metadata provides a hash, and log failures without launching mismatched installers.
+- Update logging writes check, download, install-launch, and error entries to `logs/update.log`.
 - GPU diagnostics now report PyTorch/CUDA/cuDNN, CUDA device count, tensor validation, `nvidia-smi`, GPU/driver identity, and total/used/free GPU memory.
 - Environment checks are report-only: the page does not install or repair dependencies, and results or errors are saved to `logs/environment_info.json`.
 - The GPU card uses the Font Awesome fan icon and explicit OK, Warning, and Not available states; environment mode is no longer shown on the page.
@@ -320,10 +327,13 @@ MambaAttention, FT-Transformer, AutoInt, and TabResNet have real saved-artifact 
   - `requirements_lock.txt` pins the release build stack, including CUDA 12.6 PyTorch, TabPFN, Qt, scientific packages, and PyInstaller.
   - `packaging/build_pyinstaller.ps1` creates a dedicated `build_env`, explicitly installs the pinned PyInstaller build dependency, builds a console-free release or console-enabled debug onedir folder from `packaging/avista_pyinstaller.spec`, includes assets and dynamic ML packages, writes Windows version metadata, and stages `dist`, `installer`, and `release` outputs.
   - Missing or invalid `logo.ico` files are generated from the bundled PNG with Pillow before compilation using standard square Windows icon sizes.
-  - `packaging/avista_installer.iss` installs under Program Files, creates Start Menu and optional desktop shortcuts, registers `.avista` project files, and removes AVISTA registry entries on uninstall.
+  - `packaging/build_pyinstaller.ps1` is the release entry point for the standalone folder and installer build.
   - Packaging documentation covers prerequisites, builds, installer testing, command-line and double-click project opening, CUDA driver expectations, CPU fallback, and Torch/TabPFN troubleshooting.
   - Release documents now include `LICENSE.txt`, `THIRD_PARTY_NOTICES.txt`, and `CHANGELOG.md`.
   - PyInstaller and Inno Setup build versions are parsed from `app/__version__.py`; packaging scripts no longer contain an independent release version.
+  - `packaging/build_pyinstaller.ps1` is the working release entry point used by GitHub Actions for standalone and installer builds; it passes centralized version values to `packaging/avista_installer.iss`.
+  - Inno Setup stores `Software\AVISTA\InstallDir` during install and reads existing HKCU/HKLM values so update installers default to the current AVISTA installation folder instead of always using Program Files.
+  - Uninstall behavior remains application-focused; user project folders outside the installation directory are preserved.
   - `.github/workflows/windows-release.yml` builds the Windows installer on `windows-latest` for manual dispatches and `v*` tags, caches pip downloads, installs Inno Setup, runs only packaging/resource/version tests, uploads `AVISTA_Setup.exe`, resolves a release tag from tagged pushes or the manual `release_tag` input, and publishes it to GitHub Releases with overwrite enabled for reruns.
   - The Inno Setup output and release artifact use the stable filename `installer/AVISTA_Setup.exe`.
   - GitHub Actions packaging uses Python 3.12, NumPy 1.26.4, Captum 0.8.0, and a matched CUDA 12.6 trio: PyTorch 2.9.1, TorchVision 0.24.1, and TorchAudio 2.9.1. Python 3.12 and NumPy 1.26.4 avoid Captum's NumPy-below-2.0 resolver conflict. The build script fails immediately on native command errors and verifies PySide6/Torch/TabPFN imports before invoking PyInstaller.
@@ -349,6 +359,8 @@ Core backend:
 - `app/core/trainer.py`
 - `app/core/report_generator.py`
 - `app/training/run_torch_model.py`
+- `app/core/update_checker.py`
+- `app/core/user_settings.py`
 
 Models:
 
@@ -369,6 +381,7 @@ GUI:
 - `app/gui/edge_case_report_page.py`
 - `app/gui/training_page.py`
 - `app/gui/report_page.py`
+- `app/gui/update_dialog.py`
 - `app/gui/workers.py`
 
 Entry point and requirements:
@@ -380,6 +393,7 @@ Entry point and requirements:
 - `requirements_deep_gpu.txt`
 - `requirements_xai.txt`
 - `requirements_full.txt`
+- `updates.json`
 
 Tests:
 
@@ -394,6 +408,8 @@ Tests:
 - `tests/test_trainer_evaluator.py`
 - `tests/test_gui_smoke.py`
 - `tests/test_report_page.py`
+- `tests/test_update_checker.py`
+- `tests/test_update_gui.py`
 
 ## 6. Current Test Status
 
@@ -410,6 +426,14 @@ Result:
 ```
 
 This includes backend tests and PySide6 GUI smoke tests for AVISTA branding, Font Awesome icon loading, redesigned Project Setup cards, hidden Project Setup environment controls, sidebar icons, About content, `.avista` project creation/loading, legacy `.xtab` migration, command-line project loading, data preview, split validation, centralized string and mixed-type target encoding, XGBoost encoded-target training, decoded reports and probability columns, target-change invalidation, saved-artifact edge checks, typed Model Selection parameters including the single TabPFN estimator control, active-environment optional dependency checks and installation status, saved-split Training readiness, cross-validation, cancellation, evaluation reports, model-specific outputs, and publication-quality PNG/PDF plotting exports.
+
+Latest focused update and packaging verification:
+
+```text
+24 passed
+```
+
+This run covered semantic version comparison, update metadata parsing, HTTPS installer URL validation, update availability detection, skip-version behavior, manual check visibility for up-to-date installs, automatic startup popup policy, `QThread` worker use for update checks, SHA256 verification, GitHub metadata URL configuration, release workflow checks around `build_pyinstaller.ps1`, Inno Setup install-directory registry logic, centralized version metadata, and the About dialog with update preferences.
 
 Latest focused Environment verification:
 
@@ -577,6 +601,8 @@ This run covered centered half-width ROC/PR/training previews, the 900-pixel cap
 - Registry and central-factory imports do not eagerly import XGBoost, TabPFN, or PyTorch model implementations.
 - GPU PyTorch is intentionally excluded from `requirements_full.txt` and must be installed using the CUDA-specific instructions in `requirements_deep_gpu.txt`.
 - Artifacts are saved with joblib where appropriate.
+- Update preferences are app-level settings, not project configuration, so skipped versions and automatic-check choices travel with the user account rather than a `.avista` project.
+- Update metadata and installer downloads must use HTTPS, and installers with a provided SHA256 must match before AVISTA offers to launch them.
 
 ## 8. Current Known Issues
 

@@ -12,7 +12,7 @@ AppId={{B151A258-8635-4D51-8AD7-E83D99D7D272}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
-DefaultDirName={autopf}\AVISTA
+DefaultDirName={code:GetDefaultDirName}
 DefaultGroupName=AVISTA
 DisableProgramGroupPage=yes
 PrivilegesRequired=admin
@@ -41,6 +41,7 @@ Name: "{autodesktop}\AVISTA"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{a
 Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Additional shortcuts:"; Flags: checkedonce
 
 [Registry]
+Root: HKA; Subkey: "Software\AVISTA"; ValueType: string; ValueName: "InstallDir"; ValueData: "{app}"
 Root: HKA; Subkey: "Software\Classes\.avista"; ValueType: string; ValueName: ""; ValueData: "AVISTA.Project"; Flags: uninsdeletevalue
 Root: HKA; Subkey: "Software\Classes\.avista\OpenWithProgids"; ValueType: string; ValueName: "AVISTA.Project"; ValueData: ""; Flags: uninsdeletevalue
 Root: HKA; Subkey: "Software\Classes\AVISTA.Project"; ValueType: string; ValueName: ""; ValueData: "AVISTA Project"; Flags: uninsdeletekey
@@ -49,3 +50,21 @@ Root: HKA; Subkey: "Software\Classes\AVISTA.Project\shell\open\command"; ValueTy
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "Launch AVISTA"; Flags: nowait postinstall skipifsilent
+
+[Code]
+function GetDefaultDirName(Default: String): String;
+var
+  InstallDir: String;
+begin
+  if RegQueryStringValue(HKCU, 'Software\AVISTA', 'InstallDir', InstallDir) then
+  begin
+    Result := InstallDir;
+    Exit;
+  end;
+  if RegQueryStringValue(HKLM, 'Software\AVISTA', 'InstallDir', InstallDir) then
+  begin
+    Result := InstallDir;
+    Exit;
+  end;
+  Result := ExpandConstant('{autopf}\AVISTA');
+end;

@@ -23,6 +23,66 @@ from app.core.model_registry import get_model_spec
 from app.core.project_config import ProjectConfig
 from app.core.runtime_verification import collect_runtime_verification
 from app.core.trainer import TrainingCancelled, train_saved_models
+from app.core.update_checker import (
+    UPDATE_METADATA_URL,
+    UpdateMetadata,
+    check_for_updates,
+    download_installer,
+)
+from app.core.user_settings import load_user_settings
+
+
+class UpdateCheckWorker(QObject):
+    """Check GitHub update metadata without blocking the GUI."""
+
+    finished = Signal(object)
+
+    def __init__(
+        self,
+        *,
+        manual: bool = False,
+        metadata_url: str = UPDATE_METADATA_URL,
+    ) -> None:
+        super().__init__()
+        self.manual = manual
+        self.metadata_url = metadata_url
+
+    @Slot()
+    def run(self) -> None:
+        settings = load_user_settings()
+        result = check_for_updates(
+            metadata_url=self.metadata_url,
+            settings=settings,
+            manual=self.manual,
+        )
+        self.finished.emit(result)
+
+
+class UpdateDownloadWorker(QObject):
+    """Download an update installer without blocking the GUI."""
+
+    progress = Signal(int, int)
+    finished = Signal(str)
+    failed = Signal(str)
+
+    def __init__(self, metadata: UpdateMetadata) -> None:
+        super().__init__()
+        self.metadata = metadata
+
+    @Slot()
+    def run(self) -> None:
+        try:
+            path = download_installer(
+                self.metadata,
+                progress_callback=lambda downloaded, total: self.progress.emit(
+                    downloaded,
+                    total,
+                ),
+            )
+        except Exception as exc:
+            self.failed.emit(str(exc))
+            return
+        self.finished.emit(str(path))
 
 
 class DependencyInstallWorker(QObject):

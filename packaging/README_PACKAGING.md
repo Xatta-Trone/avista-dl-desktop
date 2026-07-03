@@ -80,19 +80,20 @@ script rather than compiling the `.iss` file directly:
 .\packaging\build_pyinstaller.ps1 -Configuration Release
 ```
 
-To compile only the prepared installer manually after a standalone build,
-pass the same name and version definitions to Inno Setup:
-
-```powershell
-& "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" `
-  "/DMyAppName=AVISTA" `
-  "/DMyAppVersion=<version-from-app\__version__.py>" `
-  ".\packaging\avista_installer.iss"
-```
+The supported release entry point is `packaging\build_pyinstaller.ps1`. The
+script passes the centralized AVISTA name and version into
+`packaging\avista_installer.iss`, which defines shortcuts, file association,
+and update install-directory behavior.
 
 Install on a clean Windows VM, verify the Program Files installation, desktop
 shortcut, Start Menu shortcut, startup environment JSON, CPU fallback, report
 export, and uninstallation.
+
+The installer stores the selected folder in `Software\AVISTA\InstallDir` and
+uses an existing HKCU or HKLM value as the default on future installs. This
+keeps updates pointed at a custom folder such as `D:\AVISTA\` instead of
+falling back to Program Files. User projects live outside the application
+folder and are not deleted by the installer uninstall rules.
 
 ## Test .avista Double-Click
 
@@ -178,3 +179,29 @@ The workflow verifies that `logo.png`, `logo.ico`, and the bundled TabPFN
 checkpoint exist before compilation. If the checkpoint is stored with Git
 LFS, ensure GitHub LFS storage and bandwidth are available; checkout enables
 LFS downloads.
+
+## Update Metadata
+
+AVISTA reads update metadata from:
+
+```text
+https://raw.githubusercontent.com/Xatta-Trone/avista-dl-desktop/main/updates.json
+```
+
+Publish a new update by:
+
+1. Bumping `app\__version__.py`.
+2. Building `installer\AVISTA_Setup.exe`.
+3. Uploading the installer to a GitHub Release such as `v1.0.1`.
+4. Calculating the installer hash:
+
+   ```powershell
+   Get-FileHash .\installer\AVISTA_Setup.exe -Algorithm SHA256
+   ```
+
+5. Updating root `updates.json` with `latest_version`, `release_date`,
+   `release_notes`, the HTTPS `installer_url`, and the SHA256 value.
+
+The updater verifies `sha256` when provided and refuses to launch the
+installer on a mismatch. Leave `sha256` empty only while testing a draft
+release asset.

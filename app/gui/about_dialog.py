@@ -17,6 +17,7 @@ from app.branding import (
 from app.core.user_settings import load_user_settings
 from app.utils.resources import get_app_resource_path
 from app.gui.update_dialog import set_auto_update_check_enabled
+from app.gui.theme import apply_theme_to_widget, current_theme
 
 
 LOGO_RESOURCE = "app/assets/logo.png"
@@ -120,6 +121,7 @@ class AboutDialog(QDialog):
             }
             """
         )
+        apply_theme_to_widget(self, current_theme())
 
     @staticmethod
     def _github_html() -> str:

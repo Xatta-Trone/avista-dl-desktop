@@ -148,15 +148,15 @@ Manual build:
    `AVISTA_Setup.exe`.
 
 To publish a manually dispatched build to an existing tagged GitHub Release,
-enter the tag in the `release_tag` workflow input, for example `v1.0.0`.
+enter the tag in the `release_tag` workflow input, for example `v1.0.1`.
 The workflow creates the release if it does not exist and uploads
 `AVISTA_Setup.exe` with overwrite enabled for reruns.
 
 Tagged release:
 
 ```powershell
-git tag v1.0.0
-git push origin v1.0.0
+git tag v1.0.1
+git push origin v1.0.1
 ```
 
 Tags matching `v*` build the installer, create a GitHub Release, generate

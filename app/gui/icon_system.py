@@ -5,12 +5,14 @@ from __future__ import annotations
 import qtawesome as qta
 from PySide6.QtGui import QIcon
 
+from app.gui.theme import current_theme
 
-PRIMARY = "#0F6CBD"
-ACCENT = "#00A6A6"
-BACKGROUND = "#F7F9FC"
-TEXT = "#1F2937"
-BORDER = "#D0D7DE"
+_TOKENS = current_theme()
+PRIMARY = _TOKENS.primary
+ACCENT = _TOKENS.accent
+BACKGROUND = _TOKENS.background
+TEXT = _TOKENS.text_primary
+BORDER = _TOKENS.border
 
 PAGE_ICONS = {
     "Project Setup": "fa6s.diagram-project",

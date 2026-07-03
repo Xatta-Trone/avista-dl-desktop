@@ -82,6 +82,12 @@ At the time this file was written:
 - Deep architecture, optimization, monitoring, checkpoint, and early-stopping
   parameters are editable and persisted by Model Selection, but do not yet
   change training behavior.
+- AVISTA has centralized Light/Dark theme support with tokens and generated
+  QSS. The selected theme is stored in `%APPDATA%/AVISTA/settings.json`, is
+  switchable from Help -> Theme, and applies immediately without restarting.
+- Embedded GUI preview figures such as target distribution and training
+  curves adapt to the selected theme; exported report figures remain
+  publication-oriented.
 - Dependency files are explicit:
   - `requirements_ml.txt` contains classical ML and analysis packages.
   - `requirements_deep_cpu.txt` contains CPU-installable PyTorch packages.
@@ -145,6 +151,9 @@ Always verify this summary against `PROJECT_STATUS.md`, which may be newer.
   entire large DataFrame.
 - Add comments only where logic is not self-explanatory.
 - Avoid broad refactors during focused fixes.
+- Use `app/gui/theme.py` for application colors and theme behavior. Do not
+  introduce new page-local color systems when a theme token or shared style
+  helper can be used.
 
 ## Documentation Source of Truth
 

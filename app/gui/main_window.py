@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+from functools import partial
 from pathlib import Path
 from typing import Callable
 
 import pandas as pd
 from PySide6.QtCore import QProcess, QThread, QSize, Qt, QTimer
-from PySide6.QtGui import QPixmap, QShowEvent
+from PySide6.QtGui import QAction, QActionGroup, QPixmap, QShowEvent
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QApplication,
@@ -30,10 +31,11 @@ from app.gui.data_import_page import DataImportPage
 from app.gui.data_split_imbalance_page import DataSplitImbalancePage
 from app.gui.edge_case_report_page import EdgeCaseReportPage
 from app.gui.environment_page import EnvironmentPage
-from app.gui.icon_system import BACKGROUND, PAGE_ICONS, PRIMARY, TEXT, icon
+from app.gui.icon_system import PAGE_ICONS, icon
 from app.gui.model_selection_page import ModelSelectionPage
 from app.gui.project_setup_page import ProjectSetupPage
 from app.gui.report_page import ReportPage
+from app.gui.theme import apply_theme, get_theme, load_theme_setting, save_theme_setting
 from app.gui.training_page import TrainingPage
 from app.gui.update_dialog import UpdateAvailableDialog, UpdateDownloadDialog
 from app.gui.workers import UpdateCheckWorker, UpdateDownloadWorker
@@ -56,6 +58,7 @@ class MainWindow(QMainWindow):
         self._update_threads: list[QThread] = []
         self._update_workers: list[object] = []
         self._download_dialog: UpdateDownloadDialog | None = None
+        self.theme_name = load_theme_setting()
 
         self.stack = QStackedWidget()
         self.nav_buttons: list[QPushButton] = []
@@ -93,6 +96,19 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.stack, stretch=1)
         self.setCentralWidget(root)
         help_menu = self.menuBar().addMenu("&Help")
+        theme_menu = help_menu.addMenu("Theme")
+        self.theme_action_group = QActionGroup(self)
+        self.theme_action_group.setExclusive(True)
+        self.light_theme_action = QAction("Light", self, checkable=True)
+        self.dark_theme_action = QAction("Dark", self, checkable=True)
+        self.light_theme_action.setData("light")
+        self.dark_theme_action.setData("dark")
+        for action in (self.light_theme_action, self.dark_theme_action):
+            self.theme_action_group.addAction(action)
+            theme_menu.addAction(action)
+        self.light_theme_action.setChecked(self.theme_name == "light")
+        self.dark_theme_action.setChecked(self.theme_name == "dark")
+        self.theme_action_group.triggered.connect(self.set_theme)
         update_action = help_menu.addAction("Check for Updates")
         update_action.triggered.connect(self.check_for_updates_manually)
         about_action = help_menu.addAction(f"About {APP_NAME}")
@@ -104,6 +120,7 @@ class MainWindow(QMainWindow):
                 str(initial_config.project_file)
             )
             self.project_setup_page._show_loaded(initial_config)
+        self.apply_current_theme()
 
     def showEvent(self, event: QShowEvent) -> None:
         """Start environment diagnostics after the main window is visible."""
@@ -122,7 +139,31 @@ class MainWindow(QMainWindow):
     def show_about_dialog(self) -> None:
         """Show AVISTA product and developer information."""
 
-        self.create_about_dialog().exec()
+        dialog = self.create_about_dialog()
+        dialog.exec()
+
+    def set_theme(self, action: QAction) -> None:
+        """Persist and immediately apply a selected application theme."""
+
+        theme_name = str(action.data() or "light")
+        self.theme_name = save_theme_setting(theme_name)
+        self.light_theme_action.setChecked(self.theme_name == "light")
+        self.dark_theme_action.setChecked(self.theme_name == "dark")
+        self.apply_current_theme()
+
+    def apply_current_theme(self) -> None:
+        """Apply the active theme to the app shell and page widgets."""
+
+        app = QApplication.instance()
+        if app is not None:
+            apply_theme(app, self.theme_name)
+        self.stack.setStyleSheet(
+            f"QStackedWidget {{ background: {self.palette().window().color().name()}; }}"
+        )
+        self._apply_sidebar_theme()
+        for _, page, _ in self.pages:
+            if hasattr(page, "apply_theme"):
+                page.apply_theme(self.theme_name)
 
     def start_startup_update_check(self) -> None:
         """Run one silent automatic update check after startup."""
@@ -142,20 +183,16 @@ class MainWindow(QMainWindow):
         worker.moveToThread(thread)
         thread.started.connect(worker.run)
         worker.finished.connect(
-            lambda result, manual=manual, thread=thread, worker=worker: self._handle_update_check_finished(
-                result,
+            partial(
+                self._handle_update_check_finished,
                 manual=manual,
                 thread=thread,
                 worker=worker,
             )
         )
+        worker.finished.connect(worker.deleteLater)
         worker.finished.connect(thread.quit)
-        thread.finished.connect(
-            lambda thread=thread, worker=worker: self._discard_update_worker(
-                thread,
-                worker,
-            )
-        )
+        thread.finished.connect(partial(self._discard_update_worker, thread, worker))
         thread.finished.connect(thread.deleteLater)
         self._update_threads.append(thread)
         self._update_workers.append(worker)
@@ -166,8 +203,18 @@ class MainWindow(QMainWindow):
         result: UpdateCheckResult,
         *,
         manual: bool,
-        thread: QThread,
+        thread: QThread | object,
         worker: object,
+    ) -> None:
+        """Compatibility helper for focused tests and direct GUI calls."""
+
+        self._process_update_check_result(result, manual=manual)
+
+    def _process_update_check_result(
+        self,
+        result: UpdateCheckResult,
+        *,
+        manual: bool,
     ) -> None:
         if result.error:
             if manual:
@@ -205,27 +252,24 @@ class MainWindow(QMainWindow):
         thread.started.connect(worker.run)
         worker.progress.connect(self._download_dialog.update_progress)
         worker.finished.connect(
-            lambda path, thread=thread, worker=worker: self._handle_update_download_finished(
-                path,
+            partial(
+                self._handle_update_download_finished,
                 thread=thread,
                 worker=worker,
             )
         )
         worker.failed.connect(
-            lambda message, thread=thread, worker=worker: self._handle_update_download_failed(
-                message,
+            partial(
+                self._handle_update_download_failed,
                 thread=thread,
                 worker=worker,
             )
         )
+        worker.finished.connect(worker.deleteLater)
+        worker.failed.connect(worker.deleteLater)
         worker.finished.connect(thread.quit)
         worker.failed.connect(thread.quit)
-        thread.finished.connect(
-            lambda thread=thread, worker=worker: self._discard_update_worker(
-                thread,
-                worker,
-            )
-        )
+        thread.finished.connect(partial(self._discard_update_worker, thread, worker))
         thread.finished.connect(thread.deleteLater)
         self._update_threads.append(thread)
         self._update_workers.append(worker)
@@ -272,6 +316,7 @@ class MainWindow(QMainWindow):
     ) -> None:
         if self._download_dialog is not None:
             self._download_dialog.close()
+            self._download_dialog = None
         QMessageBox.critical(self, "AVISTA Update Download Failed", message)
 
     def _discard_update_worker(self, thread: QThread, worker: object) -> None:
@@ -317,6 +362,7 @@ class MainWindow(QMainWindow):
 
     def _build_sidebar(self) -> QWidget:
         sidebar = QWidget()
+        self.sidebar = sidebar
         sidebar.setObjectName("sidebar")
         sidebar.setFixedWidth(220)
         layout = QVBoxLayout(sidebar)
@@ -336,6 +382,7 @@ class MainWindow(QMainWindow):
             )
         )
         title = QLabel(APP_NAME)
+        self.sidebar_title = title
         title.setObjectName("sidebarTitle")
         title.setAlignment(Qt.AlignVCenter)
         brand_row.addWidget(logo)
@@ -356,10 +403,17 @@ class MainWindow(QMainWindow):
 
         layout.addStretch(1)
         self.nav_buttons[0].setChecked(True)
-        sidebar.setStyleSheet(
+        return sidebar
+
+    def _apply_sidebar_theme(self) -> None:
+        theme = get_theme(self.theme_name)
+        for index, (label, _, _) in enumerate(self.pages):
+            if index < len(self.nav_buttons):
+                self.nav_buttons[index].setIcon(icon(PAGE_ICONS[label], theme.sidebar_text))
+        self.sidebar.setStyleSheet(
             f"""
             QWidget#sidebar {{
-                background: #17324D;
+                background: {theme.sidebar};
                 border: none;
             }}
             QLabel#sidebarTitle {{
@@ -369,7 +423,7 @@ class MainWindow(QMainWindow):
                 padding: 4px 8px 14px 8px;
             }}
             QPushButton#sidebarButton {{
-                color: #DCEBFA;
+                color: {theme.sidebar_text};
                 background: transparent;
                 border: none;
                 border-radius: 7px;
@@ -378,18 +432,16 @@ class MainWindow(QMainWindow):
                 font-weight: 500;
             }}
             QPushButton#sidebarButton:hover {{
-                background: #244A6B;
+                background: {theme.sidebar_hover};
                 color: #FFFFFF;
             }}
             QPushButton#sidebarButton:checked {{
-                background: {PRIMARY};
+                background: {theme.primary};
                 color: #FFFFFF;
                 font-weight: 600;
             }}
             """
         )
-        self.stack.setStyleSheet(f"QStackedWidget {{ background: {BACKGROUND}; color: {TEXT}; }}")
-        return sidebar
 
 
 def default_output_dir(project_dir: str) -> str:

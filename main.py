@@ -16,6 +16,7 @@ from app.branding import (
 from app.core.project_config import ProjectConfig
 from app.gui.about_dialog import application_icon
 from app.gui.main_window import MainWindow
+from app.gui.theme import apply_theme, load_theme_setting
 
 
 def load_startup_project(arguments: list[str]) -> ProjectConfig | None:
@@ -65,6 +66,7 @@ def main() -> None:
     app.setApplicationDisplayName(APP_NAME)
     app.setApplicationVersion(__version__)
     app.setWindowIcon(application_icon())
+    apply_theme(app, load_theme_setting())
     splash = create_splash_screen()
     splash.show()
     app.processEvents()

@@ -41,6 +41,7 @@ from app.gui.icon_system import (
     TEXT,
     icon,
 )
+from app.gui.theme import apply_matplotlib_theme
 from app.gui.workers import TrainingWorker
 
 
@@ -878,7 +879,6 @@ class TrainingPage(QWidget):
             fontsize=12,
             fontweight="semibold",
         )
-        self.curve_figure.patch.set_facecolor("#FFFFFF")
         if self.curve_epochs:
             self._plot_optional_series(
                 accuracy_axis,
@@ -909,11 +909,9 @@ class TrainingPage(QWidget):
             (accuracy_axis, "Accuracy", "Accuracy"),
             (loss_axis, "Loss", "Loss"),
         ):
-            axis.set_facecolor("#FFFFFF")
             axis.set_xlabel("Epoch")
             axis.set_ylabel(ylabel)
             axis.set_title(title)
-            axis.grid(True, color="#D0D7DE", alpha=0.55, linewidth=0.7)
             axis.spines["top"].set_visible(False)
             axis.spines["right"].set_visible(False)
             handles, _ = axis.get_legend_handles_labels()
@@ -930,6 +928,7 @@ class TrainingPage(QWidget):
         ]
         if accuracy_values and all(0.0 <= value <= 1.0 for value in accuracy_values):
             accuracy_axis.set_ylim(0.0, 1.0)
+        apply_matplotlib_theme(self.curve_figure)
         self.curve_figure.tight_layout(rect=(0, 0, 1, 0.93))
         self.curve_canvas.draw_idle()
 
@@ -953,6 +952,11 @@ class TrainingPage(QWidget):
                 color=color,
                 linewidth=2,
             )
+
+    def apply_theme(self, theme_name: str | None = None) -> None:
+        if self.curve_figure.axes:
+            apply_matplotlib_theme(self.curve_figure, theme_name)
+            self.curve_canvas.draw_idle()
 
     def _on_training_finished(self, results: dict) -> None:
         self._finish_running_state()

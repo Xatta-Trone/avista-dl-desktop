@@ -17,6 +17,7 @@ class UserSettings:
     skipped_update_version: str = ""
     last_update_check: str = ""
     auto_check_updates: bool = True
+    theme_name: str = "light"
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "UserSettings":
@@ -24,6 +25,8 @@ class UserSettings:
             skipped_update_version=str(data.get("skipped_update_version") or ""),
             last_update_check=str(data.get("last_update_check") or ""),
             auto_check_updates=bool(data.get("auto_check_updates", True)),
+            theme_name=str(data.get("theme_name") or "light").strip().lower()
+            or "light",
         )
 
     def to_dict(self) -> dict[str, Any]:

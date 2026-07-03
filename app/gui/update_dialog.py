@@ -22,6 +22,7 @@ from app.core.user_settings import (
     load_user_settings,
     save_user_settings,
 )
+from app.gui.theme import apply_theme_to_widget, current_theme
 from app.utils.resources import get_app_resource_path
 
 
@@ -81,10 +82,10 @@ class UpdateAvailableDialog(QDialog):
         self.later_button = QPushButton("Later")
         self.skip_button = QPushButton("Skip This Version")
         buttons.addButton(self.download_button, QDialogButtonBox.ButtonRole.AcceptRole)
-        buttons.addButton(self.later_button, QDialogButtonBox.ButtonRole.RejectRole)
+        buttons.addButton(self.later_button, QDialogButtonBox.ButtonRole.ActionRole)
         buttons.addButton(self.skip_button, QDialogButtonBox.ButtonRole.DestructiveRole)
         self.download_button.clicked.connect(self._download)
-        self.later_button.clicked.connect(self.reject)
+        self.later_button.clicked.connect(self._later)
         self.skip_button.clicked.connect(self._skip)
         layout.addWidget(buttons)
 
@@ -100,9 +101,14 @@ class UpdateAvailableDialog(QDialog):
             }
             """
         )
+        apply_theme_to_widget(self, current_theme())
 
     def _download(self) -> None:
         self.choice = self.DOWNLOAD
+        self.accept()
+
+    def _later(self) -> None:
+        self.choice = self.LATER
         self.accept()
 
     def _skip(self) -> None:
@@ -137,6 +143,7 @@ class UpdateDownloadDialog(QDialog):
         self.progress_bar = QProgressBar()
         self.progress_bar.setRange(0, 0)
         layout.addWidget(self.progress_bar)
+        apply_theme_to_widget(self, current_theme())
 
     def update_progress(self, downloaded: int, total: int) -> None:
         if total > 0:

@@ -148,3 +148,31 @@ def test_update_check_uses_qthread_worker():
     assert "worker.moveToThread(thread)" in start_source
     assert "thread.started.connect(worker.run)" in start_source
     assert "check_for_updates(" in worker_source
+
+
+def test_update_dialog_later_button_closes_without_download():
+    from PySide6.QtWidgets import QApplication
+
+    from app.core.update_checker import UpdateMetadata
+    from app.gui.update_dialog import UpdateAvailableDialog
+
+    app = QApplication.instance() or QApplication([])
+    dialog = UpdateAvailableDialog(
+        current_version="1.0.0",
+        metadata=UpdateMetadata(
+            latest_version="1.0.1",
+            release_date="2026-07-03",
+            release_notes=["Update checker"],
+            installer_url="https://example.com/AVISTA_Setup.exe",
+        ),
+    )
+    dialog.show()
+    app.processEvents()
+
+    dialog.later_button.click()
+    app.processEvents()
+
+    assert dialog.choice == UpdateAvailableDialog.LATER
+    assert dialog.result() == dialog.DialogCode.Accepted
+    dialog.close()
+    assert app is not None

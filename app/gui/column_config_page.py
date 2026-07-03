@@ -28,6 +28,7 @@ from PySide6.QtWidgets import (
 
 from app.core.target_encoding import invalidate_target_artifacts
 from app.gui.icon_system import BACKGROUND, BORDER, PRIMARY, TEXT, icon
+from app.gui.theme import apply_matplotlib_theme
 
 
 MAX_UNIQUE_PREVIEW = 100
@@ -64,6 +65,7 @@ class TargetDistributionPlot(QWidget):
                 transform=axis.transAxes,
             )
             axis.set_axis_off()
+            apply_matplotlib_theme(self.figure)
             self.figure.tight_layout()
             self.canvas.draw_idle()
             return
@@ -82,6 +84,7 @@ class TargetDistributionPlot(QWidget):
             )
             axis.set_title(f"Target Distribution: {series.name}")
             axis.set_axis_off()
+            apply_matplotlib_theme(self.figure)
             self.figure.tight_layout()
             self.canvas.draw_idle()
             return
@@ -108,6 +111,7 @@ class TargetDistributionPlot(QWidget):
                 fontsize=9,
             )
         axis.margins(y=0.18)
+        apply_matplotlib_theme(self.figure)
         self.figure.tight_layout()
         self.canvas.draw_idle()
 
@@ -115,6 +119,10 @@ class TargetDistributionPlot(QWidget):
         """Save the chart at publication-oriented resolution."""
 
         self.figure.savefig(path, dpi=300, bbox_inches="tight")
+
+    def apply_theme(self) -> None:
+        apply_matplotlib_theme(self.figure)
+        self.canvas.draw_idle()
 
 
 class ColumnConfigPage(QWidget):
@@ -823,3 +831,6 @@ class ColumnConfigPage(QWidget):
             QPushButton#primaryColumnConfigButton:hover {{ background: #00A6A6; }}
             """
         )
+
+    def apply_theme(self, theme_name: str | None = None) -> None:
+        self.target_plot.apply_theme()

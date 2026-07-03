@@ -20,7 +20,7 @@ The GUI can create or load projects, inspect and repair GPU environments with us
 
 The Data Split & Imbalance page uses AVISTA-style subsection cards, compact distribution and coverage tables, a primary confirm action, and auto-dismissing compact success notifications. Warnings remain separate from successful save and load notifications, and errors remain visually distinct.
 
-MambaAttention, FT-Transformer, AutoInt, and TabResNet have real saved-artifact training with live curves and PyTorch state-dict persistence. TabPFN 2.5 now has capped saved-artifact training, optional cross-validation, decoded evaluation exports, subprocess isolation, and safe serialization fallback. A comprehensive Report page now combines saved model outputs into Markdown, PDF, CSV, and comparison figures without retraining. A PyInstaller onedir and Inno Setup Windows packaging workflow is implemented. AVISTA now has GitHub-hosted update metadata, background update checks, manual Help-menu update checking, installer download/hash validation, skip-version preferences, app-level update settings, and install-directory preservation for update installers. XAI and robustness analysis are not implemented yet.
+MambaAttention, FT-Transformer, AutoInt, and TabResNet have real saved-artifact training with live curves and PyTorch state-dict persistence. TabPFN 2.5 now has capped saved-artifact training, optional cross-validation, decoded evaluation exports, subprocess isolation, and safe serialization fallback. A comprehensive Report page now combines saved model outputs into Markdown, PDF, CSV, and comparison figures without retraining. A PyInstaller onedir and Inno Setup Windows packaging workflow is implemented. AVISTA now has GitHub-hosted update metadata, background update checks, manual Help-menu update checking, installer download/hash validation, skip-version preferences, app-level update settings, install-directory preservation for update installers, and centralized Light/Dark theme support. XAI and robustness analysis are not implemented yet.
 
 ## 4. Completed Phases
 
@@ -53,6 +53,10 @@ MambaAttention, FT-Transformer, AutoInt, and TabResNet have real saved-artifact 
 - Update preferences are stored outside project files in `%APPDATA%\AVISTA\settings.json` with `skipped_update_version`, `last_update_check`, and `auto_check_updates`.
 - Update downloads run in a background worker, save the installer to the temp directory, verify SHA256 when metadata provides a hash, and log failures without launching mismatched installers.
 - Update logging writes check, download, install-launch, and error entries to `logs/update.log`.
+- AVISTA theme support is centralized in `app/gui/theme.py` with Light and Dark token sets, generated QSS, stylesheet transformation for existing page styles, app-level persistence, and immediate Help-menu switching.
+- Theme settings are stored outside project files in `%APPDATA%\AVISTA\settings.json` as `theme_name`, defaulting to `light`.
+- Dark theme uses professional dark blue/gray surfaces rather than pure black while preserving AVISTA primary `#0F6CBD` and accent `#00A6A6`.
+- Embedded GUI matplotlib previews for target distribution and training curves adapt to the selected theme. Exported reports and saved publication figures remain white-background outputs.
 - GPU diagnostics now report PyTorch/CUDA/cuDNN, CUDA device count, tensor validation, `nvidia-smi`, GPU/driver identity, and total/used/free GPU memory.
 - Environment checks are report-only: the page does not install or repair dependencies, and results or errors are saved to `logs/environment_info.json`.
 - The GPU card uses the Font Awesome fan icon and explicit OK, Warning, and Not available states; environment mode is no longer shown on the page.
@@ -381,6 +385,7 @@ GUI:
 - `app/gui/edge_case_report_page.py`
 - `app/gui/training_page.py`
 - `app/gui/report_page.py`
+- `app/gui/theme.py`
 - `app/gui/update_dialog.py`
 - `app/gui/workers.py`
 
@@ -410,6 +415,7 @@ Tests:
 - `tests/test_report_page.py`
 - `tests/test_update_checker.py`
 - `tests/test_update_gui.py`
+- `tests/test_theme.py`
 
 ## 6. Current Test Status
 
@@ -434,6 +440,14 @@ Latest focused update and packaging verification:
 ```
 
 This run covered semantic version comparison, update metadata parsing, HTTPS installer URL validation, update availability detection, skip-version behavior, manual check visibility for up-to-date installs, automatic startup popup policy, `QThread` worker use for update checks, SHA256 verification, GitHub metadata URL configuration, release workflow checks around `build_pyinstaller.ps1`, Inno Setup install-directory registry logic, centralized version metadata, and the About dialog with update preferences.
+
+Latest focused theme verification:
+
+```text
+11 passed
+```
+
+This run covered theme settings persistence, theme name normalization, generated QSS, safe stylesheet transformation that preserves white primary-button text, immediate Help-menu Light/Dark switching without restart, all sidebar pages from Project Setup through Report accepting both themes, update-dialog compatibility, MainWindow smoke rendering, and About dialog rendering with update preferences.
 
 Latest focused Environment verification:
 
@@ -603,6 +617,8 @@ This run covered centered half-width ROC/PR/training previews, the 900-pixel cap
 - Artifacts are saved with joblib where appropriate.
 - Update preferences are app-level settings, not project configuration, so skipped versions and automatic-check choices travel with the user account rather than a `.avista` project.
 - Update metadata and installer downloads must use HTTPS, and installers with a provided SHA256 must match before AVISTA offers to launch them.
+- Theme preferences are app-level settings, not project configuration, so Light/Dark mode follows the user account and is independent of `.avista` files.
+- New GUI styling should use `app/gui/theme.py` tokens or shared style helpers. Existing page-level QSS is transformed centrally during theme application to avoid maintaining separate page-specific color systems.
 
 ## 8. Current Known Issues
 

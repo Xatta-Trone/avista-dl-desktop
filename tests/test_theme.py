@@ -34,14 +34,18 @@ def test_theme_qss_and_transform_preserve_primary_button_text():
         QWidget#card { background: #FFFFFF; color: #1F2937; }
         QPushButton#primary { background: #0F6CBD; color: #FFFFFF; }
         QLabel#muted { color: #5B6573; }
+        QLabel#intentionalBadge { background: #FFF1F0; color: #DC2626; }
         """,
         dark,
     )
 
     assert dark.background in qss
+    assert "QLabel {" in qss
+    assert "background-color: transparent;" in qss
     assert "background: #1D293D" in transformed
     assert "color: #FFFFFF" in transformed
     assert "color: #B7C0CC" in transformed
+    assert f"background: {dark.error_bg}" in transformed
 
 
 def test_main_window_theme_menu_applies_without_restart(monkeypatch, tmp_path):
@@ -109,6 +113,46 @@ def test_all_sidebar_pages_accept_light_and_dark_themes(monkeypatch):
             assert window.nav_buttons[index].isChecked()
             assert label
         assert app.property("avistaTheme") == expected
+        assert "QLabel {" in app.styleSheet()
+        assert "background-color: transparent;" in app.styleSheet()
 
     window.close()
+    assert app is not None
+
+
+def test_about_and_update_dialog_labels_render_transparently_in_both_themes():
+    from PySide6.QtWidgets import QApplication
+
+    from app.core.update_checker import UpdateMetadata
+    from app.gui.about_dialog import AboutDialog
+    from app.gui.theme import apply_theme, apply_theme_to_widget
+    from app.gui.update_dialog import UpdateAvailableDialog, UpdateDownloadDialog
+
+    app = QApplication.instance() or QApplication([])
+    metadata = UpdateMetadata(
+        latest_version="1.0.1",
+        release_date="July 23, 2026",
+        release_notes=("Focused theme verification",),
+        installer_url="https://example.com/AVISTA_Setup.exe",
+        sha256="",
+        mandatory=False,
+    )
+    dialogs = (
+        AboutDialog(),
+        UpdateAvailableDialog(current_version="1.0.0", metadata=metadata),
+        UpdateDownloadDialog(),
+    )
+
+    for theme_name in ("light", "dark"):
+        tokens = apply_theme(app, theme_name)
+        assert "QLabel {" in app.styleSheet()
+        assert "background-color: transparent;" in app.styleSheet()
+        for dialog in dialogs:
+            apply_theme_to_widget(dialog, tokens)
+            dialog.show()
+            app.processEvents()
+            assert not dialog.grab().isNull()
+
+    for dialog in dialogs:
+        dialog.close()
     assert app is not None

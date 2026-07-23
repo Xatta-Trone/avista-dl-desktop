@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from app.__version__ import APP_DESCRIPTION
 from app.core.dataset_manager import (
     DUPLICATE_APPEND_TIMESTAMP,
     DUPLICATE_CANCEL,
@@ -117,9 +118,8 @@ class ProjectSetupPage(QWidget):
 
         title = QLabel("Project Setup")
         title.setObjectName("pageTitle")
-        subtitle = QLabel(
-            "Create a portable AVISTA workspace or open an existing project."
-        )
+        subtitle = QLabel(APP_DESCRIPTION)
+        self.subtitle_label = subtitle
         subtitle.setObjectName("pageSubtitle")
         layout.addWidget(title)
         layout.addWidget(subtitle)

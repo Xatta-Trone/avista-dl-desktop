@@ -4,6 +4,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from app.__version__ import APP_DESCRIPTION, RELEASE_DATE
 from app.core.project_config import ProjectConfig
 from app.core.report_generator import (
     PERFORMANCE_COLUMNS,
@@ -162,6 +163,10 @@ def test_report_generation_creates_markdown_pdf_and_expected_figures(tmp_path):
         assert (artifacts.output_dir / filename).exists()
     markdown = artifacts.markdown_path.read_text(encoding="utf-8")
     assert "# AVISTA Model Report" in markdown
+    assert APP_DESCRIPTION in markdown
+    assert RELEASE_DATE in markdown
+    assert artifacts.summary["description"] == APP_DESCRIPTION
+    assert artifacts.summary["release_date"] == RELEASE_DATE
     assert "## Reproducibility Metadata" in markdown
     assert "## Classification Reports" in markdown
     assert (

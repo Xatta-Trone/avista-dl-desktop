@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from app.__version__ import APP_DESCRIPTION, RELEASE_DATE
 from app.core.runtime_verification import collect_runtime_verification
 
 
@@ -32,6 +33,9 @@ def test_runtime_verification_reports_versions_packages_and_checkpoint():
     )
 
     assert info["app_version"]
+    assert info["app_name"] == "AVISTA"
+    assert info["app_description"] == APP_DESCRIPTION
+    assert info["app_release_date"] == RELEASE_DATE
     assert info["bundled_python_path"]
     assert info["torch_version"] == "test-torch"
     assert info["cuda_available"] is True
@@ -64,6 +68,9 @@ def test_pyinstaller_build_uses_clean_environment_and_required_includes():
     assert "Test-ValidIconFile" in script
     assert "create_logo_icon.py" in script
     assert "VSVersionInfo" in script
+    assert "APP_DESCRIPTION" in script
+    assert "RELEASE_DATE" in script
+    assert "'$ApplicationDescription'" in script
     icon_generator = (
         PROJECT_ROOT / "packaging" / "create_logo_icon.py"
     ).read_text(encoding="utf-8")
@@ -122,6 +129,22 @@ def test_installer_preserves_existing_install_directory():
     assert "RegQueryStringValue(HKCU, 'Software\\AVISTA', 'InstallDir'" in installer
     assert "RegQueryStringValue(HKLM, 'Software\\AVISTA', 'InstallDir'" in installer
     assert "ExpandConstant('{autopf}\\AVISTA')" in installer
+
+
+def test_installer_uses_centralized_product_description():
+    build_script = (
+        PROJECT_ROOT / "packaging" / "build_pyinstaller.ps1"
+    ).read_text(encoding="utf-8")
+    installer = (
+        PROJECT_ROOT / "packaging" / "avista_installer.iss"
+    ).read_text(encoding="utf-8")
+
+    assert "APP_DESCRIPTION" in build_script
+    assert "/DMyAppDescription=$AppDescription" in build_script
+    assert "/DMyAppReleaseDate=$AppReleaseDate" in build_script
+    assert "AppComments={#MyAppDescription}" in installer
+    assert "VersionInfoDescription={#MyAppDescription}" in installer
+    assert "VersionInfoProductTextVersion=" in installer
 
 
 def test_installer_release_documents_exist():

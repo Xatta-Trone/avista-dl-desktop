@@ -152,6 +152,36 @@ def test_check_optional_packages_uses_active_environment_python(monkeypatch, tmp
     assert result["missing"] == ["tabpfn"]
 
 
+def test_packaged_runtime_checks_optional_packages_without_relaunching_executable(
+    monkeypatch,
+    tmp_path,
+):
+    monkeypatch.setattr(
+        "app.core.dependency_manager.is_packaged_application",
+        lambda: True,
+    )
+    monkeypatch.setattr(
+        "app.core.dependency_manager.subprocess.run",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            AssertionError("The packaged AVISTA executable must not be relaunched.")
+        ),
+    )
+
+    result = check_optional_packages(
+        ["json", "avista_missing_test_package"],
+        project_dir=tmp_path,
+        environment_mode="packaged_runtime",
+        app_root=tmp_path,
+    )
+
+    assert result["packages"] == {
+        "json": True,
+        "avista_missing_test_package": False,
+    }
+    assert result["missing"] == ["avista_missing_test_package"]
+    assert result["error"] is None
+
+
 def test_install_optional_package_logs_pip_output(monkeypatch, tmp_path):
     python_path = tmp_path / ".venv" / "Scripts" / "python.exe"
     python_path.parent.mkdir(parents=True)
@@ -173,3 +203,32 @@ def test_install_optional_package_logs_pip_output(monkeypatch, tmp_path):
     log_text = (tmp_path / "install_log.txt").read_text(encoding="utf-8")
     assert "pip install xgboost" in log_text
     assert "installed" in log_text
+
+
+def test_packaged_runtime_does_not_launch_gui_executable_for_pip(
+    monkeypatch,
+    tmp_path,
+):
+    monkeypatch.setattr(
+        "app.core.dependency_manager.is_packaged_application",
+        lambda: True,
+    )
+    monkeypatch.setattr(
+        "app.core.dependency_manager.subprocess.run",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            AssertionError("The packaged AVISTA executable must not run pip.")
+        ),
+    )
+
+    result = install_optional_package(
+        "xgboost",
+        project_dir=tmp_path,
+        environment_mode="packaged_runtime",
+        app_root=tmp_path,
+    )
+
+    assert result["success"] is False
+    assert result["returncode"] is None
+    assert "cannot be modified with pip" in result["error"]
+    log_text = (tmp_path / "install_log.txt").read_text(encoding="utf-8")
+    assert "cannot be modified with pip" in log_text

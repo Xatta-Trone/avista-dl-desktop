@@ -1,14 +1,12 @@
 {
-  "latest_version": "1.0.2",
-  "release_date": "2026-07-03",
+  "latest_version": "1.0.0",
+  "release_date": "July 23, 2026",
   "release_notes": [
-    "Fixed Report page figure scaling",
-    "Improved GPU startup check",
-    "Added automatic update checker",
-    "Added train-only numerical feature scaling",
-    "Added selectable numerical scaling columns with histogram inspection"
+    "Updated AVISTA standalone-product branding and startup screen metadata",
+    "Removed unwanted background rectangles from ordinary text labels",
+    "Preserved light and dark theme readability across all workflow pages"
   ],
-  "installer_url": "https://github.com/Xatta-Trone/avista-dl-desktop/releases/download/v1.0.2/AVISTA_Setup.exe",
+  "installer_url": "https://github.com/Xatta-Trone/avista-dl-desktop/releases/download/v1.0.0/AVISTA_Setup.exe",
   "sha256": "",
   "mandatory": false
 }

@@ -216,6 +216,9 @@ def theme_qss(tokens: ThemeTokens) -> str:
             background: {tokens.background};
             color: {tokens.text_primary};
         }}
+        QLabel {{
+            background-color: transparent;
+        }}
         QMenuBar, QMenu {{
             background: {tokens.surface};
             color: {tokens.text_primary};

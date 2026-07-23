@@ -8,9 +8,13 @@ from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QDesktopServices, QIcon, QPixmap
 from PySide6.QtWidgets import QCheckBox, QDialog, QDialogButtonBox, QLabel, QVBoxLayout
 
-from app.__version__ import APP_NAME, __version__
+from app.__version__ import (
+    APP_DESCRIPTION,
+    APP_NAME,
+    RELEASE_DATE,
+    __version__,
+)
 from app.branding import (
-    APPLICATION_TAGLINE,
     DEVELOPERS,
     GITHUB_PROFILES,
 )
@@ -73,7 +77,11 @@ class AboutDialog(QDialog):
         self.version_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.version_label)
 
-        self.description_label = QLabel(APPLICATION_TAGLINE)
+        self.release_date_label = QLabel(f"Release date: {RELEASE_DATE}")
+        self.release_date_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(self.release_date_label)
+
+        self.description_label = QLabel(APP_DESCRIPTION)
         self.description_label.setObjectName("aboutDescription")
         self.description_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.description_label.setWordWrap(True)

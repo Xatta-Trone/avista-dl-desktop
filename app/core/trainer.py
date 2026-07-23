@@ -20,7 +20,12 @@ from sklearn.metrics import (
 from sklearn.model_selection import StratifiedKFold
 from sklearn.utils.class_weight import compute_class_weight
 
-from app.__version__ import APP_NAME, __version__
+from app.__version__ import (
+    APP_DESCRIPTION,
+    APP_NAME,
+    RELEASE_DATE,
+    __version__,
+)
 from app.branding import report_footer
 from app.core.evaluator import evaluate_predictions
 from app.core.imbalance import apply_imbalance_strategy
@@ -1817,7 +1822,9 @@ def _project_metadata(config: Any) -> dict[str, str]:
             getattr(config, "project_file_version", "1.0")
         ),
         "application": APP_NAME,
+        "application_description": APP_DESCRIPTION,
         "application_version": __version__,
+        "application_release_date": RELEASE_DATE,
     }
 
 

@@ -72,18 +72,19 @@ The named project should be loaded on the Project Setup page.
 
 ## Create And Test The Installer
 
-The normal build reads `APP_NAME` and `__version__` from
-`app\__version__.py`, then passes both values to Inno Setup. Use the build
-script rather than compiling the `.iss` file directly:
+The normal build reads `APP_NAME`, `APP_DESCRIPTION`, `__version__`, and
+`RELEASE_DATE` from `app\__version__.py`, then passes those values to Windows
+executable metadata and Inno Setup. Use the build script rather than compiling
+the `.iss` file directly:
 
 ```powershell
 .\packaging\build_pyinstaller.ps1 -Configuration Release
 ```
 
 The supported release entry point is `packaging\build_pyinstaller.ps1`. The
-script passes the centralized AVISTA name and version into
-`packaging\avista_installer.iss`, which defines shortcuts, file association,
-and update install-directory behavior.
+script passes the centralized AVISTA name, description, version, and release
+date into `packaging\avista_installer.iss`, which defines shortcuts, file
+association, and update install-directory behavior.
 
 Install on a clean Windows VM, verify the Program Files installation, desktop
 shortcut, Start Menu shortcut, startup environment JSON, CPU fallback, report
@@ -148,15 +149,15 @@ Manual build:
    `AVISTA_Setup.exe`.
 
 To publish a manually dispatched build to an existing tagged GitHub Release,
-enter the tag in the `release_tag` workflow input, for example `v1.0.2`.
+enter the tag in the `release_tag` workflow input, for example `vX.Y.Z`.
 The workflow creates the release if it does not exist and uploads
 `AVISTA_Setup.exe` with overwrite enabled for reruns.
 
 Tagged release:
 
 ```powershell
-git tag v1.0.2
-git push origin v1.0.2
+git tag vX.Y.Z
+git push origin vX.Y.Z
 ```
 
 Tags matching `v*` build the installer, create a GitHub Release, generate
@@ -190,9 +191,10 @@ https://raw.githubusercontent.com/Xatta-Trone/avista-dl-desktop/main/updates.jso
 
 Publish a new update by:
 
-1. Bumping `app\__version__.py`.
+1. Updating `__version__`, `APP_DESCRIPTION`, and `RELEASE_DATE` only in
+   `app\__version__.py`.
 2. Building `installer\AVISTA_Setup.exe`.
-3. Uploading the installer to a GitHub Release such as `v1.0.2`.
+3. Uploading the installer to a GitHub Release such as `vX.Y.Z`.
 4. Calculating the installer hash:
 
    ```powershell

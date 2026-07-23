@@ -2,7 +2,7 @@
 
 ## Chapter 7
 
-# AVISTA: An Automated Tabular Machine Learning and Analytics Platform
+# AVISTA: An extensible desktop platform for tabular machine learning and deep learning analytics.
 
 This chapter should present AVISTA as a dissertation software-system
 contribution: a research-to-software platform that operationalizes reproducible

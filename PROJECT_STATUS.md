@@ -4,7 +4,7 @@
 
 AVISTA
 
-Automated Vehicle Infrastructure-Sensitive Tabular Analysis
+An extensible desktop platform for tabular machine learning and deep learning analytics.
 
 ## 2. Project Goal
 
@@ -18,9 +18,19 @@ The project has a working modular backend and PySide6 desktop GUI. Core tabular 
 
 The GUI can create or load projects, inspect and repair GPU environments with user confirmation, import large datasets with a paginated preview, select modeling and target columns, save label-encoding choices for categorical modeling columns, configure global numerical scaling for user-checked numeric features with selectable histogram inspection, configure train/validation/test splits, apply train-class-only imbalance handling, select classification models and edit their saved parameters, restore matching saved split artifacts, run edge-case checks, and train sklearn-compatible models from confirmed saved artifacts through a `QThread` worker.
 
+Installed PyInstaller builds now inspect bundled optional packages in-process. Creating or loading a project no longer relaunches `AVISTA.exe` with Python-only `-c` arguments, freezes the original window, or opens a second window with a command-line project error. Attempts to pip-install into the immutable packaged runtime are rejected with an actionable logged message instead of launching the GUI executable as Python.
+
 The Data Split & Imbalance page uses AVISTA-style subsection cards, compact distribution and coverage tables, a primary confirm action, and auto-dismissing compact success notifications. Warnings remain separate from successful save and load notifications, and errors remain visually distinct.
 
 MambaAttention, FT-Transformer, AutoInt, and TabResNet have real saved-artifact training with live curves and PyTorch state-dict persistence. TabPFN 2.5 now has capped saved-artifact training, optional cross-validation, decoded evaluation exports, subprocess isolation, and safe serialization fallback. A comprehensive Report page now combines saved model outputs into Markdown, PDF, CSV, and comparison figures without retraining. A PyInstaller onedir and Inno Setup Windows packaging workflow is implemented. AVISTA now has GitHub-hosted update metadata, background update checks, manual Help-menu update checking, installer download/hash validation, skip-version preferences, app-level update settings, install-directory preservation for update installers, and centralized Light/Dark theme support. XAI and robustness analysis are not implemented yet.
+
+Focused startup-screen, standalone-product branding, release-metadata,
+packaging, and theme/UI verification passed on July 23, 2026: `31 passed`
+across the launch splash, About dialog, all nine workflow pages in both themes,
+update dialogs, project configuration, centralized description/version/release
+metadata, packaging and resources, report generation, and saved training
+metadata. Python compilation and PowerShell packaging-script syntax parsing
+also passed. Per request, the full suite was not run.
 
 Focused numerical-scaling verification passed on July 3, 2026: `19 passed` from `tests/test_preprocessing.py`, the relevant Column Configuration smoke slice in `tests/test_gui_smoke.py`, `tests/test_trainer_evaluator.py::test_train_saved_models_runs_cv_and_saves_requested_outputs`, and `tests/test_report_page.py::test_report_generation_creates_markdown_pdf_and_expected_figures`.
 
@@ -34,9 +44,15 @@ Focused checkbox-based numerical-scaling verification passed on July 3, 2026: `7
 - `ProjectConfig` persists JSON-formatted AVISTA `.avista` project files with portable relative paths, project-file versioning, application identity, and legacy import.
 - Project datasets are copied into each project's `data` folder and recorded in `.avista` with source, relative copy path, size, and timestamp metadata.
 - AVISTA branding is centralized across the main window, splash screen, About dialog, project setup, metadata, reports, documentation, and PyInstaller specification.
-- `app/__version__.py` is the canonical source for `APP_NAME` and `__version__`; About, reports, training metadata, edge-case metadata, runtime inventory, project metadata, and Windows packaging consume it.
+- `app/__version__.py` is the canonical source for `APP_NAME`,
+  `APP_DESCRIPTION`, `__version__`, and `RELEASE_DATE`; the launch splash,
+  About dialog, reports, training metadata, edge-case metadata, runtime
+  inventory, project metadata, and Windows packaging consume it.
+- The existing 720 x 360 launch splash displays AVISTA, its centralized
+  version, release date, and standalone product description without changing
+  its logo, loading behavior, or duration.
 - `.avista` files and `project_metadata.json` now store `application_version` separately from `project_file_version`, preserving the distinction between the AVISTA release and project schema versions.
-- The AVISTA name expands to "Automated Vehicle Infrastructure-Sensitive Tabular Analysis."
+- AVISTA is a standalone product name and is not expanded as an acronym. Its product description is "An extensible desktop platform for tabular machine learning and deep learning analytics."
 - Generated report metadata and publication plots include AVISTA version and generation timestamps.
 - The AVISTA visual refresh phase has started with a shared Font Awesome icon system powered by `qtawesome`.
 - Project Setup now uses equal-width Create and Open cards, a current-project status card, reusable icon-led feedback cards, AVISTA colors, and professional spacing and shadows.
@@ -62,6 +78,9 @@ Focused checkbox-based numerical-scaling verification passed on July 3, 2026: `7
 - AVISTA theme support is centralized in `app/gui/theme.py` with Light and Dark token sets, generated QSS, stylesheet transformation for existing page styles, app-level persistence, and immediate Help-menu switching.
 - Theme settings are stored outside project files in `%APPDATA%\AVISTA\settings.json` as `theme_name`, defaulting to `light`.
 - Dark theme uses professional dark blue/gray surfaces rather than pure black while preserving AVISTA primary `#0F6CBD` and accent `#00A6A6`.
+- Shared Light/Dark QSS makes ordinary `QLabel` widgets transparent while
+  preserving card surfaces and higher-specificity fills for badges, status
+  indicators, warnings, errors, and successes.
 - Embedded GUI matplotlib previews for target distribution and training curves adapt to the selected theme. Exported reports and saved publication figures remain white-background outputs.
 - GPU diagnostics now report PyTorch/CUDA/cuDNN, CUDA device count, tensor validation, `nvidia-smi`, GPU/driver identity, and total/used/free GPU memory.
 - Environment checks are report-only: the page does not install or repair dependencies, and results or errors are saved to `logs/environment_info.json`.
@@ -349,6 +368,7 @@ Focused checkbox-based numerical-scaling verification passed on July 3, 2026: `7
   - The Inno Setup output and release artifact use the stable filename `installer/AVISTA_Setup.exe`.
   - GitHub Actions packaging uses Python 3.12, NumPy 1.26.4, Captum 0.8.0, and a matched CUDA 12.6 trio: PyTorch 2.9.1, TorchVision 0.24.1, and TorchAudio 2.9.1. Python 3.12 and NumPy 1.26.4 avoid Captum's NumPy-below-2.0 resolver conflict. The build script fails immediately on native command errors and verifies PySide6/Torch/TabPFN imports before invoking PyInstaller.
   - The PyInstaller spec collects AVISTA assets, QtAwesome, Matplotlib, TabPFN package data, and dynamic ML imports for Torch, XGBoost, LightGBM, sklearn, imbalanced-learn, and Matplotlib.
+  - Optional-package checks in an installed packaged runtime use `importlib` in the current process instead of invoking `AVISTA.exe -c`; packaged pip requests fail safely because the frozen application is not a Python interpreter.
 - The app was launched successfully from the project `.venv`.
 
 ## 5. Implemented Files
@@ -439,6 +459,61 @@ Result:
 ```
 
 This includes backend tests and PySide6 GUI smoke tests for AVISTA branding, Font Awesome icon loading, redesigned Project Setup cards, hidden Project Setup environment controls, sidebar icons, About content, `.avista` project creation/loading, legacy `.xtab` migration, command-line project loading, data preview, split validation, centralized string and mixed-type target encoding, XGBoost encoded-target training, decoded reports and probability columns, target-change invalidation, saved-artifact edge checks, typed Model Selection parameters including the single TabPFN estimator control, active-environment optional dependency checks and installation status, saved-split Training readiness, cross-validation, cancellation, evaluation reports, model-specific outputs, and publication-quality PNG/PDF plotting exports.
+
+Latest focused startup-screen, branding, release-metadata, packaging, and
+theme/UI verification:
+
+```text
+31 passed
+```
+
+Command:
+
+```powershell
+.venv\Scripts\python.exe -m pytest tests/test_main.py tests/test_version_metadata.py tests/test_project_config.py tests/test_packaging.py tests/test_gui_smoke.py::test_about_dialog_uses_logo_branding_and_clickable_profiles tests/test_report_page.py::test_report_generation_creates_markdown_pdf_and_expected_figures tests/test_trainer_evaluator.py::test_train_saved_models_runs_cv_and_saves_requested_outputs tests/test_theme.py -q
+```
+
+This run covered the centralized `APP_NAME`, `APP_DESCRIPTION`, `__version__`,
+and `RELEASE_DATE`; the 720 x 360 launch splash; About and Project Setup
+branding; developer/GitHub attribution; project and training metadata; report
+headers and metadata; runtime inventory; PyInstaller/Inno Setup propagation;
+packaged resources; all nine workflow pages under Light and Dark themes; and
+transparent ordinary labels in About and update dialogs. The former acronym
+expansion remains absent. PowerShell packaging-script syntax parsing also
+passed. Per request, the full suite was not run.
+
+Branding/release files changed for this task:
+
+- `app/__version__.py`, `app/branding.py`, and `main.py`
+- `app/gui/about_dialog.py`, `app/gui/project_setup_page.py`, and
+  `app/gui/edge_case_report_page.py`
+- `app/core/project_config.py`, `app/core/report_generator.py`,
+  `app/core/runtime_verification.py`, and `app/core/trainer.py`
+- `packaging/build_pyinstaller.ps1`, `packaging/avista_installer.iss`,
+  `packaging/README_PACKAGING.md`, `.github/workflows/windows-release.yml`,
+  and `updates.json`
+- `README.md`, `DEVELOPER_GUIDE.md`, `AGENTS.md`, `CHANGELOG.md`,
+  `reference/chapter.md`, and `PROJECT_STATUS.md`
+
+Theme/UI files changed for this task:
+
+- `app/gui/theme.py`
+- `tests/test_theme.py`
+
+Focused branding, release-metadata, and packaging tests changed for this task:
+
+- `tests/test_main.py`, `tests/test_gui_smoke.py`,
+  `tests/test_project_config.py`, `tests/test_report_page.py`,
+  `tests/test_trainer_evaluator.py`, `tests/test_version_metadata.py`, and
+  `tests/test_packaging.py`
+
+Latest focused packaged-project restart regression verification:
+
+```text
+26 passed
+```
+
+This verification covered packaged in-process dependency inspection, safe rejection of pip operations against the frozen runtime, project loading without relaunching `AVISTA.exe`, command-line project handling, and packaging declarations. Two broader suite attempts exceeded the 10-minute local command limit without producing a failure report; their remaining pytest processes were stopped.
 
 Latest focused update and packaging verification:
 
@@ -605,7 +680,11 @@ This run covered centered half-width ROC/PR/training previews, the 900-pixel cap
 - The codebase is modular: GUI, core pipeline logic, model wrappers, and utilities are separated.
 - The app is dataset-generic. No SAE/crash-specific columns are hard-coded.
 - `ProjectConfig` stores all user-selected settings in the current `.avista` project file; developers use `ProjectConfig.save()` and `ProjectConfig.load()` rather than constructing config paths.
-- Application identity and release metadata must import `APP_NAME` and `__version__` from `app/__version__.py`; `PROJECT_FILE_VERSION` remains independent schema metadata.
+- Application identity and release metadata must import `APP_NAME`,
+  `APP_DESCRIPTION`, `__version__`, and `RELEASE_DATE` from
+  `app/__version__.py`; `PROJECT_FILE_VERSION` remains independent schema
+  metadata.
+- AVISTA is a standalone product name rather than an acronym; no automated-vehicle-specific expansion may be introduced.
 - Project-local `.venv` support remains available, but it is optional.
 - Environment modes are:
   - `packaged_runtime`

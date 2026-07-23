@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: "Optional existing tag to publish the installer to, for example v1.0.2"
+        description: "Optional existing tag to publish the installer to, for example vX.Y.Z"
         required: false
         type: string
 

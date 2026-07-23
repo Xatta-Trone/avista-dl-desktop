@@ -7,7 +7,12 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from app.__version__ import __version__
+from app.__version__ import (
+    APP_DESCRIPTION,
+    APP_NAME,
+    RELEASE_DATE,
+    __version__,
+)
 from app.utils.resources import get_app_resource_path, is_packaged_application
 
 
@@ -24,7 +29,10 @@ def collect_runtime_verification(
     checkpoint = get_app_resource_path(TABPFN_CHECKPOINT)
     logo = get_app_resource_path(APP_LOGO)
     return {
+        "app_name": APP_NAME,
+        "app_description": APP_DESCRIPTION,
         "app_version": __version__,
+        "app_release_date": RELEASE_DATE,
         "bundled_python_path": sys.executable,
         "packaged_runtime": is_packaged_application(),
         "torch_version": gpu.get("torch_version"),

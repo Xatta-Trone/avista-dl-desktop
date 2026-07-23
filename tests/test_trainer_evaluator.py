@@ -232,12 +232,21 @@ def test_train_saved_models_runs_cv_and_saves_requested_outputs(tmp_path):
     assert training_metadata["project_name"] == "trainer-demo"
     assert training_metadata["project_file"].endswith("trainer-demo.avista")
     assert training_metadata["project_file_version"] == "1.0"
-    from app.__version__ import APP_NAME, __version__
+    from app.__version__ import (
+        APP_DESCRIPTION,
+        APP_NAME,
+        RELEASE_DATE,
+        __version__,
+    )
 
     assert training_metadata["application"] == APP_NAME
+    assert training_metadata["application_description"] == APP_DESCRIPTION
     assert training_metadata["application_version"] == __version__
+    assert training_metadata["application_release_date"] == RELEASE_DATE
     assert training_metadata["report_footer"]["generated_by"] == APP_NAME
+    assert training_metadata["report_footer"]["description"] == APP_DESCRIPTION
     assert training_metadata["report_footer"]["version"] == __version__
+    assert training_metadata["report_footer"]["release_date"] == RELEASE_DATE
     assert training_metadata["report_footer"]["generated_on"]
     assert (output_dir / "coefficients.csv").exists()
     assert (output_dir / "odds_ratios.csv").exists()

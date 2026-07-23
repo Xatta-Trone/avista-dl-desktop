@@ -1,5 +1,13 @@
 # AVISTA Developer Guide
 
+## Product Identity
+
+AVISTA is a standalone product name, not an acronym. The canonical identity
+and release constants are `APP_NAME`, `APP_DESCRIPTION`, `__version__`, and
+`RELEASE_DATE` in `app/__version__.py`. Reuse them in the splash screen, UI,
+reports, metadata, and packaging rather than duplicating their values. Routine
+AVISTA version and release-date changes require editing only that module.
+
 ## Project Files
 
 AVISTA uses JSON-formatted `.avista` project files. New projects only use `.avista`.
@@ -14,6 +22,9 @@ Do not construct or directly read `project_config.json` paths. `ProjectConfig.lo
 `config.project_file` is the canonical absolute path. Generated metadata should use `config.project_metadata()` so it includes:
 
 - `application`
+- `application_description`
+- `application_version`
+- `application_release_date`
 - `project_name`
 - `project_file`
 - `project_file_version`
@@ -38,6 +49,10 @@ The main window schedules startup diagnostics after it is visible. Automatic
 update checking follows the same pattern: it runs once in a background
 `QThread`, does not block project loading, and stays silent when the installed
 version is current.
+
+The launch splash keeps its existing dimensions and timing while drawing
+`APP_NAME`, `APP_DESCRIPTION`, `__version__`, and `RELEASE_DATE` from
+`app/__version__.py`.
 
 ## Updates
 
@@ -73,6 +88,17 @@ check preferences in `.avista` project files.
 ## Windows Packaging
 
 Build with `AVISTA.spec` so the executable and distribution are named `AVISTA`.
+Windows file-description and installer metadata must receive the centralized
+`APP_DESCRIPTION`, `__version__`, and `RELEASE_DATE` values from
+`app/__version__.py`.
+
+## Theme Styling
+
+Application-wide QSS belongs in `app/gui/theme.py`. Ordinary `QLabel` widgets
+use transparent backgrounds so they inherit the containing page or card
+surface. Intentional badges, status indicators, warnings, errors, successes,
+and other filled labels must use a more specific object-name or style-class
+selector.
 
 The installer should register `.avista` with `AVISTA.exe`:
 

@@ -9,9 +9,11 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QFont, QPainter, QPixmap
 from PySide6.QtWidgets import QApplication, QMessageBox, QSplashScreen
 
-from app.__version__ import APP_NAME, __version__
-from app.branding import (
-    APPLICATION_TAGLINE,
+from app.__version__ import (
+    APP_DESCRIPTION,
+    APP_NAME,
+    RELEASE_DATE,
+    __version__,
 )
 from app.core.project_config import ProjectConfig
 from app.gui.about_dialog import application_icon
@@ -48,7 +50,7 @@ def create_splash_screen() -> QSplashScreen:
     painter.drawText(
         pixmap.rect().adjusted(48, 155, -48, -70),
         Qt.AlignLeft | Qt.TextWordWrap,
-        APPLICATION_TAGLINE,
+        APP_DESCRIPTION,
     )
     painter.setFont(QFont("Segoe UI", 10))
     painter.drawText(
@@ -56,8 +58,23 @@ def create_splash_screen() -> QSplashScreen:
         Qt.AlignLeft | Qt.AlignBottom,
         f"Version {__version__}",
     )
+    painter.drawText(
+        pixmap.rect().adjusted(48, 0, -48, -28),
+        Qt.AlignRight | Qt.AlignBottom,
+        f"Release date: {RELEASE_DATE}",
+    )
     painter.end()
-    return QSplashScreen(pixmap)
+    splash = QSplashScreen(pixmap)
+    splash.setProperty(
+        "avistaBrandingText",
+        (
+            APP_NAME,
+            f"Version {__version__}",
+            f"Release date: {RELEASE_DATE}",
+            APP_DESCRIPTION,
+        ),
+    )
+    return splash
 
 
 def main() -> None:

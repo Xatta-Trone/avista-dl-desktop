@@ -7,7 +7,12 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
-from app.__version__ import APP_NAME, __version__
+from app.__version__ import (
+    APP_DESCRIPTION,
+    APP_NAME,
+    RELEASE_DATE,
+    __version__,
+)
 
 
 PROJECT_FILE_EXTENSION = ".avista"
@@ -27,7 +32,9 @@ class ProjectConfig:
     project_file_path: str = ""
     project_file_version: str = PROJECT_FILE_VERSION
     application: str = APP_NAME
+    application_description: str = APP_DESCRIPTION
     application_version: str = __version__
+    application_release_date: str = RELEASE_DATE
     dataset: dict[str, Any] = field(default_factory=dict)
     target_column: str | None = None
     feature_columns: list[str] = field(default_factory=list)
@@ -77,7 +84,9 @@ class ProjectConfig:
             "project_name": self.project_name,
             "project_file_version": self.project_file_version,
             "application": self.application,
+            "application_description": self.application_description,
             "application_version": self.application_version,
+            "application_release_date": self.application_release_date,
         }
 
     def save(self, path: str | Path | None = None) -> Path:
@@ -93,7 +102,9 @@ class ProjectConfig:
         self.project_file_path = str(output_path)
         self.project_file_version = PROJECT_FILE_VERSION
         self.application = APP_NAME
+        self.application_description = APP_DESCRIPTION
         self.application_version = __version__
+        self.application_release_date = RELEASE_DATE
         output_path.write_text(
             json.dumps(self._serialized_data(output_path.parent), indent=2),
             encoding="utf-8",
@@ -179,7 +190,9 @@ class ProjectConfig:
             data.get("project_file_version", PROJECT_FILE_VERSION)
         )
         data["application"] = APP_NAME
+        data["application_description"] = APP_DESCRIPTION
         data["application_version"] = __version__
+        data["application_release_date"] = RELEASE_DATE
         dataset = dict(data.get("dataset", {}) or {})
         relative_dataset = str(dataset.get("project_relative_path", "")).strip()
         data["dataset"] = dataset
@@ -194,7 +207,9 @@ class ProjectConfig:
         if legacy:
             data["project_file_version"] = PROJECT_FILE_VERSION
             data["application"] = APP_NAME
+            data["application_description"] = APP_DESCRIPTION
             data["application_version"] = __version__
+            data["application_release_date"] = RELEASE_DATE
         return cls(**data)
 
 

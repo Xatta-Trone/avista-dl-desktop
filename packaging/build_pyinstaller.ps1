@@ -27,11 +27,29 @@ $VersionInfoFile = Join-Path $DistDir "avista_version_info.txt"
 $VersionText = Get-Content -LiteralPath $VersionSource -Raw
 $VersionMatch = [regex]::Match($VersionText, '(?m)^__version__\s*=\s*"([^"]+)"')
 $NameMatch = [regex]::Match($VersionText, '(?m)^APP_NAME\s*=\s*"([^"]+)"')
-if (-not $VersionMatch.Success -or -not $NameMatch.Success) {
-    throw "Could not read APP_NAME and __version__ from $VersionSource."
+$DescriptionMatch = [regex]::Match(
+    $VersionText,
+    '(?ms)^APP_DESCRIPTION\s*=\s*\(\s*"([^"]*)"\s*"([^"]*)"\s*\)'
+)
+$ReleaseDateMatch = [regex]::Match(
+    $VersionText,
+    '(?m)^RELEASE_DATE\s*=\s*"([^"]+)"'
+)
+if (
+    -not $VersionMatch.Success -or
+    -not $NameMatch.Success -or
+    -not $DescriptionMatch.Success -or
+    -not $ReleaseDateMatch.Success
+) {
+    throw "Could not read APP_NAME, APP_DESCRIPTION, RELEASE_DATE, and __version__ from $VersionSource."
 }
 $AppVersion = $VersionMatch.Groups[1].Value
 $AppName = $NameMatch.Groups[1].Value
+$AppDescription = (
+    $DescriptionMatch.Groups[1].Value +
+    $DescriptionMatch.Groups[2].Value
+)
+$AppReleaseDate = $ReleaseDateMatch.Groups[1].Value
 $VersionParts = @($AppVersion.Split("."))
 while ($VersionParts.Count -lt 4) {
     $VersionParts += "0"
@@ -70,7 +88,9 @@ function Write-VersionInfoFile {
         [string]$Path,
         [string]$Version,
         [string]$VersionTuple,
-        [string]$ApplicationName
+        [string]$ApplicationName,
+        [string]$ApplicationDescription,
+        [string]$ApplicationReleaseDate
     )
 
     $versionInfo = @"
@@ -92,12 +112,13 @@ VSVersionInfo(
         '040904B0',
         [
           StringStruct('CompanyName', '$ApplicationName Developers'),
-          StringStruct('FileDescription', 'Automated Vehicle Infrastructure-Sensitive Tabular Analysis'),
+          StringStruct('FileDescription', '$ApplicationDescription'),
           StringStruct('FileVersion', '$Version'),
           StringStruct('InternalName', '$ApplicationName'),
           StringStruct('OriginalFilename', '$ApplicationName.exe'),
           StringStruct('ProductName', '$ApplicationName'),
           StringStruct('ProductVersion', '$Version'),
+          StringStruct('ReleaseDate', '$ApplicationReleaseDate'),
           StringStruct('LegalCopyright', 'Copyright 2026 AVISTA Developers')
         ]
       )
@@ -176,7 +197,13 @@ if (-not (Test-ValidIconFile $LogoIco)) {
     New-LogoIcon
 }
 
-Write-VersionInfoFile $VersionInfoFile $AppVersion $WindowsVersionTuple $AppName
+Write-VersionInfoFile `
+    $VersionInfoFile `
+    $AppVersion `
+    $WindowsVersionTuple `
+    $AppName `
+    $AppDescription `
+    $AppReleaseDate
 
 $env:AVISTA_PYINSTALLER_CONSOLE = if ($Configuration -eq "Debug") { "1" } else { "0" }
 $env:AVISTA_VERSION_FILE = $VersionInfoFile
@@ -237,7 +264,11 @@ if (-not $SkipInstaller) {
         throw "Inno Setup 6 was not found. Install it or rerun with -SkipInstaller."
     }
 
-    & $Iscc "/DMyAppName=$AppName" "/DMyAppVersion=$AppVersion" `
+    & $Iscc `
+        "/DMyAppName=$AppName" `
+        "/DMyAppVersion=$AppVersion" `
+        "/DMyAppDescription=$AppDescription" `
+        "/DMyAppReleaseDate=$AppReleaseDate" `
         (Join-Path $PSScriptRoot "avista_installer.iss")
     if ($LASTEXITCODE -ne 0) {
         throw "Inno Setup failed with exit code $LASTEXITCODE."

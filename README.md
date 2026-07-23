@@ -1,8 +1,12 @@
 # AVISTA
 
-**Automated Vehicle Infrastructure-Sensitive Tabular Analysis**
+**An extensible desktop platform for tabular machine learning and deep learning analytics.**
 
 AVISTA is a professional Python desktop application for generic tabular machine learning workflows. It supports portable project setup, environment inspection, tabular data import, column configuration, edge-case validation, splitting, imbalance handling, model selection, training, evaluation, and saved analytics.
+
+The launch screen and About dialog identify the current release as **Version
+1.0.0**, released **July 23, 2026**. Product name, description, version, and
+release date come from `app/__version__.py`.
 
 ## Project Files
 
@@ -44,7 +48,15 @@ Updates**. Update preferences are stored outside project files in
 `%APPDATA%\AVISTA\settings.json`, and update activity is logged to
 `logs\update.log`.
 
-Latest verified test status: `207 passed`.
+Installed builds inspect their bundled optional packages without relaunching
+`AVISTA.exe` as a Python interpreter, so creating or loading a project does not
+freeze the original window or open a second command-line error window.
+
+Latest completed full-suite baseline: `207 passed`. Latest focused packaged-project
+restart regression verification: `26 passed`.
+
+Latest focused startup, branding, release-metadata, packaging, and theme/UI
+verification: `31 passed`.
 
 See [PROJECT_STATUS.md](PROJECT_STATUS.md) for the authoritative implementation status and roadmap.
 

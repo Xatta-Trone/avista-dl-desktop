@@ -2,7 +2,12 @@ import json
 import shutil
 from pathlib import Path
 
-from app.__version__ import APP_NAME, __version__
+from app.__version__ import (
+    APP_DESCRIPTION,
+    APP_NAME,
+    RELEASE_DATE,
+    __version__,
+)
 from app.core.project_config import ProjectConfig
 
 
@@ -43,7 +48,9 @@ def test_project_config_save_load_avista_round_trip(tmp_path):
 
     assert saved_path == project_dir / "demo.avista"
     assert stored["application"] == APP_NAME
+    assert stored["application_description"] == APP_DESCRIPTION
     assert stored["application_version"] == __version__
+    assert stored["application_release_date"] == RELEASE_DATE
     assert stored["project_file_version"] == "1.0"
     assert stored["project_dir"] == "."
     assert stored["project_file_path"] == "demo.avista"
@@ -90,7 +97,9 @@ def test_project_config_imports_legacy_json_and_converts_to_avista(tmp_path):
     assert config.project_file == converted.resolve()
     assert config.project_dir == str(tmp_path.resolve())
     assert config.application == APP_NAME
+    assert config.application_description == APP_DESCRIPTION
     assert config.application_version == __version__
+    assert config.application_release_date == RELEASE_DATE
     assert config.project_file_version == "1.0"
 
 

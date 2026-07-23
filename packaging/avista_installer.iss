@@ -4,6 +4,12 @@
 #ifndef MyAppVersion
   #error MyAppVersion must be supplied by build_pyinstaller.ps1 from app/__version__.py
 #endif
+#ifndef MyAppDescription
+  #error MyAppDescription must be supplied by build_pyinstaller.ps1 from app/__version__.py
+#endif
+#ifndef MyAppReleaseDate
+  #error MyAppReleaseDate must be supplied by build_pyinstaller.ps1 from app/__version__.py
+#endif
 #define MyAppPublisher "AVISTA Developers"
 #define MyAppExeName "AVISTA.exe"
 
@@ -11,6 +17,7 @@
 AppId={{B151A258-8635-4D51-8AD7-E83D99D7D272}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
+AppComments={#MyAppDescription} Release date: {#MyAppReleaseDate}
 AppPublisher={#MyAppPublisher}
 DefaultDirName={code:GetDefaultDirName}
 DefaultGroupName=AVISTA
@@ -26,6 +33,8 @@ LicenseFile=..\LICENSE.txt
 Compression=lzma2/ultra64
 SolidCompression=yes
 WizardStyle=modern
+VersionInfoDescription={#MyAppDescription}
+VersionInfoProductTextVersion={#MyAppVersion} ({#MyAppReleaseDate})
 ChangesAssociations=yes
 CloseApplications=yes
 RestartApplications=no

@@ -1,7 +1,13 @@
 import pytest
 
+from app.__version__ import (
+    APP_DESCRIPTION,
+    APP_NAME,
+    RELEASE_DATE,
+    __version__,
+)
 from app.core.project_config import ProjectConfig
-from main import load_startup_project
+from main import create_splash_screen, load_startup_project
 
 
 def test_command_line_avista_path_loads_project(tmp_path):
@@ -47,3 +53,23 @@ def test_command_line_project_rejects_non_project_path(tmp_path):
 
     with pytest.raises(ValueError, match=".avista"):
         load_startup_project([str(legacy_path)])
+
+
+def test_splash_screen_uses_central_release_branding():
+    pytest.importorskip("PySide6")
+    from PySide6.QtWidgets import QApplication
+
+    app = QApplication.instance() or QApplication([])
+
+    splash = create_splash_screen()
+
+    assert splash.pixmap().width() == 720
+    assert splash.pixmap().height() == 360
+    assert tuple(splash.property("avistaBrandingText")) == (
+        APP_NAME,
+        f"Version {__version__}",
+        f"Release date: {RELEASE_DATE}",
+        APP_DESCRIPTION,
+    )
+    splash.close()
+    assert app is not None

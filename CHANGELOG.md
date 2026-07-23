@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- Reframed AVISTA as the standalone product name and centralized its product
+  description across the UI, reports, metadata, documentation, and Windows
+  packaging.
+- Centralized AVISTA 1.0.0 release-date metadata and added it to the existing
+  launch splash, About dialog, reports, project/training metadata, runtime
+  inventory, and Windows packaging.
+- Made ordinary text labels transparent through the shared Light/Dark QSS
+  while preserving cards, controls, badges, and status backgrounds.
+
 ## 1.0.0
 
 - Added the modular AVISTA desktop workflow for project setup, environment

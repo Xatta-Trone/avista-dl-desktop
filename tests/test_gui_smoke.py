@@ -73,7 +73,12 @@ def test_about_dialog_uses_logo_branding_and_clickable_profiles(monkeypatch):
     from PySide6.QtGui import QDesktopServices
     from PySide6.QtWidgets import QApplication
 
-    from app.__version__ import APP_NAME, __version__
+    from app.__version__ import (
+        APP_DESCRIPTION,
+        APP_NAME,
+        RELEASE_DATE,
+        __version__,
+    )
     from app.gui.main_window import MainWindow
 
     app = QApplication.instance() or QApplication([])
@@ -95,14 +100,15 @@ def test_about_dialog_uses_logo_branding_and_clickable_profiles(monkeypatch):
     assert dialog.isVisible()
     assert dialog.title_label.text() == APP_NAME
     assert dialog.version_label.text() == f"Version {__version__}"
-    assert dialog.description_label.text() == (
-        "Automated Vehicle Infrastructure-Sensitive Tabular Analysis"
-    )
+    assert dialog.release_date_label.text() == f"Release date: {RELEASE_DATE}"
+    assert dialog.description_label.text() == APP_DESCRIPTION
+    assert window.project_setup_page.subtitle_label.text() == APP_DESCRIPTION
     assert dialog.logo_label.pixmap() is not None
     assert not dialog.logo_label.pixmap().isNull()
     assert not dialog.windowIcon().isNull()
-    assert "Md Monzurul Islam (Xatta Trone)" in dialog.developers_label.text()
+    assert "Md Monzurul Islam (AKA Xatta Trone)" in dialog.developers_label.text()
     assert "Shriyank Somvanshi" in dialog.developers_label.text()
+    assert "Monzurul Islam:" in dialog.github_label.text()
     assert 'href="https://github.com/xatta-trone"' in dialog.github_label.text()
     assert 'href="https://github.com/shriyanksomvanshi"' in dialog.github_label.text()
     assert dialog.github_label.openExternalLinks() is False
@@ -1524,6 +1530,44 @@ def test_model_selection_shows_missing_optional_dependencies(monkeypatch, tmp_pa
     assert page.dependency_install_buttons["tabpfn"].isHidden()
     assert not page.model_checkboxes["mamba_attention"].isEnabled()
     assert page.dependency_install_buttons["mamba_attention"].text() == "Install torch"
+    window.close()
+    assert app is not None
+
+
+def test_packaged_project_load_does_not_relaunch_avista_for_dependency_check(
+    monkeypatch,
+    tmp_path,
+):
+    from PySide6.QtWidgets import QApplication
+
+    from app.core.project_config import ProjectConfig
+    from app.gui.main_window import MainWindow
+
+    monkeypatch.setattr(
+        "app.core.dependency_manager.is_packaged_application",
+        lambda: True,
+    )
+    monkeypatch.setattr(
+        "app.core.dependency_manager.subprocess.run",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            AssertionError("Project loading must not relaunch AVISTA.exe.")
+        ),
+    )
+    app = QApplication.instance() or QApplication([])
+    window = MainWindow()
+    config = ProjectConfig(
+        project_name="packaged-load",
+        project_dir=str(tmp_path),
+        input_file="",
+        output_dir=str(tmp_path / "outputs"),
+        environment_mode="packaged_runtime",
+    )
+    config.save()
+
+    window.set_config(config)
+
+    assert window.config is not None
+    assert window.config.project_name == "packaged-load"
     window.close()
     assert app is not None
 

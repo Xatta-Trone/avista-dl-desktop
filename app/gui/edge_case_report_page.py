@@ -31,7 +31,12 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from app.__version__ import APP_NAME, __version__
+from app.__version__ import (
+    APP_DESCRIPTION,
+    APP_NAME,
+    RELEASE_DATE,
+    __version__,
+)
 from app.core.error_handler import ERROR, FATAL, WARNING, EdgeCaseReport, Issue
 from app.core.project_config import ProjectConfig
 from app.gui.icon_system import BACKGROUND, BORDER, PRIMARY, TEXT, icon
@@ -811,6 +816,7 @@ class EdgeCaseReportPage(QWidget):
         return "\n".join(
             (
                 f"{APP_NAME} Edge-Case Report",
+                APP_DESCRIPTION,
                 f"Project: {report.context.get('project_name', 'Unknown')}",
                 f"Target: {report.context.get('target_column', 'Not confirmed')}",
                 f"Training ready: {'Yes' if report.can_continue else 'No'}",
@@ -839,12 +845,14 @@ class EdgeCaseReportPage(QWidget):
         )
         return (
             f"<h1>{APP_NAME} Edge-Case Report</h1>"
+            f"<p>{APP_DESCRIPTION}</p>"
             f"<p>{self._html(self._summary_text()).replace(chr(10), '<br>')}</p>"
             "<table border='1' cellspacing='0' cellpadding='6' width='100%'>"
             "<tr><th>Level</th><th>Issue</th><th>Description</th>"
             "<th>Affected Column</th><th>Recommendation</th></tr>"
             f"{issue_rows}</table>"
             f"<p>Version {__version__}</p>"
+            f"<p>Release date: {RELEASE_DATE}</p>"
         )
 
     @staticmethod

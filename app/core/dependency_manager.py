@@ -11,7 +11,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from app.core.environment_manager import resolve_environment_path
+from app.core.environment_manager import PACKAGED_RUNTIME, resolve_environment_path
+from app.utils.resources import is_packaged_application
 
 
 _PACKAGE_NAME_PATTERN = re.compile(r"^[A-Za-z0-9_.-]+$")
@@ -52,6 +53,16 @@ def check_optional_packages(
     packages = list(dict.fromkeys(package_names))
     environment = resolve_environment_path(project_dir, app_root, environment_mode)
     python_path = Path(environment["python"])
+    if (
+        environment["environment_mode"] == PACKAGED_RUNTIME
+        and is_packaged_application()
+    ):
+        result = validate_imports(packages)
+        return {
+            **result,
+            "python": str(python_path),
+            "error": None,
+        }
     if not python_path.exists():
         return {
             "success": False,
@@ -112,6 +123,31 @@ def install_optional_package(
     log_path = project_path / "install_log.txt"
     started_at = datetime.now(timezone.utc).isoformat()
     command = [str(python_path), "-m", "pip", "install", package_name]
+
+    if (
+        environment["environment_mode"] == PACKAGED_RUNTIME
+        and is_packaged_application()
+    ):
+        error = (
+            "The installed AVISTA runtime cannot be modified with pip. "
+            "Reinstall or update AVISTA to restore bundled packages."
+        )
+        _append_package_install_log(
+            log_path,
+            started_at,
+            command,
+            None,
+            "",
+            error,
+        )
+        return {
+            "success": False,
+            "package": package_name,
+            "python": str(python_path),
+            "log_path": str(log_path),
+            "returncode": None,
+            "error": error,
+        }
 
     if not python_path.exists():
         error = f"Python executable not found: {python_path}"

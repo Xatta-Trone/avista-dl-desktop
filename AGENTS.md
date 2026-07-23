@@ -18,10 +18,11 @@ test status, known issues, or the roadmap.
 
 ## Project Overview
 
-AVISTA is a modular Python desktop application for generic tabular machine
-learning. It uses PySide6 and supports project setup, environment and GPU
-inspection, data import, column configuration, data splitting, imbalance
-handling, edge-case validation, and basic sklearn-compatible model training.
+AVISTA is the standalone product name for an extensible desktop platform for
+tabular machine learning and deep learning analytics. AVISTA is not an acronym
+and must not be expanded. The application uses PySide6 and supports project
+setup, environment and GPU inspection, data import, column configuration, data
+splitting, imbalance handling, edge-case validation, and model training.
 
 The application must work with arbitrary tabular datasets. The script under
 `reference/` is a reference pipeline only. Do not copy its domain-specific
@@ -49,6 +50,14 @@ operations must use `QThread` workers.
 At the time this file was written:
 
 - The modular backend and PySide6 GUI are operational.
+- Product identity and release metadata are centralized in
+  `app/__version__.py`: `APP_NAME` remains `AVISTA`, `APP_DESCRIPTION`
+  supplies the standalone product description, `__version__` is the
+  release-version source, and `RELEASE_DATE` is the display release date.
+- The latest focused startup-screen, branding, About-dialog, metadata, report,
+  project-file, runtime-resource, packaging, and theme/UI verification is
+  `31 passed`; PowerShell packaging-script syntax parsing also passed on July
+  23, 2026.
 - Project create/load, environment inspection, GPU validation and confirmed
   repair, paginated data import, column configuration, data split and
   imbalance configuration, edge-case reporting, and a basic Training page are
@@ -87,6 +96,8 @@ At the time this file was written:
 - AVISTA has centralized Light/Dark theme support with tokens and generated
   QSS. The selected theme is stored in `%APPDATA%/AVISTA/settings.json`, is
   switchable from Help -> Theme, and applies immediately without restarting.
+- Ordinary `QLabel` widgets have transparent backgrounds in both themes;
+  intentional label fills require a more specific badge or status selector.
 - Embedded GUI preview figures such as target distribution and training
   curves adapt to the selected theme; exported report figures remain
   publication-oriented.
@@ -136,6 +147,11 @@ Always verify this summary against `PROJECT_STATUS.md`, which may be newer.
 12. Relaunch the application after completing application changes.
 13. Keep `PROJECT_STATUS.md` and the README development-status summary
     accurate when milestones or test counts change.
+14. Treat AVISTA as a standalone product name, never an acronym expansion.
+    Reuse `APP_DESCRIPTION` for product-description text and do not introduce
+    automated-vehicle-specific branding.
+15. Import `APP_NAME`, `APP_DESCRIPTION`, `__version__`, and `RELEASE_DATE`
+    from `app/__version__.py`; do not duplicate release values in consumers.
 
 ## Coding Conventions
 

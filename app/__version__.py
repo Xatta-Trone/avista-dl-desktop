@@ -1,6 +1,6 @@
 """Canonical AVISTA application identity and release version."""
 
-__version__ = "1.0.0"
+__version__ = "1.0.3"
 APP_NAME = "AVISTA"
 APP_DESCRIPTION = (
     "An extensible desktop platform for tabular machine learning "

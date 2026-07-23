@@ -18,6 +18,10 @@ The project has a working modular backend and PySide6 desktop GUI. Core tabular 
 
 The GUI can create or load projects, inspect and repair GPU environments with user confirmation, import large datasets with a paginated preview, select modeling and target columns, save label-encoding choices for categorical modeling columns, configure global numerical scaling for user-checked numeric features with selectable histogram inspection, configure train/validation/test splits, apply train-class-only imbalance handling, select classification models and edit their saved parameters, restore matching saved split artifacts, run edge-case checks, and train sklearn-compatible models from confirmed saved artifacts through a `QThread` worker.
 
+The current AVISTA application and update-feed version is `1.0.3`, with the
+release date centralized as July 23, 2026. Focused version, update-feed,
+startup/About, and packaging verification passed: `30 passed`.
+
 Installed PyInstaller builds now inspect bundled optional packages in-process. Creating or loading a project no longer relaunches `AVISTA.exe` with Python-only `-c` arguments, freezes the original window, or opens a second window with a command-line project error. Attempts to pip-install into the immutable packaged runtime are rejected with an actionable logged message instead of launching the GUI executable as Python.
 
 The Data Split & Imbalance page uses AVISTA-style subsection cards, compact distribution and coverage tables, a primary confirm action, and auto-dismissing compact success notifications. Warnings remain separate from successful save and load notifications, and errors remain visually distinct.
@@ -459,6 +463,20 @@ Result:
 ```
 
 This includes backend tests and PySide6 GUI smoke tests for AVISTA branding, Font Awesome icon loading, redesigned Project Setup cards, hidden Project Setup environment controls, sidebar icons, About content, `.avista` project creation/loading, legacy `.xtab` migration, command-line project loading, data preview, split validation, centralized string and mixed-type target encoding, XGBoost encoded-target training, decoded reports and probability columns, target-change invalidation, saved-artifact edge checks, typed Model Selection parameters including the single TabPFN estimator control, active-environment optional dependency checks and installation status, saved-split Training readiness, cross-validation, cancellation, evaluation reports, model-specific outputs, and publication-quality PNG/PDF plotting exports.
+
+Latest focused AVISTA 1.0.3 version synchronization verification:
+
+```text
+30 passed
+```
+
+This run covered centralized version consumers, `updates.json` version,
+release-date and installer-URL synchronization, semantic update checking,
+update dialogs, startup splash metadata, About content, runtime inventory, and
+Windows packaging declarations. The focused tests were split into `22 passed`
+for non-GUI metadata/update/packaging tests and `8 passed` for update/startup/
+About GUI tests after one combined invocation exceeded its command time limit
+without returning a failure report. The full suite was not run.
 
 Latest focused startup-screen, branding, release-metadata, packaging, and
 theme/UI verification:

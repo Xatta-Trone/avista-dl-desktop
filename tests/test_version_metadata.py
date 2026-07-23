@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -135,3 +136,16 @@ def test_release_date_consumers_use_central_metadata():
         text = (PROJECT_ROOT / relative_path).read_text(encoding="utf-8")
         assert RELEASE_DATE not in text, relative_path
         assert "RELEASE_DATE" in text or "MyAppReleaseDate" in text, relative_path
+
+
+def test_public_update_feed_matches_central_release_metadata():
+    update_metadata = json.loads(
+        (PROJECT_ROOT / "updates.json").read_text(encoding="utf-8")
+    )
+
+    assert update_metadata["latest_version"] == __version__
+    assert update_metadata["release_date"] == RELEASE_DATE
+    assert (
+        f"/releases/download/v{__version__}/AVISTA_Setup.exe"
+        in update_metadata["installer_url"]
+    )

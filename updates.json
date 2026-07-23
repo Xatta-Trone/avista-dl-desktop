@@ -1,12 +1,12 @@
 {
-  "latest_version": "1.0.0",
+  "latest_version": "1.0.3",
   "release_date": "July 23, 2026",
   "release_notes": [
     "Updated AVISTA standalone-product branding and startup screen metadata",
     "Removed unwanted background rectangles from ordinary text labels",
     "Preserved light and dark theme readability across all workflow pages"
   ],
-  "installer_url": "https://github.com/Xatta-Trone/avista-dl-desktop/releases/download/v1.0.0/AVISTA_Setup.exe",
+  "installer_url": "https://github.com/Xatta-Trone/avista-dl-desktop/releases/download/v1.0.3/AVISTA_Setup.exe",
   "sha256": "",
   "mandatory": false
 }

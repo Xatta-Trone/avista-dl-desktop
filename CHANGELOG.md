@@ -1,11 +1,11 @@
 # Changelog
 
-## Unreleased
+## 1.0.3 - 2026-07-23
 
 - Reframed AVISTA as the standalone product name and centralized its product
   description across the UI, reports, metadata, documentation, and Windows
   packaging.
-- Centralized AVISTA 1.0.0 release-date metadata and added it to the existing
+- Centralized AVISTA 1.0.3 release-date metadata and added it to the existing
   launch splash, About dialog, reports, project/training metadata, runtime
   inventory, and Windows packaging.
 - Made ordinary text labels transparent through the shared Light/Dark QSS

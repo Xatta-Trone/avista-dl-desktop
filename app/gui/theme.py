@@ -212,12 +212,12 @@ def transform_stylesheet(stylesheet: str, tokens: ThemeTokens | str | None = Non
 
 def theme_qss(tokens: ThemeTokens) -> str:
     return f"""
-        QMainWindow, QDialog, QWidget {{
+        QMainWindow, QDialog {{
             background: {tokens.background};
             color: {tokens.text_primary};
         }}
-        QLabel {{
-            background-color: transparent;
+        QWidget {{
+            color: {tokens.text_primary};
         }}
         QMenuBar, QMenu {{
             background: {tokens.surface};

@@ -40,8 +40,8 @@ def test_theme_qss_and_transform_preserve_primary_button_text():
     )
 
     assert dark.background in qss
-    assert "QLabel {" in qss
-    assert "background-color: transparent;" in qss
+    assert "QMainWindow, QDialog, QWidget" not in qss
+    assert "QLabel {" not in qss
     assert "background: #1D293D" in transformed
     assert "color: #FFFFFF" in transformed
     assert "color: #B7C0CC" in transformed
@@ -113,14 +113,14 @@ def test_all_sidebar_pages_accept_light_and_dark_themes(monkeypatch):
             assert window.nav_buttons[index].isChecked()
             assert label
         assert app.property("avistaTheme") == expected
-        assert "QLabel {" in app.styleSheet()
-        assert "background-color: transparent;" in app.styleSheet()
+        assert "QMainWindow, QDialog, QWidget" not in app.styleSheet()
+        assert "QLabel {" not in app.styleSheet()
 
     window.close()
     assert app is not None
 
 
-def test_about_and_update_dialog_labels_render_transparently_in_both_themes():
+def test_about_and_update_dialogs_preserve_targeted_surfaces_in_both_themes():
     from PySide6.QtWidgets import QApplication
 
     from app.core.update_checker import UpdateMetadata
@@ -145,8 +145,8 @@ def test_about_and_update_dialog_labels_render_transparently_in_both_themes():
 
     for theme_name in ("light", "dark"):
         tokens = apply_theme(app, theme_name)
-        assert "QLabel {" in app.styleSheet()
-        assert "background-color: transparent;" in app.styleSheet()
+        assert "QMainWindow, QDialog, QWidget" not in app.styleSheet()
+        assert "QLabel {" not in app.styleSheet()
         for dialog in dialogs:
             apply_theme_to_widget(dialog, tokens)
             dialog.show()

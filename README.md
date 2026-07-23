@@ -5,7 +5,7 @@
 AVISTA is a professional Python desktop application for generic tabular machine learning workflows. It supports portable project setup, environment inspection, tabular data import, column configuration, edge-case validation, splitting, imbalance handling, model selection, training, evaluation, and saved analytics.
 
 The launch screen and About dialog identify the current release as **Version
-1.0.3**, released **July 23, 2026**. Product name, description, version, and
+1.0.4**, released **July 23, 2026**. Product name, description, version, and
 release date come from `app/__version__.py`.
 
 ## Project Files

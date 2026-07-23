@@ -96,8 +96,9 @@ At the time this file was written:
 - AVISTA has centralized Light/Dark theme support with tokens and generated
   QSS. The selected theme is stored in `%APPDATA%/AVISTA/settings.json`, is
   switchable from Help -> Theme, and applies immediately without restarting.
-- Ordinary `QLabel` widgets have transparent backgrounds in both themes;
-  intentional label fills require a more specific badge or status selector.
+- The central theme must not apply global transparency to `QLabel` or
+  `QWidget`. Top-level backgrounds are scoped to windows and dialogs; existing
+  object-specific selectors preserve cards, panels, badges, and status fills.
 - Embedded GUI preview figures such as target distribution and training
   curves adapt to the selected theme; exported report figures remain
   publication-oriented.

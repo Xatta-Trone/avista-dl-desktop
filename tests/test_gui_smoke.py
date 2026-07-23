@@ -3188,6 +3188,88 @@ def test_edge_case_page_empty_state_and_dynamic_issue_tables(tmp_path):
     assert app is not None
 
 
+def test_edge_case_actions_start_at_top_without_horizontal_overflow(tmp_path):
+    from PySide6.QtCore import QPoint, QRect, Qt
+    from PySide6.QtWidgets import QApplication, QWidget
+
+    from app.core.error_handler import EdgeCaseReport
+    from app.core.project_config import ProjectConfig
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+    window = MainWindow()
+    window._startup_environment_check_scheduled = True
+    window._startup_update_check_scheduled = True
+    window.resize(1200, 760)
+    window.show()
+    window.navigate_to(6)
+    app.processEvents()
+
+    page = window.edge_case_report_page
+    page.refresh()
+    app.processEvents()
+
+    viewport = page.scroll_area.viewport()
+    button_position = page.empty_run_button.mapTo(viewport, QPoint(0, 0))
+    button_rect = QRect(button_position, page.empty_run_button.size())
+    card_position = page.empty_card.mapTo(viewport, QPoint(0, 0))
+
+    assert page.scroll_area.widgetResizable()
+    assert page.scroll_area.alignment() & Qt.AlignmentFlag.AlignTop
+    assert page.scroll_area.verticalScrollBar().value() == 0
+    assert page.scroll_area.verticalScrollBar().maximum() == 0
+    assert page.scroll_area.horizontalScrollBar().maximum() == 0
+    assert card_position.y() < viewport.height() // 3
+    assert viewport.rect().contains(button_rect)
+
+    config = ProjectConfig(
+        project_name="edge-alignment",
+        project_dir=str(tmp_path),
+        input_file="",
+        output_dir=str(tmp_path / "outputs"),
+        feature_columns=["feature"],
+        target_column="target",
+    )
+    config.save()
+    report = EdgeCaseReport(
+        context={
+            **config.project_metadata(),
+            "target_column": "target",
+            "feature_count": 1,
+            "column_configuration_confirmed": True,
+            "split_confirmed": True,
+            "imbalance_method": "none",
+        }
+    )
+    report_path = (
+        tmp_path / "outputs" / "edge_cases" / "edge_case_report.json"
+    )
+    report.save_json(report_path)
+    page._render_report(report, report_path, config)
+    page.scroll_area.verticalScrollBar().setValue(0)
+    app.processEvents()
+
+    configuration_card = page.findChild(
+        QWidget,
+        "edgeCaseConfigurationCard",
+    )
+    run_position = page.run_button.mapTo(viewport, QPoint(0, 0))
+    run_rect = QRect(run_position, page.run_button.size())
+    configuration_position = configuration_card.mapTo(
+        viewport,
+        QPoint(0, 0),
+    )
+
+    assert page.scroll_area.verticalScrollBar().value() == 0
+    assert page.scroll_area.horizontalScrollBar().maximum() == 0
+    assert page.scroll_content.width() <= viewport.width()
+    assert configuration_position.y() < viewport.height() // 3
+    assert viewport.rect().contains(run_rect)
+
+    window.close()
+    assert app is not None
+
+
 def test_training_page_shows_ready_confirmed_status(tmp_path):
     import json
 

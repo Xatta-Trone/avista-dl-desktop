@@ -8,7 +8,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from PySide6.QtCore import QThread, QTimer, Qt, QUrl
+from PySide6.QtCore import QSize, QThread, QTimer, Qt, QUrl
 from PySide6.QtGui import QColor, QDesktopServices, QTextDocument
 from PySide6.QtPrintSupport import QPrinter
 from PySide6.QtWidgets import (
@@ -24,6 +24,7 @@ from PySide6.QtWidgets import (
     QProgressBar,
     QPushButton,
     QScrollArea,
+    QSizePolicy,
     QStackedWidget,
     QTableWidget,
     QTableWidgetItem,
@@ -48,6 +49,21 @@ ERROR_COLOR = "#CF222E"
 MUTED = "#5B6573"
 
 
+class ActivePageStack(QStackedWidget):
+    """Size the stack from its visible page instead of its tallest hidden page."""
+
+    def sizeHint(self) -> QSize:
+        current = self.currentWidget()
+        return current.sizeHint() if current is not None else super().sizeHint()
+
+    def minimumSizeHint(self) -> QSize:
+        current = self.currentWidget()
+        if current is None:
+            return super().minimumSizeHint()
+        hint = current.minimumSizeHint()
+        return QSize(0, hint.height())
+
+
 class EdgeCaseReportPage(QWidget):
     """Display saved validation results and run checks in a worker thread."""
 
@@ -65,7 +81,15 @@ class EdgeCaseReportPage(QWidget):
         self.notification_timer.setSingleShot(True)
         self.notification_timer.timeout.connect(self.notification_card.hide)
 
-        self.content_stack = QStackedWidget()
+        self.content_stack = ActivePageStack()
+        self.content_stack.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Maximum,
+        )
+        self.content_stack.setMinimumWidth(0)
+        self.content_stack.currentChanged.connect(
+            lambda _index: self.content_stack.updateGeometry()
+        )
         self.empty_state = self._build_empty_state()
         self.report_content = self._build_report_content()
         self.content_stack.addWidget(self.empty_state)
@@ -73,9 +97,16 @@ class EdgeCaseReportPage(QWidget):
 
         page = QWidget()
         page.setObjectName("edgeCaseScrollContent")
+        page.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Maximum,
+        )
+        page.setMinimumWidth(0)
+        self.scroll_content = page
         page_layout = QVBoxLayout(page)
         page_layout.setContentsMargins(24, 24, 24, 24)
         page_layout.setSpacing(16)
+        page_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         title = QLabel("Edge-Case Report")
         title.setObjectName("edgeCaseTitle")
         subtitle = QLabel(
@@ -93,8 +124,15 @@ class EdgeCaseReportPage(QWidget):
         scroll = QScrollArea()
         scroll.setObjectName("edgeCaseScrollArea")
         scroll.setWidgetResizable(True)
+        scroll.setAlignment(
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop
+        )
+        scroll.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
         scroll.setFrameShape(QFrame.Shape.NoFrame)
         scroll.setWidget(page)
+        self.scroll_area = scroll
         root = QVBoxLayout(self)
         root.setContentsMargins(0, 0, 0, 0)
         root.addWidget(scroll)
@@ -103,11 +141,18 @@ class EdgeCaseReportPage(QWidget):
 
     def _build_empty_state(self) -> QWidget:
         wrapper = QWidget()
+        wrapper.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Maximum,
+        )
+        wrapper.setMinimumWidth(0)
         layout = QVBoxLayout(wrapper)
-        layout.setContentsMargins(0, 36, 0, 24)
-        layout.addStretch(1)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         card = self._card("edgeCaseEmptyCard")
         card.setMaximumWidth(620)
+        card.setMinimumWidth(0)
+        self.empty_card = card
         card_layout = card.layout()
         empty_icon = QLabel()
         empty_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -137,7 +182,6 @@ class EdgeCaseReportPage(QWidget):
         row.addWidget(card)
         row.addStretch(1)
         layout.addLayout(row)
-        layout.addStretch(1)
         return wrapper
 
     def _build_report_content(self) -> QWidget:

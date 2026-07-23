@@ -18,9 +18,25 @@ The project has a working modular backend and PySide6 desktop GUI. Core tabular 
 
 The GUI can create or load projects, inspect and repair GPU environments with user confirmation, import large datasets with a paginated preview, select modeling and target columns, save label-encoding choices for categorical modeling columns, configure global numerical scaling for user-checked numeric features with selectable histogram inspection, configure train/validation/test splits, apply train-class-only imbalance handling, select classification models and edit their saved parameters, restore matching saved split artifacts, run edge-case checks, and train sklearn-compatible models from confirmed saved artifacts through a `QThread` worker.
 
-The current AVISTA application and update-feed version is `1.0.3`, with the
-release date centralized as July 23, 2026. Focused version, update-feed,
-startup/About, and packaging verification passed: `30 passed`.
+The current AVISTA application and update-feed version is `1.0.4`, with the
+release date centralized as July 23, 2026. Focused centralized-version,
+update-feed, report metadata, and splash-screen verification passed:
+`7 passed`.
+
+The Light/Dark theme regression caused by a global transparent `QLabel` rule
+is fixed. The central QSS no longer applies broad label or widget
+transparency; top-level backgrounds are scoped to windows and dialogs while
+existing object-specific selectors retain every card, panel, form, status,
+table, preview, chart, and empty-state surface. Focused UI/theme verification
+passed: `7 passed`.
+
+The Edge-Case Report scroll content now starts at the top. Its stacked content
+sizes from the active view rather than the taller hidden report, the empty
+state no longer uses vertical centering stretches, and the page disables
+horizontal scrolling while retaining responsive content width. At 1200 x 760,
+both the empty-state and generated-report **Run Edge-Case Checks** buttons are
+visible at scroll position zero. Focused Edge-Case UI verification passed:
+`1 passed`.
 
 Installed PyInstaller builds now inspect bundled optional packages in-process. Creating or loading a project no longer relaunches `AVISTA.exe` with Python-only `-c` arguments, freezes the original window, or opens a second window with a command-line project error. Attempts to pip-install into the immutable packaged runtime are rejected with an actionable logged message instead of launching the GUI executable as Python.
 
@@ -82,9 +98,11 @@ Focused checkbox-based numerical-scaling verification passed on July 3, 2026: `7
 - AVISTA theme support is centralized in `app/gui/theme.py` with Light and Dark token sets, generated QSS, stylesheet transformation for existing page styles, app-level persistence, and immediate Help-menu switching.
 - Theme settings are stored outside project files in `%APPDATA%\AVISTA\settings.json` as `theme_name`, defaulting to `light`.
 - Dark theme uses professional dark blue/gray surfaces rather than pure black while preserving AVISTA primary `#0F6CBD` and accent `#00A6A6`.
-- Shared Light/Dark QSS makes ordinary `QLabel` widgets transparent while
-  preserving card surfaces and higher-specificity fills for badges, status
-  indicators, warnings, errors, and successes.
+- Shared Light/Dark QSS does not use global label/widget transparency.
+  Application backgrounds are scoped to top-level windows and dialogs;
+  ordinary labels naturally blend with their parent while existing targeted
+  selectors preserve cards, panels, forms, badges, status indicators,
+  warnings, errors, successes, previews, charts, and empty states.
 - Embedded GUI matplotlib previews for target distribution and training curves adapt to the selected theme. Exported reports and saved publication figures remain white-background outputs.
 - GPU diagnostics now report PyTorch/CUDA/cuDNN, CUDA device count, tensor validation, `nvidia-smi`, GPU/driver identity, and total/used/free GPU memory.
 - Environment checks are report-only: the page does not install or repair dependencies, and results or errors are saved to `logs/environment_info.json`.
@@ -464,6 +482,61 @@ Result:
 
 This includes backend tests and PySide6 GUI smoke tests for AVISTA branding, Font Awesome icon loading, redesigned Project Setup cards, hidden Project Setup environment controls, sidebar icons, About content, `.avista` project creation/loading, legacy `.xtab` migration, command-line project loading, data preview, split validation, centralized string and mixed-type target encoding, XGBoost encoded-target training, decoded reports and probability columns, target-change invalidation, saved-artifact edge checks, typed Model Selection parameters including the single TabPFN estimator control, active-environment optional dependency checks and installation status, saved-split Training readiness, cross-validation, cancellation, evaluation reports, model-specific outputs, and publication-quality PNG/PDF plotting exports.
 
+Latest focused theme-regression verification:
+
+```text
+7 passed
+```
+
+Command:
+
+```powershell
+.venv\Scripts\python.exe -m pytest tests/test_theme.py tests/test_gui_smoke.py::test_about_dialog_uses_logo_branding_and_clickable_profiles tests/test_gui_smoke.py::test_column_config_numerical_histogram_theme_redraws -q
+```
+
+This run verified the absence of global `QLabel` transparency and broad
+`QWidget` background selectors, intentional badge/status surface
+transformation, theme switching, all nine sidebar pages, the About and update
+dialogs, and the themed numerical-histogram preview. Before/after renders of
+all requested pages and About were reviewed in both Light and Dark themes;
+card layouts, margins, spacing, borders, typography, controls, panels, tables,
+previews, and visual hierarchy remained intact. Per request, the full suite
+was not run.
+
+Latest focused Edge-Case Report alignment verification:
+
+```text
+1 passed
+```
+
+Command:
+
+```powershell
+.venv\Scripts\python.exe -m pytest tests/test_gui_smoke.py::test_edge_case_actions_start_at_top_without_horizontal_overflow -q
+```
+
+This test verifies top alignment, zero initial vertical offset, no horizontal
+overflow, responsive scroll-content width, and immediate visibility of the
+**Run Edge-Case Checks** action in both the empty and generated-report states
+at 1200 x 760. Light and Dark page renders were also reviewed. Per request,
+the full suite was not run.
+
+Latest focused AVISTA 1.0.4 version synchronization verification:
+
+```text
+7 passed
+```
+
+Command:
+
+```powershell
+.venv\Scripts\python.exe -m pytest tests/test_version_metadata.py tests/test_main.py::test_splash_screen_uses_central_release_branding -q
+```
+
+This run verified centralized version consumers, report/project/training
+metadata, `updates.json` version, release date and installer URL, and the
+startup splash. Per request, the full suite was not run.
+
 Latest focused AVISTA 1.0.3 version synchronization verification:
 
 ```text
@@ -496,7 +569,7 @@ and `RELEASE_DATE`; the 720 x 360 launch splash; About and Project Setup
 branding; developer/GitHub attribution; project and training metadata; report
 headers and metadata; runtime inventory; PyInstaller/Inno Setup propagation;
 packaged resources; all nine workflow pages under Light and Dark themes; and
-transparent ordinary labels in About and update dialogs. The former acronym
+plain-label blending in About and update dialogs. The former acronym
 expansion remains absent. PowerShell packaging-script syntax parsing also
 passed. Per request, the full suite was not run.
 

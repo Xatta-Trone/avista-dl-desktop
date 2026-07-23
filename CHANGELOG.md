@@ -1,15 +1,23 @@
 # Changelog
 
+## 1.0.4 - 2026-07-23
+
+- Fixed the Edge-Case Report page so empty and generated report content starts
+  at the top of the viewport.
+- Kept **Run Edge-Case Checks** visible without initial scrolling and removed
+  horizontal overflow while preserving responsive cards and existing styling.
+
 ## 1.0.3 - 2026-07-23
 
 - Reframed AVISTA as the standalone product name and centralized its product
   description across the UI, reports, metadata, documentation, and Windows
   packaging.
-- Centralized AVISTA 1.0.3 release-date metadata and added it to the existing
+- Centralized AVISTA release-date metadata and added it to the existing
   launch splash, About dialog, reports, project/training metadata, runtime
   inventory, and Windows packaging.
-- Made ordinary text labels transparent through the shared Light/Dark QSS
-  while preserving cards, controls, badges, and status backgrounds.
+- Removed the broad label-transparency regression by scoping application
+  backgrounds to top-level windows and dialogs, preserving targeted card,
+  panel, badge, preview, empty-state, and status surfaces in both themes.
 
 ## 1.0.0
 

@@ -94,11 +94,13 @@ Windows file-description and installer metadata must receive the centralized
 
 ## Theme Styling
 
-Application-wide QSS belongs in `app/gui/theme.py`. Ordinary `QLabel` widgets
-use transparent backgrounds so they inherit the containing page or card
-surface. Intentional badges, status indicators, warnings, errors, successes,
-and other filled labels must use a more specific object-name or style-class
-selector.
+Application-wide QSS belongs in `app/gui/theme.py`. Do not add global
+`QLabel { background: transparent; }` or
+`QWidget { background: transparent; }` rules. Scope top-level application
+backgrounds to windows and dialogs so ordinary labels naturally inherit their
+parent surface. Cards, panels, badges, status indicators, warnings, errors,
+successes, previews, and empty states retain their existing object-name or
+style-class selectors.
 
 The installer should register `.avista` with `AVISTA.exe`:
 

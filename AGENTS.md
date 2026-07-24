@@ -166,6 +166,8 @@ Always verify this summary against `PROJECT_STATUS.md`, which may be newer.
     automated-vehicle-specific branding.
 15. Import `APP_NAME`, `APP_DESCRIPTION`, `__version__`, and `RELEASE_DATE`
     from `app/__version__.py`; do not duplicate release values in consumers.
+16. Prepare releases through `scripts/prepare_release.py`; run its `--check`
+    mode before creating a tag, and ensure the tag is `v<central version>`.
 
 ## Coding Conventions
 

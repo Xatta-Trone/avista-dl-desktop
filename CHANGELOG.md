@@ -2,6 +2,10 @@
 
 ## 1.0.5 - 2026-07-24
 
+- Added a centralized release-preparation command that synchronizes application
+  version metadata, the public update feed, installer URL, release
+  documentation, and changelog from one invocation, with CI tag/version
+  validation and safe installer-hash handling.
 - Added the fixed categorical missing-value policy for selected modeling
   features: null, empty, and whitespace-only values become `Unknown` before
   training-fitted categorical encoding and remain supported on validation,

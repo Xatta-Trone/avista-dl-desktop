@@ -2,6 +2,7 @@
   "latest_version": "1.0.5",
   "release_date": "July 24, 2026",
   "release_notes": [
+    "Added centralized release metadata preparation and CI tag/version validation",
     "Added Unknown-value handling for missing selected categorical modeling features",
     "Added separate Run Data Split, Apply Imbalance Handling, and Confirm Split & Imbalance stages",
     "Restored saved split and balancing tables and completion status when reopening projects",

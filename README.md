@@ -111,6 +111,22 @@ https://raw.githubusercontent.com/Xatta-Trone/avista-dl-desktop/main/updates.jso
 version ordering. `installer_url` must use HTTPS. If `sha256` is provided,
 AVISTA verifies the downloaded installer before it can run.
 
+Prepare a future release with one command:
+
+```powershell
+.venv\Scripts\python.exe scripts\prepare_release.py `
+  --version 1.0.6 `
+  --release-date "July 25, 2026" `
+  --note "First release-note item" `
+  --note "Second release-note item"
+```
+
+This updates the canonical values in `app/__version__.py` and synchronizes
+`updates.json`, the installer URL, README release banner, changelog heading,
+and project status. Use `--dry-run` to preview changes and `--check` to verify
+the repository before committing or tagging. Git tags remain an explicit
+post-commit action.
+
 The Windows installer stores the selected install folder in
 `Software\AVISTA\InstallDir` and uses that value as the default for future
 updates, so custom locations such as `D:\AVISTA\` are preserved.

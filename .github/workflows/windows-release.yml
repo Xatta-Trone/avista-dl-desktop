@@ -56,6 +56,24 @@ jobs:
           python -m pip install -r requirements_base.txt
           python -m pip install matplotlib scipy scikit-learn imbalanced-learn
 
+      - name: Verify release metadata synchronization
+        shell: pwsh
+        run: |
+          $releaseCheckArgs = @(
+            "scripts/prepare_release.py",
+            "--check"
+          )
+          $expectedTag = ""
+          if ("${{ github.ref_type }}" -eq "tag") {
+            $expectedTag = "${{ github.ref_name }}"
+          } elseif ("${{ inputs.release_tag }}") {
+            $expectedTag = "${{ inputs.release_tag }}"
+          }
+          if ($expectedTag) {
+            $releaseCheckArgs += @("--expected-tag", $expectedTag)
+          }
+          python @releaseCheckArgs
+
       - name: Run packaging and resource tests
         shell: pwsh
         run: |

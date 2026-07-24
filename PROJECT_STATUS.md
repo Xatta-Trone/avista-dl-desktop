@@ -23,6 +23,16 @@ release date centralized as July 24, 2026. Focused centralized-version,
 update-feed, report metadata, and splash-screen verification passed:
 `7 passed`.
 
+Release preparation is centralized through
+`scripts/prepare_release.py`. A single command sets the canonical version and
+release date in `app/__version__.py`, synchronizes `updates.json`, the
+versioned installer URL, README, changelog, and current project-status block,
+and requires fresh notes when advancing versions. Dry-run, repository check,
+tag/version validation, and post-build SHA256 modes are supported. The Windows
+release workflow runs the synchronization and expected-tag check before
+packaging. Focused release-tool and version-metadata verification passed:
+`12 passed`.
+
 The Light/Dark theme regression caused by a global transparent `QLabel` rule
 is fixed. The central QSS no longer applies broad label or widget
 transparency; top-level backgrounds are scoped to windows and dialogs while

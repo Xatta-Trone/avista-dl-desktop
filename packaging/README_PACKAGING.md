@@ -241,21 +241,46 @@ AVISTA reads update metadata from:
 https://raw.githubusercontent.com/Xatta-Trone/avista-dl-desktop/main/updates.json
 ```
 
-Publish a new update by:
+Prepare a new update through the centralized release command:
 
-1. Updating `__version__`, `APP_DESCRIPTION`, and `RELEASE_DATE` only in
-   `app\__version__.py`.
+```powershell
+.venv\Scripts\python.exe scripts\prepare_release.py `
+  --version 1.0.6 `
+  --release-date "July 25, 2026" `
+  --note "First release-note item" `
+  --note "Second release-note item"
+```
+
+The command updates `app\__version__.py` and derives `updates.json`, its
+versioned installer URL, the README release banner, the changelog heading, and
+the current project-status release block. It clears an old installer hash when
+the version changes so a previous binary cannot be trusted accidentally.
+
+Continue the release by:
+
+1. Reviewing the changes and running:
+
+   ```powershell
+   .venv\Scripts\python.exe scripts\prepare_release.py --check
+   ```
+
 2. Building `installer\AVISTA_Setup.exe`.
-3. Uploading the installer to a GitHub Release such as `vX.Y.Z`.
-4. Calculating the installer hash:
+3. Calculating the installer hash:
 
    ```powershell
    Get-FileHash .\installer\AVISTA_Setup.exe -Algorithm SHA256
    ```
 
-5. Updating root `updates.json` with `latest_version`, `release_date`,
-   `release_notes`, the HTTPS `installer_url`, and the SHA256 value.
+4. Publishing the hash without editing JSON manually:
+
+   ```powershell
+   .venv\Scripts\python.exe scripts\prepare_release.py --sha256 "<64-hex-digest>"
+   ```
+
+5. Committing the synchronized files, creating the matching `vX.Y.Z` tag, and
+   pushing the commit before the tag.
 
 The updater verifies `sha256` when provided and refuses to launch the
-installer on a mismatch. Leave `sha256` empty only while testing a draft
-release asset.
+installer on a mismatch. GitHub Actions runs `prepare_release.py --check` and
+also verifies that a pushed or manually selected release tag matches the
+central application version before building.

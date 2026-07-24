@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.4 - 2026-07-23
+## 1.0.5 - 2026-07-24
 
 - Added the fixed categorical missing-value policy for selected modeling
   features: null, empty, and whitespace-only values become `Unknown` before
@@ -15,6 +15,9 @@
 - Moved the existing **Generate Report** action directly below Report Summary
   and before the Model Performance Table without changing report generation or
   export behavior.
+
+## 1.0.4 - 2026-07-23
+
 - Fixed the Edge-Case Report page so empty and generated report content starts
   at the top of the viewport.
 - Kept **Run Edge-Case Checks** visible without initial scrolling and removed

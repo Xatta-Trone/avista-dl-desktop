@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import multiprocessing
 import sys
 from pathlib import Path
 
@@ -19,6 +20,22 @@ from app.core.project_config import ProjectConfig
 from app.gui.about_dialog import application_icon
 from app.gui.main_window import MainWindow
 from app.gui.theme import apply_theme, load_theme_setting
+
+
+DEEP_WORKER_ARGUMENTS = frozenset(
+    {"--project-dir", "--config", "--model", "--output-dir", "--log-path"}
+)
+
+
+def contains_deep_worker_arguments(arguments: list[str]) -> bool:
+    """Detect worker-only arguments before any QApplication is constructed."""
+
+    supplied = {
+        argument
+        for argument in arguments
+        if argument in DEEP_WORKER_ARGUMENTS
+    }
+    return {"--config", "--model", "--output-dir"}.issubset(supplied)
 
 
 def load_startup_project(arguments: list[str]) -> ProjectConfig | None:
@@ -77,7 +94,16 @@ def create_splash_screen() -> QSplashScreen:
     return splash
 
 
-def main() -> None:
+def main() -> int:
+    if contains_deep_worker_arguments(sys.argv[1:]):
+        print(
+            "AVISTA.exe cannot execute deep-learning worker arguments. "
+            "Use AVISTADeepWorker.exe from the installed application directory.",
+            file=sys.stderr,
+            flush=True,
+        )
+        return 2
+
     app = QApplication(sys.argv)
     app.setApplicationName(APP_NAME)
     app.setApplicationDisplayName(APP_NAME)
@@ -95,8 +121,9 @@ def main() -> None:
     window = MainWindow(initial_config=initial_config)
     window.show()
     splash.finish(window)
-    sys.exit(app.exec())
+    return app.exec()
 
 
 if __name__ == "__main__":
-    main()
+    multiprocessing.freeze_support()
+    raise SystemExit(main())

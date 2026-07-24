@@ -53,6 +53,10 @@ class ProjectConfig:
     imbalance_method: str | None = None
     use_class_weights: bool = False
     smote_ratio_preset: str = "baseline"
+    split_stage_completed: bool = False
+    imbalance_stage_completed: bool = False
+    split_state: dict[str, Any] = field(default_factory=dict)
+    imbalance_state: dict[str, Any] = field(default_factory=dict)
     selected_models: list[str] = field(default_factory=list)
     model_params: dict[str, dict[str, Any]] = field(default_factory=dict)
     enable_cross_validation: bool = False

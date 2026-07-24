@@ -3,7 +3,15 @@
 AVISTA uses PyInstaller onedir mode for the application folder and Inno Setup
 6 for the signed installer-ready executable. The standalone folder contains
 the CPython runtime, Qt, native scientific libraries, CUDA-enabled PyTorch,
-TabPFN, AVISTA assets, and the bundled TabPFN checkpoint.
+TabPFN, AVISTA assets, and the bundled TabPFN checkpoint. It contains two
+entry-point executables:
+
+- `AVISTA.exe`: the windowed PySide6 desktop application.
+- `AVISTADeepWorker.exe`: the console-enabled, GUI-free deep-training worker.
+
+The worker is installed beside the desktop executable. It is not a general
+Python interpreter, is not used for `.avista` file association, and must not
+initialize PySide6 or the AVISTA main window.
 
 ## Prerequisites
 
@@ -47,20 +55,61 @@ For a console-enabled troubleshooting build:
 ## Outputs
 
 - `dist\`: PyInstaller onedir output.
-- `release\AVISTA\`: installer-ready standalone application.
+- `release\AVISTA\AVISTA.exe`: installer-ready desktop application.
+- `release\AVISTA\AVISTADeepWorker.exe`: installed deep-training worker.
 - `installer\AVISTA_Setup.exe`: Inno Setup installer.
 - `release\AVISTA_Setup.exe`: release copy of the installer.
+
+The PyInstaller specification uses two analyses and entry points, then merges
+their shared dependencies into one onedir application folder. Inno Setup's
+application-folder rule installs both executables side by side.
+
+## Deep-Worker Launch Modes
+
+Deep-learning command construction is centralized in
+`app\training\deep_worker_launcher.py`.
+
+Source runs use:
+
+```text
+<active python.exe> -u <absolute path>\app\training\run_torch_model.py ...
+```
+
+Packaged runs use:
+
+```text
+<installed application directory>\AVISTADeepWorker.exe ...
+```
+
+Packaged mode is detected using frozen-runtime markers supported by
+PyInstaller and Nuitka. Worker paths are resolved from the installed
+executable directory, never the current working directory. The GUI never
+launches `AVISTA.exe` with a Python script or `-m` argument.
+
+Each launch writes a project-local diagnostic log under
+`logs\training\<model>_worker_<timestamp>.log`. The parent records the
+executable, sanitized arguments, working directory, runtime mode, process
+status, stdout/stderr, last valid JSON event, and final decimal/hexadecimal
+return code. The worker records Python, Torch, CUDA, device, dataset-loading,
+model-initialization, and training stages.
 
 ## Test The Standalone Build
 
 1. Run `release\AVISTA\AVISTA.exe`.
-2. Confirm the Environment page displays the completed startup check.
-3. Inspect `%LOCALAPPDATA%\AVISTA\logs\environment_info.json`, or the active
+2. Confirm `release\AVISTA\AVISTADeepWorker.exe` exists beside it.
+3. Confirm the Environment page displays the completed startup check.
+4. Inspect `%LOCALAPPDATA%\AVISTA\logs\environment_info.json`, or the active
    project's corresponding `logs\environment_info.json`.
-4. Confirm `app_version`, `bundled_python_path`, `torch_version`,
+5. Confirm `app_version`, `bundled_python_path`, `torch_version`,
    `cuda_available`, `gpu_name`, `xgboost_available`, `tabpfn_available`,
    `tabpfn_checkpoint_exists`, and `logo_exists` are present.
-5. Test both an NVIDIA system and a CPU-only Windows VM.
+6. Train MambaAttention, FT-Transformer, AutoInt, and TabResNet separately.
+   Confirm the GUI remains responsive, results arrive row by row, and no
+   additional AVISTA desktop window opens.
+7. Verify success, cancel, Python exception, missing checkpoint/asset, and
+   native-process failure handling. Confirm every failure points to a complete
+   worker log.
+8. Test both an NVIDIA system and a CPU-only Windows VM.
 
 To verify command-line project loading:
 
@@ -88,7 +137,9 @@ association, and update install-directory behavior.
 
 Install on a clean Windows VM, verify the Program Files installation, desktop
 shortcut, Start Menu shortcut, startup environment JSON, CPU fallback, report
-export, and uninstallation.
+export, deep-worker launch, and uninstallation. Confirm both executables are in
+the selected application folder and that only `AVISTA.exe` owns shortcuts and
+the `.avista` association.
 
 The installer stores the selected folder in `Software\AVISTA\InstallDir` and
 uses an existing HKCU or HKLM value as the default on future installs. This
@@ -177,9 +228,10 @@ NVIDIA driver. AVISTA performs its runtime GPU check on the user's computer
 after installation and continues in CPU mode when no compatible GPU exists.
 
 The workflow verifies that `logo.png`, `logo.ico`, and the bundled TabPFN
-checkpoint exist before compilation. If the checkpoint is stored with Git
-LFS, ensure GitHub LFS storage and bandwidth are available; checkout enables
-LFS downloads.
+checkpoint exist before compilation. It also verifies that both `AVISTA.exe`
+and `AVISTADeepWorker.exe` were produced before compiling or publishing the
+installer. If the checkpoint is stored with Git LFS, ensure GitHub LFS storage
+and bandwidth are available; checkout enables LFS downloads.
 
 ## Update Metadata
 

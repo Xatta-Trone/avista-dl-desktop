@@ -264,6 +264,7 @@ class ReportPage(QWidget):
         layout.addWidget(title)
         layout.addWidget(self.notification_card)
         self.summary_card = self._summary_card()
+        self.generate_action_card = self._generate_action_card()
         self.performance_card = self._performance_card()
         self.roc_card = self._figure_card(
             "reportRocCard",
@@ -304,6 +305,7 @@ class ReportPage(QWidget):
         self.export_card = self._export_card()
         for card in (
             self.summary_card,
+            self.generate_action_card,
             self.performance_card,
             self.roc_card,
             self.pr_card,
@@ -458,6 +460,22 @@ class ReportPage(QWidget):
         layout.addLayout(grid)
         return card
 
+    def _generate_action_card(self) -> QWidget:
+        card = QFrame()
+        card.setObjectName("reportGenerateActionCard")
+        card.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        layout = QVBoxLayout(card)
+        layout.setContentsMargins(16, 12, 16, 12)
+        layout.setSpacing(8)
+        action_row = QHBoxLayout()
+        action_row.setContentsMargins(0, 0, 0, 0)
+        action_row.addWidget(self.generate_button)
+        action_row.addStretch(1)
+        layout.addLayout(action_row)
+        layout.addWidget(self.generation_progress)
+        layout.addWidget(self.generation_status)
+        return card
+
     def _performance_card(self) -> QWidget:
         card, layout = self._card(
             "reportPerformanceCard",
@@ -533,19 +551,16 @@ class ReportPage(QWidget):
         card, layout = self._card(
             "reportExportCard",
             "Export Report",
-            "Generate and open the comprehensive Markdown and PDF report.",
+            "Open the generated comprehensive Markdown and PDF report.",
             "fa6s.file-export",
         )
         buttons = QHBoxLayout()
         buttons.setSpacing(10)
-        buttons.addWidget(self.generate_button)
         buttons.addWidget(self.open_folder_button)
         buttons.addWidget(self.open_markdown_button)
         buttons.addWidget(self.open_pdf_button)
         buttons.addStretch(1)
         layout.addLayout(buttons)
-        layout.addWidget(self.generation_progress)
-        layout.addWidget(self.generation_status)
         return card
 
     def _card(
@@ -826,6 +841,11 @@ class ReportPage(QWidget):
         self.setStyleSheet(
             f"""
             QWidget#reportContent {{ background: {BACKGROUND}; color: {TEXT}; }}
+            QFrame#reportGenerateActionCard {{
+                background: #FFFFFF;
+                border: 1px solid {BORDER};
+                border-radius: 10px;
+            }}
             QLabel#reportTitle {{ font-size: 24px; font-weight: 700; }}
             QLabel#reportCardTitle {{
                 color: {TEXT}; font-size: 16px; font-weight: 700;

@@ -126,7 +126,7 @@ def _write_model_outputs(tmp_path: Path) -> None:
 
 
 def test_report_page_loads_and_generate_button_exists(tmp_path):
-    from PySide6.QtWidgets import QApplication
+    from PySide6.QtWidgets import QApplication, QPushButton
 
     from app.gui.main_window import MainWindow
 
@@ -135,9 +135,26 @@ def test_report_page_loads_and_generate_button_exists(tmp_path):
     window = MainWindow(config)
 
     assert window.pages[-1][0] == "Report"
-    assert window.report_page.generate_button.text() == "Generate Report"
-    assert window.report_page.summary_card.objectName() == "reportSummaryCard"
-    assert window.report_page.performance_card.objectName() == "reportPerformanceCard"
+    page = window.report_page
+    assert page.generate_button.text() == "Generate Report"
+    assert page.summary_card.objectName() == "reportSummaryCard"
+    assert page.generate_action_card.objectName() == "reportGenerateActionCard"
+    assert page.performance_card.objectName() == "reportPerformanceCard"
+    content_layout = page.summary_card.parentWidget().layout()
+    assert content_layout.indexOf(page.generate_action_card) == (
+        content_layout.indexOf(page.summary_card) + 1
+    )
+    assert content_layout.indexOf(page.generate_action_card) < content_layout.indexOf(
+        page.performance_card
+    )
+    assert page.generate_button.parentWidget() is page.generate_action_card
+    generate_buttons = [
+        button
+        for button in page.findChildren(QPushButton)
+        if button.text() == "Generate Report"
+    ]
+    assert generate_buttons == [page.generate_button]
+    assert page.export_card.findChild(QPushButton, "primaryReportButton") is None
     assert not window.nav_buttons[-1].icon().isNull()
     window.close()
     assert app is not None

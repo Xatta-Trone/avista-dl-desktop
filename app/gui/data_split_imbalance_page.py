@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+import joblib
 import numpy as np
 import pandas as pd
 from PySide6.QtCore import QSize, QTimer, Qt
@@ -35,12 +36,21 @@ from PySide6.QtWidgets import (
 from app.core.imbalance import apply_imbalance_strategy
 from app.core.edge_case_checker import selected_column_missing_counts
 from app.core.preprocessing import (
+    ensure_categorical_missing_config,
     fit_split_preprocessing,
+    load_artifacts,
     save_artifacts,
     save_numerical_scaling_artifacts,
     transform_split_features,
 )
 from app.core.project_config import ProjectConfig
+from app.core.split_artifacts import (
+    imbalance_signature,
+    invalidate_imbalance_artifacts,
+    invalidate_split_artifacts,
+    signatures_match,
+    split_signature,
+)
 from app.core.splitter import (
     build_class_coverage_report,
     class_coverage_issues,
@@ -133,39 +143,32 @@ BALANCING_PRESET_HELP = {
 }
 
 SAVED_SPLIT_FILES = (
-    "imbalance_config.json",
-    "split_indices.json",
     "class_distribution_before.csv",
-    "class_distribution_after.csv",
     "class_coverage_report.csv",
     "preprocessing_artifact.joblib",
-    "X_train_balanced.npy",
-    "y_train_balanced.npy",
+    "X_train.npy",
+    "y_train.npy",
     "X_val.npy",
     "y_val.npy",
     "X_test.npy",
     "y_test.npy",
 )
 
-CLASSIFICATION_TARGET_FILES = (
-    "y_train_encoded.npy",
-    "y_train_balanced_encoded.npy",
-    "y_val_encoded.npy",
-    "y_test_encoded.npy",
-    "y_train_original.npy",
-    "y_train_balanced_original.npy",
-    "y_val_original.npy",
-    "y_test_original.npy",
-    "target_label_encoder.joblib",
-    "target_label_mapping.json",
+SAVED_IMBALANCE_FILES = (
+    "imbalance_config.json",
+    "class_distribution_after.csv",
+    "X_train_balanced.npy",
+    "y_train_balanced.npy",
 )
-
 
 class DataSplitImbalancePage(QWidget):
     def __init__(self, main_window) -> None:
         super().__init__()
         self.main_window = main_window
-        self._last_config_signature: tuple[str | None, tuple[str, ...]] | None = None
+        self._last_config_signature: tuple[Any, ...] | None = None
+        self._refreshing_controls = False
+        self._split_stage_current = False
+        self._imbalance_stage_current = False
         self.success_notification_timer = QTimer(self)
         self.success_notification_timer.setSingleShot(True)
         self.success_notification_timer.setInterval(5000)
@@ -300,7 +303,9 @@ class DataSplitImbalancePage(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(scroll)
+        self._connect_stage_invalidation_signals()
         self._update_percentage_validator()
+        self._update_stage_status()
         self._apply_style()
 
     def refresh(self) -> None:
@@ -313,7 +318,15 @@ class DataSplitImbalancePage(QWidget):
             self._clear_split_state()
             return
 
-        signature = (config.target_column, tuple(config.feature_columns or []))
+        options = dict(config.preprocessing_options or {})
+        signature = (
+            config.target_column,
+            tuple(config.feature_columns or []),
+            tuple(config.label_encoding_columns or []),
+            options.get("numerical_scaling_method", "none"),
+            tuple(options.get("scaled_numerical_columns", []) or []),
+            options.get("categorical_missing_value", "Unknown"),
+        )
         config_changed = signature != self._last_config_signature
         self._last_config_signature = signature
 
@@ -329,33 +342,48 @@ class DataSplitImbalancePage(QWidget):
         if config_changed:
             self._clear_split_state()
 
-        self.train_percent.setValue(int(config.train_percent))
-        self.validation_percent.setValue(int(config.validation_percent))
-        self.test_percent.setValue(int(config.test_percent))
-        self.random_seed.setValue(int(getattr(config, "random_seed", 42)))
-        self._update_percentage_validator()
-        self._select_combo(self.split_method, config.split_method or "random")
-        self._select_combo(self.imbalance_method, config.imbalance_method or "none")
-        self.use_class_weights.setChecked(bool(config.use_class_weights))
-        self._select_combo(self.ratio_preset, self._preset_label(config.smote_ratio_preset))
-        self._update_custom_visibility()
+        self._refreshing_controls = True
+        try:
+            self.train_percent.setValue(int(config.train_percent))
+            self.validation_percent.setValue(int(config.validation_percent))
+            self.test_percent.setValue(int(config.test_percent))
+            self.random_seed.setValue(int(getattr(config, "random_seed", 42)))
+            self._update_percentage_validator()
+            self._select_combo(self.split_method, config.split_method or "random")
+            self._select_combo(
+                self.imbalance_method,
+                config.imbalance_method or "none",
+            )
+            self.use_class_weights.setChecked(bool(config.use_class_weights))
+            self._select_combo(
+                self.ratio_preset,
+                self._preset_label(config.smote_ratio_preset),
+            )
+            imbalance_options = dict(
+                options.get("imbalance", {}) or {}
+            )
+            self.custom_ratio_input.setText(
+                str(imbalance_options.get("custom_ratio", ""))
+            )
+            self._update_custom_visibility()
+        finally:
+            self._refreshing_controls = False
         if not config.target_column:
             self._clear_split_state()
             return
 
         saved_status = self._load_saved_results(config)
-        if saved_status == "loaded":
+        if saved_status in {"loaded", "split_loaded"}:
             return
         if saved_status == "target_changed":
-            self._recompute_before_distributions()
             self._show_reload_message(
-                "Target column changed. Please confirm split and imbalance again.",
+                "Saved split settings are stale. Run Data Split again.",
                 warning=True,
             )
             return
-        self._recompute_before_distributions()
+        self._clear_split_state()
 
-    def confirm_split_and_imbalance(self) -> None:
+    def run_data_split(self) -> None:
         config = self._reload_latest_config()
         df = self.main_window.dataframe
         error = self._prerequisite_error(config, df)
@@ -363,6 +391,7 @@ class DataSplitImbalancePage(QWidget):
             self._show_error(error)
             return
 
+        self._apply_split_controls(config)
         train = self.train_percent.value()
         validation = self.validation_percent.value()
         test = self.test_percent.value()
@@ -372,15 +401,6 @@ class DataSplitImbalancePage(QWidget):
                 f"Train + validation + test must equal 100%. Current total: {total_percent}%."
             )
             return
-
-        config.train_percent = float(train)
-        config.validation_percent = float(validation)
-        config.test_percent = float(test)
-        config.random_seed = int(self.random_seed.value())
-        config.split_method = self.split_method.currentText()
-        config.imbalance_method = self.imbalance_method.currentText()
-        config.use_class_weights = self.use_class_weights.isChecked()
-        config.smote_ratio_preset = self._preset_key()
 
         try:
             X, y = self._build_latest_xy(config, df)
@@ -409,6 +429,7 @@ class DataSplitImbalancePage(QWidget):
             )
             coverage_issues = class_coverage_issues(coverage)
             output_dir = Path(config.project_dir) / "outputs" / "data_split"
+            invalidate_split_artifacts(config.project_dir)
             classification_target = (
                 str(config.task_type or "auto").strip().lower() != "regression"
             )
@@ -421,44 +442,25 @@ class DataSplitImbalancePage(QWidget):
             if target_encoder is not None:
                 for key in ("y_train", "y_val", "y_test"):
                     encoded_split[key] = encode_target(target_encoder, split[key])
-            sampling_strategy = self._sampling_strategy(
-                encoded_split["y_train"],
-                target_encoder,
-            )
-            self._store_imbalance_options(config, sampling_strategy)
-            balanced = apply_imbalance_strategy(
-                split["X_train"], encoded_split["y_train"], artifacts, config
-            )
-            if not balanced["imbalance_info"]["success"]:
-                error_message = balanced["imbalance_info"].get("error") or balanced["imbalance_info"]["message"]
-                raise ValueError(f"Imbalance handling failed: {error_message}")
-            balanced["imbalance_info"]["warnings"] = (
-                [
-                    issue["message"]
-                    for issue in coverage_issues
-                    if issue["level"] == "warning"
-                ]
-                + balanced["imbalance_info"].get("warnings", [])
-            )
-            balanced_original = (
-                decode_target(target_encoder, balanced["y_resampled"])
-                if target_encoder is not None
-                else np.asarray(balanced["y_resampled"])
-            )
-            self._save_outputs(
+            self._save_split_outputs(
                 output_dir,
                 split,
                 encoded_split,
-                balanced,
-                balanced_original,
                 y,
                 config,
-                sampling_strategy,
                 coverage,
-                coverage_issues,
                 artifacts,
                 target_encoder,
             )
+            config.split_stage_completed = True
+            config.imbalance_stage_completed = False
+            config.split_state = {
+                "completed": True,
+                "signature": split_signature(config),
+                "target_column": config.target_column,
+                "output_directory": str(output_dir),
+            }
+            config.imbalance_state = {}
             config_path = config.save()
         except Exception as exc:
             self._show_error(str(exc))
@@ -472,38 +474,197 @@ class DataSplitImbalancePage(QWidget):
                 "Test Set": split["y_test"],
             }
         )
+        self._populate_distribution_tables(before, self.before_distribution_tables)
+        self._clear_distribution_tables(self.after_distribution_tables)
+        self._populate_class_coverage_table(coverage)
+        self._split_stage_current = True
+        self._imbalance_stage_current = False
+        self._update_stage_status()
+        self._show_success_notification(
+            [
+                "Data split completed and saved.",
+                f"Target column: {config.target_column}",
+                f"Train rows: {split['split_info']['train_rows']}",
+                f"Validation rows: {split['split_info']['validation_rows']}",
+                f"Test rows: {split['split_info']['test_rows']}",
+                f"Project file: {config_path}",
+            ]
+        )
+        self._show_split_issues(coverage_issues, [])
+
+    def apply_imbalance_handling(self) -> None:
+        config = self._reload_latest_config()
+        df = self.main_window.dataframe
+        error = self._prerequisite_error(config, df)
+        if error:
+            self._show_error(error)
+            return
+        if not self._split_controls_match_config(config):
+            self._show_error(
+                "Split controls have changed. Run Data Split before applying "
+                "imbalance handling."
+            )
+            return
+        if self._current_split_metadata(config) is None:
+            self._show_error(
+                "Run Data Split before applying imbalance handling."
+            )
+            return
+
+        self._apply_imbalance_controls(config)
+        output_dir = Path(config.project_dir) / "outputs" / "data_split"
+        try:
+            raw = self._load_raw_split(output_dir, config)
+            sampling_strategy = self._sampling_strategy(
+                raw["y_train_encoded"],
+                raw["target_encoder"],
+            )
+            self._store_imbalance_options(config, sampling_strategy)
+            balanced = apply_imbalance_strategy(
+                raw["X_train"],
+                raw["y_train_encoded"],
+                raw["artifacts"],
+                config,
+            )
+            if not balanced["imbalance_info"]["success"]:
+                error_message = (
+                    balanced["imbalance_info"].get("error")
+                    or balanced["imbalance_info"]["message"]
+                )
+                raise ValueError(
+                    f"Imbalance handling failed: {error_message}"
+                )
+            coverage = pd.read_csv(
+                output_dir / "class_coverage_report.csv"
+            )
+            coverage_issues = class_coverage_issues(coverage)
+            balanced["imbalance_info"]["warnings"] = (
+                [
+                    issue["message"]
+                    for issue in coverage_issues
+                    if issue["level"] == "warning"
+                ]
+                + balanced["imbalance_info"].get("warnings", [])
+            )
+            balanced_original = (
+                decode_target(
+                    raw["target_encoder"],
+                    balanced["y_resampled"],
+                )
+                if raw["target_encoder"] is not None
+                else np.asarray(balanced["y_resampled"])
+            )
+            invalidate_imbalance_artifacts(config.project_dir)
+            self._save_imbalance_outputs(
+                output_dir,
+                balanced,
+                balanced_original,
+                raw,
+                config,
+                sampling_strategy,
+                coverage_issues,
+            )
+            config.imbalance_stage_completed = True
+            config.imbalance_state = {
+                "completed": True,
+                "signature": imbalance_signature(config),
+                "target_column": config.target_column,
+                "training_rows_before": len(raw["y_train_original"]),
+                "training_rows_after": len(balanced_original),
+            }
+            config.save()
+        except Exception as exc:
+            self._show_error(str(exc))
+            return
+
         after = self._distribution_frame(
             {
                 "Train Set (Balanced)": balanced_original,
-                "Validation Set": split["y_val"],
-                "Test Set": split["y_test"],
+                "Validation Set": raw["y_val_original"],
+                "Test Set": raw["y_test_original"],
             }
         )
-        self._populate_distribution_tables(before, self.before_distribution_tables)
-        self._populate_distribution_tables(after, self.after_distribution_tables)
-        self._populate_class_coverage_table(coverage)
-        self._show_success(
-            split=split,
-            balanced_rows=len(balanced["y_resampled"]),
-            output_dir=output_dir,
-            config_path=config_path,
-            sampling_strategy=sampling_strategy,
-            issues=coverage_issues,
-            warnings=balanced["imbalance_info"].get("warnings", []),
+        self._populate_distribution_tables(
+            after,
+            self.after_distribution_tables,
+        )
+        self._imbalance_stage_current = True
+        self._update_stage_status()
+        self._show_success_notification(
+            [
+                "Imbalance handling completed and saved.",
+                f"Method: {config.imbalance_method or 'none'}",
+                f"Training rows before: {len(raw['y_train_original'])}",
+                f"Training rows after: {len(balanced_original)}",
+                "Validation and test rows were not modified.",
+            ]
+        )
+        self._show_split_issues(
+            coverage_issues,
+            balanced["imbalance_info"].get("warnings", []),
         )
 
-    def _save_outputs(
+    def confirm_split_and_imbalance(self) -> None:
+        config = self._reload_latest_config()
+        df = self.main_window.dataframe
+        error = self._prerequisite_error(config, df)
+        if error:
+            self._show_error(error)
+            return
+        if (
+            not self._split_controls_match_config(config)
+            or self._current_split_metadata(config) is None
+        ):
+            self._show_error(
+                "The current split is not saved. Run Data Split first."
+            )
+            return
+        if not self._imbalance_controls_match_config(config):
+            self._show_error(
+                "Imbalance settings have changed. Apply Imbalance Handling "
+                "before confirmation."
+            )
+            return
+
+        if self._current_imbalance_metadata(config) is None:
+            self._show_error(
+                "The imbalance stage is not saved. Apply Imbalance Handling "
+                "first."
+            )
+            return
+
+        config.split_stage_completed = True
+        config.imbalance_stage_completed = True
+        config.split_state = {
+            "completed": True,
+            "signature": split_signature(config),
+            "target_column": config.target_column,
+        }
+        config.imbalance_state = {
+            "completed": True,
+            "signature": imbalance_signature(config),
+            "target_column": config.target_column,
+        }
+        config_path = config.save()
+        self._split_stage_current = True
+        self._imbalance_stage_current = True
+        self._update_stage_status()
+        self._show_success_notification(
+            [
+                "Split and imbalance configuration saved successfully.",
+                "Downstream training artifacts are current.",
+                f"Project file: {config_path}",
+            ]
+        )
+
+    def _save_split_outputs(
         self,
         output_dir: Path,
         split: dict[str, Any],
         encoded_split: dict[str, Any],
-        balanced: dict[str, Any],
-        balanced_original: np.ndarray,
         full_y: pd.Series,
         config: Any,
-        sampling_strategy: Any,
         coverage: pd.DataFrame,
-        coverage_issues: list[dict[str, str]],
         preprocessing_artifacts: Any,
         target_encoder: Any,
     ) -> None:
@@ -516,6 +677,8 @@ class DataSplitImbalancePage(QWidget):
             "validation_index": split["validation_index"],
             "test_index": split["test_index"],
             "split_info": split["split_info"],
+            "signature": split_signature(config),
+            "stage_completed": True,
         }
         (output_dir / "split_indices.json").write_text(
             json.dumps(indices, indent=2, default=_json_scalar), encoding="utf-8"
@@ -529,15 +692,7 @@ class DataSplitImbalancePage(QWidget):
                 "Test Set": split["y_test"],
             }
         )
-        after = self._distribution_frame(
-            {
-                "Train Set (Balanced)": balanced_original,
-                "Validation Set": split["y_val"],
-                "Test Set": split["y_test"],
-            }
-        )
         before.to_csv(output_dir / "class_distribution_before.csv", index=False)
-        after.to_csv(output_dir / "class_distribution_after.csv", index=False)
         coverage.to_csv(output_dir / "class_coverage_report.csv", index=False)
         save_artifacts(
             preprocessing_artifacts,
@@ -545,11 +700,67 @@ class DataSplitImbalancePage(QWidget):
         )
         save_numerical_scaling_artifacts(config.project_dir, preprocessing_artifacts)
 
+        np.save(output_dir / "X_train.npy", np.asarray(split["X_train"]))
+        np.save(output_dir / "y_train.npy", np.asarray(split["y_train"]))
+        np.save(output_dir / "X_val.npy", np.asarray(split["X_val"]))
+        np.save(output_dir / "y_val.npy", np.asarray(split["y_val"]))
+        np.save(output_dir / "X_test.npy", np.asarray(split["X_test"]))
+        np.save(output_dir / "y_test.npy", np.asarray(split["y_test"]))
+        if target_encoder is not None:
+            np.save(
+                output_dir / "y_train_encoded.npy",
+                np.asarray(encoded_split["y_train"]),
+            )
+            np.save(
+                output_dir / "y_val_encoded.npy",
+                np.asarray(encoded_split["y_val"]),
+            )
+            np.save(
+                output_dir / "y_test_encoded.npy",
+                np.asarray(encoded_split["y_test"]),
+            )
+            np.save(
+                output_dir / "y_train_original.npy",
+                np.asarray(split["y_train"]),
+            )
+            np.save(
+                output_dir / "y_val_original.npy",
+                np.asarray(split["y_val"]),
+            )
+            np.save(
+                output_dir / "y_test_original.npy",
+                np.asarray(split["y_test"]),
+            )
+            save_target_encoder(target_encoder, output_dir)
+
+    def _save_imbalance_outputs(
+        self,
+        output_dir: Path,
+        balanced: dict[str, Any],
+        balanced_original: np.ndarray,
+        raw: dict[str, Any],
+        config: Any,
+        sampling_strategy: Any,
+        coverage_issues: list[dict[str, str]],
+    ) -> None:
+        after = self._distribution_frame(
+            {
+                "Train Set (Balanced)": balanced_original,
+                "Validation Set": raw["y_val_original"],
+                "Test Set": raw["y_test_original"],
+            }
+        )
+        after.to_csv(output_dir / "class_distribution_after.csv", index=False)
         imbalance_config = {
             "target_column": config.target_column,
             "feature_columns": list(config.feature_columns or []),
             "task_type": config.task_type,
-            "original_train_distribution": _json_counts(split["y_train"]),
+            "signature": imbalance_signature(config),
+            "split_signature": split_signature(config),
+            "stage_completed": True,
+            "original_train_distribution": _json_counts(
+                raw["y_train_original"]
+            ),
             "balanced_train_distribution": _json_counts(balanced_original),
             "imbalance_method": config.imbalance_method,
             "balancing_preset": config.smote_ratio_preset,
@@ -576,26 +787,73 @@ class DataSplitImbalancePage(QWidget):
 
         np.save(output_dir / "X_train_balanced.npy", np.asarray(balanced["X_resampled"]))
         np.save(output_dir / "y_train_balanced.npy", np.asarray(balanced_original))
-        np.save(output_dir / "X_val.npy", np.asarray(split["X_val"]))
-        np.save(output_dir / "y_val.npy", np.asarray(split["y_val"]))
-        np.save(output_dir / "X_test.npy", np.asarray(split["X_test"]))
-        np.save(output_dir / "y_test.npy", np.asarray(split["y_test"]))
-        if target_encoder is not None:
-            np.save(output_dir / "y_train_encoded.npy", np.asarray(encoded_split["y_train"]))
+        if raw["target_encoder"] is not None:
             np.save(
                 output_dir / "y_train_balanced_encoded.npy",
                 np.asarray(balanced["y_resampled"], dtype=np.int64),
             )
-            np.save(output_dir / "y_val_encoded.npy", np.asarray(encoded_split["y_val"]))
-            np.save(output_dir / "y_test_encoded.npy", np.asarray(encoded_split["y_test"]))
-            np.save(output_dir / "y_train_original.npy", np.asarray(split["y_train"]))
             np.save(
                 output_dir / "y_train_balanced_original.npy",
                 np.asarray(balanced_original),
             )
-            np.save(output_dir / "y_val_original.npy", np.asarray(split["y_val"]))
-            np.save(output_dir / "y_test_original.npy", np.asarray(split["y_test"]))
-            save_target_encoder(target_encoder, output_dir)
+
+    def _load_raw_split(
+        self,
+        output_dir: Path,
+        config: ProjectConfig,
+    ) -> dict[str, Any]:
+        artifacts = load_artifacts(
+            output_dir / "preprocessing_artifact.joblib"
+        )
+        feature_names = list(artifacts.output_feature_names)
+        X_train = pd.DataFrame(
+            np.load(output_dir / "X_train.npy"),
+            columns=feature_names,
+        )
+        target_encoder_path = output_dir / "target_label_encoder.joblib"
+        target_encoder = (
+            joblib.load(target_encoder_path)
+            if target_encoder_path.exists()
+            else None
+        )
+        y_train_original = np.load(
+            output_dir / "y_train.npy",
+            allow_pickle=True,
+        )
+        y_val_original = np.load(
+            output_dir / "y_val.npy",
+            allow_pickle=True,
+        )
+        y_test_original = np.load(
+            output_dir / "y_test.npy",
+            allow_pickle=True,
+        )
+        y_train_encoded = (
+            np.load(output_dir / "y_train_encoded.npy")
+            if target_encoder is not None
+            else y_train_original
+        )
+        return {
+            "artifacts": artifacts,
+            "target_encoder": target_encoder,
+            "X_train": X_train,
+            "y_train_encoded": pd.Series(
+                y_train_encoded,
+                name=config.target_column,
+            ),
+            "y_train_original": pd.Series(
+                y_train_original,
+                name=config.target_column,
+            ),
+            "y_val_original": pd.Series(
+                y_val_original,
+                name=config.target_column,
+            ),
+            "y_test_original": pd.Series(
+                y_test_original,
+                name=config.target_column,
+            ),
+        }
 
     def _sampling_strategy(self, y_train: pd.Series, target_encoder: Any = None) -> Any:
         method = self.imbalance_method.currentText()
@@ -679,9 +937,129 @@ class DataSplitImbalancePage(QWidget):
         options = dict(config.preprocessing_options or {})
         imbalance_options = dict(options.get("imbalance", {}) or {})
         imbalance_options["sampling_strategy"] = sampling_strategy
+        imbalance_options["custom_ratio"] = self.custom_ratio_input.text().strip()
         options["imbalance"] = imbalance_options
         options["random_seed"] = int(self.random_seed.value())
         config.preprocessing_options = options
+
+    def _apply_split_controls(self, config: ProjectConfig) -> None:
+        config.train_percent = float(self.train_percent.value())
+        config.validation_percent = float(self.validation_percent.value())
+        config.test_percent = float(self.test_percent.value())
+        config.random_seed = int(self.random_seed.value())
+        config.split_method = self.split_method.currentText()
+        ensure_categorical_missing_config(config)
+
+    def _apply_imbalance_controls(self, config: ProjectConfig) -> None:
+        config.imbalance_method = self.imbalance_method.currentText()
+        config.use_class_weights = self.use_class_weights.isChecked()
+        config.smote_ratio_preset = self._preset_key()
+        options = dict(config.preprocessing_options or {})
+        imbalance_options = dict(options.get("imbalance", {}) or {})
+        imbalance_options["custom_ratio"] = (
+            self.custom_ratio_input.text().strip()
+        )
+        options["imbalance"] = imbalance_options
+        config.preprocessing_options = options
+
+    def _split_controls_match_config(self, config: ProjectConfig) -> bool:
+        return (
+            float(config.train_percent) == float(self.train_percent.value())
+            and float(config.validation_percent)
+            == float(self.validation_percent.value())
+            and float(config.test_percent) == float(self.test_percent.value())
+            and int(config.random_seed) == int(self.random_seed.value())
+            and (config.split_method or "random")
+            == self.split_method.currentText()
+        )
+
+    def _imbalance_controls_match_config(
+        self,
+        config: ProjectConfig,
+    ) -> bool:
+        options = dict(config.preprocessing_options or {})
+        imbalance_options = dict(options.get("imbalance", {}) or {})
+        return (
+            (config.imbalance_method or "none")
+            == self.imbalance_method.currentText()
+            and bool(config.use_class_weights)
+            == self.use_class_weights.isChecked()
+            and self._preset_label(config.smote_ratio_preset)
+            == self.ratio_preset.currentText()
+            and str(imbalance_options.get("custom_ratio", ""))
+            == self.custom_ratio_input.text().strip()
+        )
+
+    def _current_split_metadata(
+        self,
+        config: ProjectConfig,
+    ) -> dict[str, Any] | None:
+        path = (
+            Path(config.project_dir)
+            / "outputs"
+            / "data_split"
+            / "split_indices.json"
+        )
+        try:
+            metadata = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError, TypeError):
+            return None
+        if not metadata.get("stage_completed"):
+            return None
+        if not signatures_match(
+            metadata.get("signature"),
+            split_signature(config),
+        ):
+            return None
+        output_dir = path.parent
+        required = list(SAVED_SPLIT_FILES)
+        if str(config.task_type or "auto").strip().lower() != "regression":
+            required.extend(
+                [
+                    "y_train_encoded.npy",
+                    "y_val_encoded.npy",
+                    "y_test_encoded.npy",
+                    "target_label_encoder.joblib",
+                    "target_label_mapping.json",
+                ]
+            )
+        if not all((output_dir / filename).is_file() for filename in required):
+            return None
+        return metadata
+
+    def _current_imbalance_metadata(
+        self,
+        config: ProjectConfig,
+    ) -> dict[str, Any] | None:
+        path = (
+            Path(config.project_dir)
+            / "outputs"
+            / "data_split"
+            / "imbalance_config.json"
+        )
+        try:
+            metadata = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError, TypeError):
+            return None
+        if not metadata.get("stage_completed"):
+            return None
+        if not signatures_match(
+            metadata.get("signature"),
+            imbalance_signature(config),
+        ):
+            return None
+        output_dir = path.parent
+        required = list(SAVED_IMBALANCE_FILES)
+        if str(config.task_type or "auto").strip().lower() != "regression":
+            required.extend(
+                [
+                    "y_train_balanced_encoded.npy",
+                    "y_train_balanced_original.npy",
+                ]
+            )
+        if not all((output_dir / filename).is_file() for filename in required):
+            return None
+        return metadata
 
     def _distribution_frame(self, datasets: dict[str, pd.Series]) -> pd.DataFrame:
         rows = []
@@ -762,56 +1140,29 @@ class DataSplitImbalancePage(QWidget):
 
     def _load_saved_results(self, config: ProjectConfig) -> str:
         output_dir = Path(config.project_dir) / "outputs" / "data_split"
-        imbalance_path = output_dir / "imbalance_config.json"
-        indices_path = output_dir / "split_indices.json"
         before_path = output_dir / "class_distribution_before.csv"
         after_path = output_dir / "class_distribution_after.csv"
         coverage_path = output_dir / "class_coverage_report.csv"
 
-        if not indices_path.exists() and not imbalance_path.exists():
+        if not (output_dir / "split_indices.json").exists():
+            self._split_stage_current = False
+            self._imbalance_stage_current = False
+            self._update_stage_status()
             return "missing"
 
-        metadata = []
-        for path in (imbalance_path, indices_path):
-            if not path.exists():
-                continue
-            try:
-                metadata.append(json.loads(path.read_text(encoding="utf-8")))
-            except (OSError, json.JSONDecodeError):
-                return "missing"
-
-        saved_targets = {
-            item.get("target_column")
-            for item in metadata
-            if item.get("target_column") is not None
-        }
-        if not saved_targets or saved_targets != {config.target_column}:
-            self._clear_distribution_tables(self.after_distribution_tables)
+        split_metadata = self._current_split_metadata(config)
+        if split_metadata is None:
+            self._clear_split_state()
             return "target_changed"
-        saved_feature_sets = {
-            tuple(item.get("feature_columns") or [])
-            for item in metadata
-            if item.get("feature_columns") is not None
-        }
-        if saved_feature_sets and saved_feature_sets != {tuple(config.feature_columns or [])}:
-            self._clear_distribution_tables(self.after_distribution_tables)
-            return "target_changed"
-
-        required_files = list(SAVED_SPLIT_FILES)
-        if str(config.task_type or "auto").strip().lower() != "regression":
-            required_files.extend(CLASSIFICATION_TARGET_FILES)
-        if not all((output_dir / name).exists() for name in required_files):
-            return "missing"
 
         try:
             before = pd.read_csv(before_path)
-            after = pd.read_csv(after_path)
             coverage = pd.read_csv(coverage_path)
         except (OSError, ValueError, pd.errors.ParserError):
             return "missing"
 
         required_columns = {"split", "class", "count", "percent"}
-        if not required_columns.issubset(before.columns) or not required_columns.issubset(after.columns):
+        if not required_columns.issubset(before.columns):
             return "missing"
         coverage_columns = {
             "Class",
@@ -826,12 +1177,49 @@ class DataSplitImbalancePage(QWidget):
 
         self._clear_split_state()
         self._populate_distribution_tables(before, self.before_distribution_tables)
-        self._populate_distribution_tables(after, self.after_distribution_tables)
         self._populate_class_coverage_table(coverage)
+        self._split_stage_current = True
+        config.split_stage_completed = True
+        config.split_state = {
+            "completed": True,
+            "signature": split_signature(config),
+            "target_column": config.target_column,
+        }
+
+        imbalance_metadata = self._current_imbalance_metadata(config)
+        if imbalance_metadata is not None:
+            try:
+                after = pd.read_csv(after_path)
+            except (OSError, ValueError, pd.errors.ParserError):
+                after = pd.DataFrame()
+            if required_columns.issubset(after.columns):
+                self._populate_distribution_tables(
+                    after,
+                    self.after_distribution_tables,
+                )
+                self._imbalance_stage_current = True
+                config.imbalance_stage_completed = True
+                config.imbalance_state = {
+                    "completed": True,
+                    "signature": imbalance_signature(config),
+                    "target_column": config.target_column,
+                }
+                self._update_stage_status()
+                self._show_reload_message(
+                    "Saved split and imbalance stages loaded for target "
+                    f"column: {config.target_column}"
+                )
+                return "loaded"
+
+        self._imbalance_stage_current = False
+        config.imbalance_stage_completed = False
+        config.imbalance_state = {}
+        self._clear_distribution_tables(self.after_distribution_tables)
+        self._update_stage_status()
         self._show_reload_message(
-            f"Saved split/imbalance data loaded for target column: {config.target_column}"
+            "Saved split stage loaded. Apply imbalance handling to continue."
         )
-        return "loaded"
+        return "split_loaded"
 
     def _build_latest_xy(
         self,
@@ -890,11 +1278,88 @@ class DataSplitImbalancePage(QWidget):
         self.feedback_label.clear()
         self.warning_card.setVisible(False)
         self.warning_label.clear()
+        self._split_stage_current = False
+        self._imbalance_stage_current = False
+        self._update_stage_status()
 
     def _clear_distribution_tables(self, tables: dict[str, QTableWidget]) -> None:
         for table in tables.values():
             table.clearContents()
             table.setRowCount(0)
+
+    def _connect_stage_invalidation_signals(self) -> None:
+        for spin in (
+            self.train_percent,
+            self.validation_percent,
+            self.test_percent,
+            self.random_seed,
+        ):
+            spin.valueChanged.connect(self._on_split_settings_changed)
+        self.split_method.currentTextChanged.connect(
+            self._on_split_settings_changed
+        )
+        self.imbalance_method.currentTextChanged.connect(
+            self._on_imbalance_settings_changed
+        )
+        self.use_class_weights.toggled.connect(
+            self._on_imbalance_settings_changed
+        )
+        self.ratio_preset.currentTextChanged.connect(
+            self._on_imbalance_settings_changed
+        )
+        self.custom_ratio_input.textChanged.connect(
+            self._on_imbalance_settings_changed
+        )
+
+    def _on_split_settings_changed(self, *_args: Any) -> None:
+        if self._refreshing_controls:
+            return
+        self._split_stage_current = False
+        self._imbalance_stage_current = False
+        self._clear_distribution_tables(self.before_distribution_tables)
+        self._clear_distribution_tables(self.after_distribution_tables)
+        self.class_coverage_table.clearContents()
+        self.class_coverage_table.setRowCount(0)
+        self._update_stage_status()
+
+    def _on_imbalance_settings_changed(self, *_args: Any) -> None:
+        if self._refreshing_controls:
+            return
+        self._imbalance_stage_current = False
+        self._clear_distribution_tables(self.after_distribution_tables)
+        self._update_stage_status()
+
+    def _update_stage_status(self) -> None:
+        if not hasattr(self, "split_stage_label"):
+            return
+        self.split_stage_label.setText(
+            "Split stage: Completed"
+            if self._split_stage_current
+            else "Split stage: Run Data Split required"
+        )
+        self.imbalance_stage_label.setText(
+            "Imbalance stage: Completed"
+            if self._imbalance_stage_current
+            else "Imbalance stage: Apply Imbalance Handling required"
+        )
+        has_config = self.main_window.config is not None
+        has_data = self.main_window.dataframe is not None
+        valid_percent = (
+            self.train_percent.value()
+            + self.validation_percent.value()
+            + self.test_percent.value()
+            == 100
+        )
+        self.run_split_button.setEnabled(
+            has_config and has_data and valid_percent
+        )
+        self.apply_imbalance_button.setEnabled(
+            has_config and has_data and self._split_stage_current
+        )
+        confirmation_ready = (
+            self._split_stage_current and self._imbalance_stage_current
+        )
+        self.confirm_button.setEnabled(has_config and confirmation_ready)
 
     def _show_reload_message(self, message: str, warning: bool = False) -> None:
         if warning:
@@ -1005,6 +1470,14 @@ class DataSplitImbalancePage(QWidget):
         )
         layout.addLayout(self._split_controls())
         layout.addWidget(self.percent_validator_label)
+        self.run_split_button = QPushButton("Run Data Split")
+        self.run_split_button.setObjectName("primaryRunSplitButton")
+        self.run_split_button.setIcon(
+            get_fa_icon("fa6s.scissors", "#FFFFFF")
+        )
+        self.run_split_button.setIconSize(QSize(16, 16))
+        self.run_split_button.clicked.connect(self.run_data_split)
+        layout.addWidget(self.run_split_button)
         return card
 
     def _before_balancing_card(self) -> QWidget:
@@ -1035,6 +1508,20 @@ class DataSplitImbalancePage(QWidget):
             "fa6s.scale-balanced",
         )
         layout.addLayout(self._imbalance_controls())
+        self.apply_imbalance_button = QPushButton(
+            "Apply Imbalance Handling"
+        )
+        self.apply_imbalance_button.setObjectName(
+            "primaryApplyImbalanceButton"
+        )
+        self.apply_imbalance_button.setIcon(
+            get_fa_icon("fa6s.scale-balanced", "#FFFFFF")
+        )
+        self.apply_imbalance_button.setIconSize(QSize(16, 16))
+        self.apply_imbalance_button.clicked.connect(
+            self.apply_imbalance_handling
+        )
+        layout.addWidget(self.apply_imbalance_button)
         return card
 
     def _after_balancing_card(self) -> QWidget:
@@ -1058,6 +1545,16 @@ class DataSplitImbalancePage(QWidget):
             "Save the split, balancing metadata, and downstream training artifacts.",
             "fa6s.circle-check",
         )
+        self.split_stage_label = QLabel(
+            "Split stage: Run Data Split required"
+        )
+        self.split_stage_label.setObjectName("splitStageStatus")
+        self.imbalance_stage_label = QLabel(
+            "Imbalance stage: Apply Imbalance Handling required"
+        )
+        self.imbalance_stage_label.setObjectName("imbalanceStageStatus")
+        layout.addWidget(self.split_stage_label)
+        layout.addWidget(self.imbalance_stage_label)
         self.confirm_button = QPushButton("Confirm Split & Imbalance")
         self.confirm_button.setObjectName("primaryDataSplitButton")
         self.confirm_button.setIcon(get_fa_icon("fa6s.floppy-disk", "#FFFFFF"))
@@ -1441,6 +1938,12 @@ class DataSplitImbalancePage(QWidget):
                 font-size: 12px;
                 font-weight: 600;
             }}
+            QLabel#splitStageStatus,
+            QLabel#imbalanceStageStatus {{
+                color: {TEXT};
+                font-size: 12px;
+                font-weight: 600;
+            }}
             QWidget#splitConfigurationCard,
             QWidget#beforeBalancingCard,
             QWidget#classCoverageCard,
@@ -1582,6 +2085,8 @@ class DataSplitImbalancePage(QWidget):
                 border: 1px solid {BORDER};
             }}
             QPushButton:hover {{ background: #EFF6FF; border-color: {PRIMARY}; }}
+            QPushButton#primaryRunSplitButton,
+            QPushButton#primaryApplyImbalanceButton,
             QPushButton#primaryDataSplitButton {{
                 min-height: 44px;
                 color: #FFFFFF;
@@ -1590,7 +2095,15 @@ class DataSplitImbalancePage(QWidget):
                 border-radius: 7px;
                 font-weight: 600;
             }}
+            QPushButton#primaryRunSplitButton:hover,
+            QPushButton#primaryApplyImbalanceButton:hover,
             QPushButton#primaryDataSplitButton:hover {{ background: #00A6A6; }}
+            QPushButton#primaryRunSplitButton:disabled,
+            QPushButton#primaryApplyImbalanceButton:disabled,
+            QPushButton#primaryDataSplitButton:disabled {{
+                color: #E5E7EB;
+                background: #9CA3AF;
+            }}
             """
         )
 

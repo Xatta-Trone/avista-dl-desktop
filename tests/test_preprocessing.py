@@ -48,7 +48,8 @@ def test_mixed_numeric_categorical_dataset(tmp_path):
     assert artifacts.numeric_columns == ["age", "score"]
     assert artifacts.categorical_columns == ["city"]
     assert "city_Austin" in artifacts.output_feature_names
-    assert X.shape == (3, 4)
+    assert "city_Unknown" in artifacts.output_feature_names
+    assert X.shape == (3, 5)
     assert y.tolist() == [0, 1, 0]
 
 
@@ -121,6 +122,55 @@ def test_unknown_categories_are_safe_during_transform(tmp_path):
     assert transformed.shape == (1, len(artifacts.output_feature_names))
     city_columns = [column for column in transformed.columns if column.startswith("city_")]
     assert transformed.loc[0, city_columns].sum() == 0
+
+
+def test_categorical_missing_policy_is_train_fitted_and_persists(tmp_path):
+    train_df = pd.DataFrame(
+        {
+            "age": [20.0, 30.0, 40.0],
+            "city": ["Austin", "Dallas", "Austin"],
+            "unused": ["", "   ", None],
+            "target": ["", "yes", "no"],
+        }
+    )
+    validation_df = pd.DataFrame(
+        {
+            "age": [50.0, 60.0, 70.0, 80.0],
+            "city": [None, pd.NA, "", "   "],
+            "unused": [None, None, None, None],
+            "target": [None, "yes", "no", "yes"],
+        }
+    )
+    config = make_config(
+        tmp_path,
+        feature_columns=["age", "city"],
+    )
+    original_target = validation_df["target"].copy()
+
+    artifacts = fit_split_preprocessing(train_df, config)
+    path = save_artifacts(artifacts, tmp_path / "preprocessing.joblib")
+    transformed = transform_split_features(
+        validation_df,
+        load_artifacts(path),
+    )
+
+    assert artifacts.encoder.categories_[0].tolist() == [
+        "Austin",
+        "Dallas",
+        "Unknown",
+    ]
+    assert transformed["city_Unknown"].tolist() == [1.0, 1.0, 1.0, 1.0]
+    assert "unused" not in transformed.columns
+    assert validation_df["target"].equals(original_target)
+    assert artifacts.preprocessing_metadata["categorical_fill_value"] == "Unknown"
+    assert (
+        artifacts.preprocessing_metadata["categorical_encoder_fit_scope"]
+        == "training_split_only"
+    )
+    assert (
+        config.preprocessing_options["categorical_missing_value_strategy"]
+        == "replace_missing_and_blank_before_encoding"
+    )
 
 
 def test_artifact_save_load(tmp_path):

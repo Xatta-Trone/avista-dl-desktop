@@ -11,8 +11,14 @@ import pytest
 pytest.importorskip("PySide6")
 
 from app.core.project_config import ProjectConfig
+from app.core.trainer import TrainingCancelled
 from app.gui.workers import TrainingWorker, build_torch_subprocess_command
 from app.training import run_torch_model
+from app.training.deep_worker_launcher import (
+    DEEP_WORKER_EXECUTABLE,
+    build_deep_worker_launch,
+    resolve_source_worker_script,
+)
 from tests.test_trainer_evaluator import save_encoded_string_training_bundle
 
 
@@ -36,11 +42,10 @@ def test_torch_subprocess_command_contains_required_arguments(tmp_path):
 
     command = build_torch_subprocess_command(config, "mamba_attention")
 
-    assert command[:4] == [
-        sys.executable,
+    assert command[:3] == [
+        str(Path(sys.executable).resolve()),
         "-u",
-        "-m",
-        "app.training.run_torch_model",
+        str(resolve_source_worker_script()),
     ]
     assert command[command.index("--project-dir") + 1] == str(tmp_path.resolve())
     assert command[command.index("--config") + 1] == str(
@@ -50,6 +55,81 @@ def test_torch_subprocess_command_contains_required_arguments(tmp_path):
     assert command[command.index("--output-dir") + 1].endswith(
         "outputs\\training\\MambaAttention"
     )
+    assert command[command.index("--log-path") + 1].endswith(".log")
+
+
+@pytest.mark.parametrize(
+    ("model_key", "model_name"),
+    [
+        ("mamba_attention", "MambaAttention"),
+        ("ft_transformer", "FT-Transformer"),
+        ("autoint", "AutoInt"),
+        ("tabresnet", "TabResNet"),
+    ],
+)
+def test_packaged_deep_worker_command_never_relaunches_avista(
+    tmp_path,
+    monkeypatch,
+    model_key,
+    model_name,
+):
+    config = make_config(tmp_path, selected_models=[model_key])
+    app_executable = tmp_path / "installed" / "AVISTA.exe"
+    worker_executable = app_executable.with_name(DEEP_WORKER_EXECUTABLE)
+    app_executable.parent.mkdir()
+    app_executable.write_bytes(b"gui")
+    worker_executable.write_bytes(b"worker")
+    monkeypatch.setattr(
+        "app.training.deep_worker_launcher.is_packaged_application",
+        lambda: True,
+    )
+    monkeypatch.setattr(
+        "app.training.deep_worker_launcher.sys.executable",
+        str(app_executable),
+    )
+
+    launch = build_deep_worker_launch(config, model_key)
+
+    assert launch.packaged is True
+    assert launch.executable == worker_executable.resolve()
+    assert launch.executable.name == "AVISTADeepWorker.exe"
+    assert launch.executable != app_executable.resolve()
+    assert launch.arguments[0] == "--project-dir"
+    assert launch.arguments[launch.arguments.index("--model") + 1] == model_name
+    assert "run_torch_model.py" not in " ".join(launch.arguments)
+    assert launch.working_directory == tmp_path.resolve()
+
+
+def test_missing_packaged_worker_fails_without_starting_gui(
+    tmp_path,
+    monkeypatch,
+):
+    config = make_config(tmp_path, selected_models=["ft_transformer"])
+    app_executable = tmp_path / "installed" / "AVISTA.exe"
+    app_executable.parent.mkdir()
+    app_executable.write_bytes(b"gui")
+    monkeypatch.setattr(
+        "app.training.deep_worker_launcher.is_packaged_application",
+        lambda: True,
+    )
+    monkeypatch.setattr(
+        "app.training.deep_worker_launcher.sys.executable",
+        str(app_executable),
+    )
+    monkeypatch.setattr(
+        "app.gui.workers.subprocess.Popen",
+        lambda *_args, **_kwargs: pytest.fail(
+            "The GUI executable must not be launched when the worker is missing."
+        ),
+    )
+
+    result = TrainingWorker(config)._run_torch_subprocess("ft_transformer")
+
+    assert result["status"] == "failed"
+    assert result["process_start_success"] is False
+    assert result["worker_executable_exists"] is False
+    assert result["executable_path"].endswith("AVISTADeepWorker.exe")
+    assert "worker is missing" in result["error"]
 
 
 def test_worker_emits_first_model_result_before_second_finishes(
@@ -105,11 +185,10 @@ def test_ft_transformer_subprocess_command_uses_model_output_folder(tmp_path):
 
     command = build_torch_subprocess_command(config, "ft_transformer")
 
-    assert command[:4] == [
-        sys.executable,
+    assert command[:3] == [
+        str(Path(sys.executable).resolve()),
         "-u",
-        "-m",
-        "app.training.run_torch_model",
+        str(resolve_source_worker_script()),
     ]
     assert command[command.index("--model") + 1] == "FT-Transformer"
     assert command[command.index("--output-dir") + 1].endswith(
@@ -122,11 +201,10 @@ def test_autoint_subprocess_command_uses_model_output_folder(tmp_path):
 
     command = build_torch_subprocess_command(config, "autoint")
 
-    assert command[:4] == [
-        sys.executable,
+    assert command[:3] == [
+        str(Path(sys.executable).resolve()),
         "-u",
-        "-m",
-        "app.training.run_torch_model",
+        str(resolve_source_worker_script()),
     ]
     assert command[command.index("--model") + 1] == "AutoInt"
     assert command[command.index("--output-dir") + 1].endswith(
@@ -139,11 +217,10 @@ def test_tab_resnet_subprocess_command_uses_model_output_folder(tmp_path):
 
     command = build_torch_subprocess_command(config, "tab_resnet")
 
-    assert command[:4] == [
-        sys.executable,
+    assert command[:3] == [
+        str(Path(sys.executable).resolve()),
         "-u",
-        "-m",
-        "app.training.run_torch_model",
+        str(resolve_source_worker_script()),
     ]
     assert command[command.index("--model") + 1] == "TabResNet"
     assert command[command.index("--output-dir") + 1].endswith(
@@ -156,11 +233,10 @@ def test_tabpfn_subprocess_command_uses_safe_output_folder(tmp_path):
 
     command = build_torch_subprocess_command(config, "tabpfn")
 
-    assert command[:4] == [
-        sys.executable,
+    assert command[:3] == [
+        str(Path(sys.executable).resolve()),
         "-u",
-        "-m",
-        "app.training.run_torch_model",
+        str(resolve_source_worker_script()),
     ]
     assert command[command.index("--model") + 1] == "TabPFN 2.5"
     assert command[command.index("--output-dir") + 1].endswith(
@@ -195,18 +271,36 @@ def test_torch_subprocess_entrypoint_saves_failure_reason(tmp_path, monkeypatch)
     )
     assert "Unsupported torch model" in failure["error"]
     assert failure["source"] == "torch_subprocess"
+    assert failure["exception_type"] == "ValueError"
+    assert "Traceback" in failure["traceback"]
+    worker_logs = list((tmp_path / "logs" / "training").glob("*.log"))
+    assert worker_logs
+    assert "Worker failed" in worker_logs[0].read_text(encoding="utf-8")
 
 
 def test_worker_contains_nonzero_torch_subprocess_failure(tmp_path, monkeypatch):
     config = make_config(tmp_path)
+    app_executable = tmp_path / "installed" / "AVISTA.exe"
+    worker_executable = app_executable.with_name(DEEP_WORKER_EXECUTABLE)
+    app_executable.parent.mkdir()
+    app_executable.write_bytes(b"gui")
+    worker_executable.write_bytes(b"worker")
+    monkeypatch.setattr(
+        "app.training.deep_worker_launcher.is_packaged_application",
+        lambda: True,
+    )
+    monkeypatch.setattr(
+        "app.training.deep_worker_launcher.sys.executable",
+        str(app_executable),
+    )
 
     class FakeProcess:
         def __init__(self):
             self.stdout = io.StringIO(
                 '{"event":"started","model":"MambaAttention"}\n'
             )
-            self.stderr = io.StringIO("native heap corruption\n")
-            self.returncode = -1073740940
+            self.stderr = io.StringIO("")
+            self.returncode = 3221226505
 
         def poll(self):
             return self.returncode
@@ -226,11 +320,16 @@ def test_worker_contains_nonzero_torch_subprocess_failure(tmp_path, monkeypatch)
     result = worker._run_torch_subprocess("mamba_attention")
 
     assert result["status"] == "failed"
-    assert result["return_code"] == -1073740940
-    assert result["error"] == (
-        "MambaAttention failed in subprocess. GUI remained stable."
-    )
-    assert "native heap corruption" in result["stderr_tail"]
+    assert result["return_code"] == 3221226505
+    assert result["return_code_hex"] == "0xC0000409"
+    assert result["windows_status"] == "STATUS_STACK_BUFFER_OVERRUN"
+    assert result["windows_status_explanation"] == "Native fast-fail termination"
+    assert result["native_process_termination"] is True
+    assert "AVISTADeepWorker" in result["error"]
+    assert "No Python traceback was returned" in result["error"]
+    assert result["last_valid_json_event"]["event"] == "started"
+    assert result["worker_log_path"].endswith(".log")
+    assert Path(result["worker_log_path"]).exists()
     failure_path = (
         tmp_path
         / "outputs"
@@ -282,6 +381,42 @@ def test_worker_parses_epoch_progress_before_process_completion(
 
     assert result["status"] == "trained"
     assert received[0]["validation_accuracy"] == 0.5
+
+
+def test_worker_cancellation_terminates_deep_worker(tmp_path, monkeypatch):
+    config = make_config(tmp_path)
+
+    class FakeProcess:
+        def __init__(self):
+            self.stdout = io.StringIO(
+                '{"event":"started","model":"MambaAttention"}\n'
+            )
+            self.stderr = io.StringIO("")
+            self.returncode = None
+            self.terminated = False
+
+        def poll(self):
+            return self.returncode
+
+        def terminate(self):
+            self.terminated = True
+            self.returncode = -1
+
+        def wait(self):
+            return self.returncode
+
+    process = FakeProcess()
+    monkeypatch.setattr(
+        "app.gui.workers.subprocess.Popen",
+        lambda *_args, **_kwargs: process,
+    )
+    worker = TrainingWorker(config)
+    worker._cancel_requested = True
+
+    with pytest.raises(TrainingCancelled, match="Training cancelled by user"):
+        worker._run_torch_subprocess("mamba_attention")
+
+    assert process.terminated is True
 
 
 def test_worker_parses_ft_transformer_live_curve_event(tmp_path, monkeypatch):
@@ -609,6 +744,7 @@ def test_torch_subprocess_success_smoke(tmp_path):
     assert history.columns.tolist() == [
         "epoch",
         "train_loss",
+        "train_accuracy",
         "validation_loss",
         "validation_macro_f1",
         "validation_accuracy",

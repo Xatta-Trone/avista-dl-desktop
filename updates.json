@@ -4,7 +4,9 @@
   "release_notes": [
     "Fixed Edge-Case Report top alignment and initial action visibility",
     "Prevented horizontal overflow in the Edge-Case Report",
-    "Preserved responsive cards and Light/Dark theme styling"
+    "Preserved responsive cards and Light/Dark theme styling",
+    "Fixed packaged deep-learning launches with the dedicated AVISTADeepWorker.exe",
+    "Added detailed deep-worker logs and Windows native-process failure diagnostics"
   ],
   "installer_url": "https://github.com/Xatta-Trone/avista-dl-desktop/releases/download/v1.0.4/AVISTA_Setup.exe",
   "sha256": "",

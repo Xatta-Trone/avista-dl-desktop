@@ -23,6 +23,8 @@ $LogoIco = Join-Path $ProjectRoot "app\assets\logo.ico"
 $LogoIconGenerator = Join-Path $PSScriptRoot "create_logo_icon.py"
 $SpecFile = Join-Path $PSScriptRoot "avista_pyinstaller.spec"
 $VersionInfoFile = Join-Path $DistDir "avista_version_info.txt"
+$WorkerVersionInfoFile = Join-Path $DistDir "avista_deep_worker_version_info.txt"
+$WorkerName = "AVISTADeepWorker"
 
 $VersionText = Get-Content -LiteralPath $VersionSource -Raw
 $VersionMatch = [regex]::Match($VersionText, '(?m)^__version__\s*=\s*"([^"]+)"')
@@ -90,7 +92,8 @@ function Write-VersionInfoFile {
         [string]$VersionTuple,
         [string]$ApplicationName,
         [string]$ApplicationDescription,
-        [string]$ApplicationReleaseDate
+        [string]$ApplicationReleaseDate,
+        [string]$ExecutableName
     )
 
     $versionInfo = @"
@@ -114,8 +117,8 @@ VSVersionInfo(
           StringStruct('CompanyName', '$ApplicationName Developers'),
           StringStruct('FileDescription', '$ApplicationDescription'),
           StringStruct('FileVersion', '$Version'),
-          StringStruct('InternalName', '$ApplicationName'),
-          StringStruct('OriginalFilename', '$ApplicationName.exe'),
+          StringStruct('InternalName', '$ExecutableName'),
+          StringStruct('OriginalFilename', '$ExecutableName.exe'),
           StringStruct('ProductName', '$ApplicationName'),
           StringStruct('ProductVersion', '$Version'),
           StringStruct('ReleaseDate', '$ApplicationReleaseDate'),
@@ -203,10 +206,20 @@ Write-VersionInfoFile `
     $WindowsVersionTuple `
     $AppName `
     $AppDescription `
-    $AppReleaseDate
+    $AppReleaseDate `
+    $AppName
+Write-VersionInfoFile `
+    $WorkerVersionInfoFile `
+    $AppVersion `
+    $WindowsVersionTuple `
+    $AppName `
+    "$AppDescription Deep-learning worker." `
+    $AppReleaseDate `
+    $WorkerName
 
 $env:AVISTA_PYINSTALLER_CONSOLE = if ($Configuration -eq "Debug") { "1" } else { "0" }
 $env:AVISTA_VERSION_FILE = $VersionInfoFile
+$env:AVISTA_WORKER_VERSION_FILE = $WorkerVersionInfoFile
 $PyInstallerArgs = @(
     "-m", "PyInstaller",
     $SpecFile,
@@ -227,12 +240,17 @@ finally {
     Pop-Location
     Remove-Item Env:\AVISTA_PYINSTALLER_CONSOLE -ErrorAction SilentlyContinue
     Remove-Item Env:\AVISTA_VERSION_FILE -ErrorAction SilentlyContinue
+    Remove-Item Env:\AVISTA_WORKER_VERSION_FILE -ErrorAction SilentlyContinue
 }
 
 $BuiltAppDir = Join-Path $DistDir $AppName
 $BuiltExe = Join-Path $BuiltAppDir "$AppName.exe"
+$BuiltWorkerExe = Join-Path $BuiltAppDir "$WorkerName.exe"
 if (-not (Test-Path -LiteralPath $BuiltExe)) {
     throw "PyInstaller completed but $BuiltExe was not found."
+}
+if (-not (Test-Path -LiteralPath $BuiltWorkerExe)) {
+    throw "PyInstaller completed but $BuiltWorkerExe was not found."
 }
 
 Remove-BuildPath $ReleaseAppDir
@@ -282,6 +300,7 @@ if (-not $SkipInstaller) {
 }
 
 Write-Host "AVISTA standalone build: $ReleaseAppDir"
+Write-Host "AVISTA deep-learning worker: $(Join-Path $ReleaseAppDir "$WorkerName.exe")"
 if (-not $SkipInstaller) {
     Write-Host "AVISTA installer output: $InstallerDir"
 }

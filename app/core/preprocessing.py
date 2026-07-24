@@ -18,6 +18,15 @@ from sklearn.preprocessing import LabelEncoder, MinMaxScaler, OneHotEncoder, Sta
 ScalerType = MinMaxScaler | StandardScaler | None
 SCALER_CONFIG_FILENAME = "numerical_scaling_config.json"
 SCALER_ARTIFACT_FILENAME = "numerical_scaler.joblib"
+CATEGORICAL_MISSING_VALUE = "Unknown"
+CATEGORICAL_MISSING_INPUTS = (
+    "NaN",
+    "None",
+    "pandas.NA",
+    "empty_string",
+    "whitespace_only",
+)
+CATEGORICAL_MISSING_STRATEGY = "replace_missing_and_blank_before_encoding"
 
 
 @dataclass
@@ -37,6 +46,7 @@ class PreprocessingArtifacts:
     output_feature_names: list[str]
     numeric_scaling_method: str = "none"
     scaled_numeric_columns: list[str] = field(default_factory=list)
+    categorical_fill_value: str = CATEGORICAL_MISSING_VALUE
     preprocessing_metadata: dict[str, Any] = field(default_factory=dict)
 
     def save_artifacts(self, path: str | Path) -> Path:
@@ -121,6 +131,7 @@ def build_preprocessing_pipeline(
         output_feature_names=output_feature_names,
         numeric_scaling_method=spec["numeric_scaling_method"],
         scaled_numeric_columns=spec["scaled_numeric_columns"],
+        categorical_fill_value=spec["categorical_fill_value"],
         preprocessing_metadata=metadata,
     )
     return X, y, artifacts
@@ -169,6 +180,11 @@ def transform_new_data(df: pd.DataFrame, artifacts: PreprocessingArtifacts) -> p
         artifacts.categorical_columns,
         artifacts.categorical_imputer,
         artifacts.encoder,
+        getattr(
+            artifacts,
+            "categorical_fill_value",
+            CATEGORICAL_MISSING_VALUE,
+        ),
     )
     return pd.DataFrame(
         _combine_arrays(numeric_array, categorical_array),
@@ -234,7 +250,7 @@ def resolve_preprocessing_spec(
     """Resolve numeric, categorical, and scaling configuration from data and config."""
 
     feature_columns = list(feature_columns or _resolve_feature_columns(df, config))
-    preprocessing_options = getattr(config, "preprocessing_options", {}) or {}
+    preprocessing_options = ensure_categorical_missing_config(config)
     numeric_columns = [
         column for column in feature_columns if pd.api.types.is_numeric_dtype(df[column])
     ]
@@ -257,7 +273,7 @@ def resolve_preprocessing_spec(
         "scaled_numeric_columns": scaled_numeric_columns,
         "numeric_scaling_method": numeric_scaling_method,
         "numeric_impute_strategy": preprocessing_options.get("numeric_impute_strategy", "median"),
-        "categorical_fill_value": preprocessing_options.get("categorical_fill_value", "Unknown"),
+        "categorical_fill_value": CATEGORICAL_MISSING_VALUE,
     }
 
 
@@ -278,7 +294,40 @@ def build_preprocessing_metadata(
         "scaled_numerical_columns": list(spec["scaled_numeric_columns"]),
         "numeric_impute_strategy": spec["numeric_impute_strategy"],
         "categorical_fill_value": spec["categorical_fill_value"],
+        "categorical_missing_value_strategy": CATEGORICAL_MISSING_STRATEGY,
+        "categorical_missing_inputs": list(CATEGORICAL_MISSING_INPUTS),
+        "categorical_encoder_fit_scope": "training_split_only",
     }
+
+
+def ensure_categorical_missing_config(config: Any) -> dict[str, Any]:
+    """Persist the fixed categorical missing-value policy in project state."""
+
+    options = dict(getattr(config, "preprocessing_options", {}) or {})
+    options["categorical_fill_value"] = CATEGORICAL_MISSING_VALUE
+    options["categorical_missing_value"] = CATEGORICAL_MISSING_VALUE
+    options["categorical_missing_value_strategy"] = (
+        CATEGORICAL_MISSING_STRATEGY
+    )
+    options["categorical_missing_inputs"] = list(CATEGORICAL_MISSING_INPUTS)
+    setattr(config, "preprocessing_options", options)
+    return options
+
+
+def categorical_feature_columns(
+    df: pd.DataFrame,
+    config: Any,
+) -> list[str]:
+    """Return selected modeling features handled as categorical values."""
+
+    target_column = getattr(config, "target_column", None)
+    return [
+        column
+        for column in list(getattr(config, "feature_columns", []) or [])
+        if column != target_column
+        and column in df.columns
+        and not pd.api.types.is_numeric_dtype(df[column])
+    ]
 
 
 def _resolve_feature_columns(df: pd.DataFrame, config: Any) -> list[str]:
@@ -370,7 +419,18 @@ def _fit_transform_categorical(
     if encoder is None:
         raise ValueError("Categorical encoder is required when categorical columns exist.")
 
-    categorical_array = imputer.fit_transform(_categorical_frame(df, categorical_columns))
+    fill_value = str(imputer.fill_value or CATEGORICAL_MISSING_VALUE)
+    categorical_frame = _categorical_frame(
+        df,
+        categorical_columns,
+        fill_value,
+    )
+    categories = [
+        sorted(set(categorical_frame[column].tolist()) | {fill_value})
+        for column in categorical_columns
+    ]
+    encoder.set_params(categories=categories)
+    categorical_array = imputer.fit_transform(categorical_frame)
     return encoder.fit_transform(categorical_array)
 
 
@@ -379,13 +439,16 @@ def _transform_categorical(
     categorical_columns: list[str],
     imputer: SimpleImputer | None,
     encoder: OneHotEncoder | None,
+    fill_value: str,
 ) -> np.ndarray:
     if not categorical_columns:
         return np.empty((len(df), 0))
     if imputer is None or encoder is None:
         raise ValueError("Categorical preprocessing artifacts are missing.")
 
-    categorical_array = imputer.transform(_categorical_frame(df, categorical_columns))
+    categorical_array = imputer.transform(
+        _categorical_frame(df, categorical_columns, fill_value)
+    )
     return encoder.transform(categorical_array)
 
 
@@ -440,8 +503,21 @@ def _combine_arrays(numeric_array: np.ndarray, categorical_array: np.ndarray) ->
     return np.empty((numeric_array.shape[0] or categorical_array.shape[0], 0))
 
 
-def _categorical_frame(df: pd.DataFrame, categorical_columns: list[str]) -> pd.DataFrame:
-    return df[categorical_columns].astype(object).where(pd.notna(df[categorical_columns]), np.nan)
+def _categorical_frame(
+    df: pd.DataFrame,
+    categorical_columns: list[str],
+    fill_value: str,
+) -> pd.DataFrame:
+    frame = df.loc[:, categorical_columns].copy()
+    for column in categorical_columns:
+        values = frame[column].astype("string")
+        missing = values.isna() | values.str.strip().eq("").fillna(False)
+        frame[column] = (
+            values.mask(missing, fill_value)
+            .fillna(fill_value)
+            .astype(str)
+        )
+    return frame
 
 
 def _normalize_scaling_method(value: Any, preprocessing_options: dict[str, Any]) -> str:

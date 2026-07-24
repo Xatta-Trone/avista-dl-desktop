@@ -7,7 +7,11 @@ from app.__version__ import (
     __version__,
 )
 from app.core.project_config import ProjectConfig
-from main import create_splash_screen, load_startup_project
+from main import (
+    contains_deep_worker_arguments,
+    create_splash_screen,
+    load_startup_project,
+)
 
 
 def test_command_line_avista_path_loads_project(tmp_path):
@@ -73,3 +77,27 @@ def test_splash_screen_uses_central_release_branding():
     )
     splash.close()
     assert app is not None
+
+
+def test_gui_rejects_deep_worker_arguments_before_qapplication(monkeypatch):
+    import main as main_module
+
+    arguments = [
+        "--config",
+        "project.avista",
+        "--model",
+        "FT-Transformer",
+        "--output-dir",
+        "outputs/training/FT-Transformer",
+    ]
+    assert contains_deep_worker_arguments(arguments)
+    monkeypatch.setattr(main_module.sys, "argv", ["AVISTA.exe", *arguments])
+    monkeypatch.setattr(
+        main_module,
+        "QApplication",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            AssertionError("QApplication must not be created.")
+        ),
+    )
+
+    assert main_module.main() == 2

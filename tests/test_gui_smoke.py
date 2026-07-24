@@ -13,6 +13,12 @@ def _table_counts(table):
     }
 
 
+def _complete_split_workflow(page):
+    page.run_data_split()
+    page.apply_imbalance_handling()
+    page.confirm_split_and_imbalance()
+
+
 def test_main_window_smoke():
     from PySide6.QtWidgets import QApplication, QLabel
 
@@ -2273,7 +2279,7 @@ def test_data_split_page_saves_three_way_artifacts(tmp_path):
     page.imbalance_method.setCurrentText("none")
     assert page.balancing_preset_container.isHidden()
     assert "Preserve target class proportions" in page.split_method.toolTip()
-    page.confirm_split_and_imbalance()
+    _complete_split_workflow(page)
 
     output_dir = tmp_path / "outputs" / "data_split"
     expected = [
@@ -2303,6 +2309,149 @@ def test_data_split_page_saves_three_way_artifacts(tmp_path):
     imbalance_metadata = json.loads((output_dir / "imbalance_config.json").read_text())
     assert split_metadata["target_column"] == "target"
     assert imbalance_metadata["target_column"] == "target"
+    window.close()
+    assert app is not None
+
+
+def test_data_split_stages_persist_reload_and_invalidate_independently(tmp_path):
+    import numpy as np
+    import pandas as pd
+    from PySide6.QtWidgets import QApplication
+
+    from app.core.project_config import ProjectConfig
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+    config = ProjectConfig(
+        project_name="split-stages",
+        project_dir=str(tmp_path),
+        input_file=str(tmp_path / "data.csv"),
+        output_dir=str(tmp_path / "outputs"),
+        feature_columns=["feature"],
+        target_column="target",
+        task_type="classification",
+        split_method="stratified",
+    )
+    dataframe = pd.DataFrame(
+        {"feature": range(100), "target": [0] * 80 + [1] * 20}
+    )
+    window = MainWindow()
+    window.config = config
+    window.dataframe = dataframe
+    page = window.data_split_imbalance_page
+    page.refresh()
+
+    assert page.run_split_button.text() == "Run Data Split"
+    assert page.apply_imbalance_button.text() == "Apply Imbalance Handling"
+    assert page.confirm_button.text() == "Confirm Split & Imbalance"
+    assert not page.apply_imbalance_button.isEnabled()
+    assert not page.confirm_button.isEnabled()
+
+    page.run_data_split()
+    output_dir = tmp_path / "outputs" / "data_split"
+    assert (output_dir / "split_indices.json").exists()
+    assert not (output_dir / "imbalance_config.json").exists()
+    assert page.apply_imbalance_button.isEnabled()
+    assert not page.confirm_button.isEnabled()
+    split_mtime = (output_dir / "split_indices.json").stat().st_mtime_ns
+    validation_before = np.load(output_dir / "y_val.npy", allow_pickle=True)
+    test_before = np.load(output_dir / "y_test.npy", allow_pickle=True)
+
+    page.imbalance_method.setCurrentText("random_oversample")
+    assert page.before_distribution_tables["Train Set"].rowCount() > 0
+    assert page.after_distribution_tables["Train Set (Balanced)"].rowCount() == 0
+    page.apply_imbalance_handling()
+    assert page.confirm_button.isEnabled()
+    assert np.array_equal(
+        np.load(output_dir / "y_val.npy", allow_pickle=True),
+        validation_before,
+    )
+    assert np.array_equal(
+        np.load(output_dir / "y_test.npy", allow_pickle=True),
+        test_before,
+    )
+    assert (output_dir / "split_indices.json").stat().st_mtime_ns == split_mtime
+    balance_mtime = (output_dir / "imbalance_config.json").stat().st_mtime_ns
+
+    page.confirm_split_and_imbalance()
+    assert (output_dir / "split_indices.json").stat().st_mtime_ns == split_mtime
+    assert (output_dir / "imbalance_config.json").stat().st_mtime_ns == balance_mtime
+    saved = ProjectConfig.load(config.project_file)
+    assert saved.split_stage_completed is True
+    assert saved.imbalance_stage_completed is True
+
+    window.close()
+    reopened = MainWindow(saved)
+    reopened.dataframe = dataframe
+    reopened_page = reopened.data_split_imbalance_page
+    reopened_page.refresh()
+    assert reopened_page.before_distribution_tables["Train Set"].rowCount() > 0
+    assert (
+        reopened_page.after_distribution_tables["Train Set (Balanced)"].rowCount()
+        > 0
+    )
+    assert "Completed" in reopened_page.split_stage_label.text()
+    assert "Completed" in reopened_page.imbalance_stage_label.text()
+
+    reopened_page.use_class_weights.setChecked(
+        not reopened_page.use_class_weights.isChecked()
+    )
+    assert reopened_page.before_distribution_tables["Train Set"].rowCount() > 0
+    assert (
+        reopened_page.after_distribution_tables["Train Set (Balanced)"].rowCount()
+        == 0
+    )
+    assert reopened_page.apply_imbalance_button.isEnabled()
+    assert not reopened_page.confirm_button.isEnabled()
+    reopened.close()
+    assert app is not None
+
+
+def test_data_split_accepts_selected_categorical_missing_values_only(tmp_path):
+    import joblib
+    import numpy as np
+    import pandas as pd
+    from PySide6.QtWidgets import QApplication
+
+    from app.core.project_config import ProjectConfig
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+    window = MainWindow()
+    window.config = ProjectConfig(
+        project_name="categorical-missing-split",
+        project_dir=str(tmp_path),
+        input_file=str(tmp_path / "data.csv"),
+        output_dir=str(tmp_path / "outputs"),
+        feature_columns=["value", "city"],
+        label_encoding_columns=["city"],
+        target_column="target",
+        task_type="classification",
+        split_method="stratified",
+    )
+    window.dataframe = pd.DataFrame(
+        {
+            "value": range(80),
+            "city": ["Austin", None, "", "   "] * 20,
+            "unused": [None] * 80,
+            "target": ["no", "yes"] * 40,
+        }
+    )
+
+    page = window.data_split_imbalance_page
+    page.refresh()
+    _complete_split_workflow(page)
+
+    output_dir = tmp_path / "outputs" / "data_split"
+    artifacts = joblib.load(output_dir / "preprocessing_artifact.joblib")
+    target_encoder = joblib.load(output_dir / "target_label_encoder.joblib")
+    assert "city_Unknown" in artifacts.output_feature_names
+    assert artifacts.categorical_fill_value == "Unknown"
+    assert target_encoder.classes_.tolist() == ["no", "yes"]
+    assert "Unknown" not in set(
+        np.load(output_dir / "y_train_original.npy", allow_pickle=True)
+    )
+    assert "Error:" not in page.feedback_label.text()
     window.close()
     assert app is not None
 
@@ -2343,7 +2492,7 @@ def test_data_split_page_encodes_string_targets_and_saves_mapping(tmp_path):
 
     page = window.data_split_imbalance_page
     page.split_method.setCurrentText("stratified")
-    page.confirm_split_and_imbalance()
+    _complete_split_workflow(page)
 
     output_dir = tmp_path / "outputs" / "data_split"
     mapping = json.loads(
@@ -2399,7 +2548,7 @@ def test_data_split_page_encodes_mixed_type_targets(tmp_path):
     )
 
     page = window.data_split_imbalance_page
-    page.confirm_split_and_imbalance()
+    _complete_split_workflow(page)
 
     output_dir = tmp_path / "outputs" / "data_split"
     mapping = json.loads(
@@ -2447,7 +2596,7 @@ def test_column_target_change_invalidates_saved_encoder_and_split(tmp_path):
             "new_target": ["X", "Y", "Z"] * 20,
         }
     )
-    window.data_split_imbalance_page.confirm_split_and_imbalance()
+    _complete_split_workflow(window.data_split_imbalance_page)
     output_dir = tmp_path / "outputs" / "data_split"
     assert (output_dir / "target_label_encoder.joblib").exists()
 
@@ -2501,7 +2650,7 @@ def test_data_split_page_loads_saved_results_for_current_target(tmp_path):
 
     page = window.data_split_imbalance_page
     page.imbalance_method.setCurrentText("random_oversample")
-    page.confirm_split_and_imbalance()
+    _complete_split_workflow(page)
     expected_after_rows = page.after_distribution_tables["Train Set (Balanced)"].rowCount()
 
     page._clear_split_state()
@@ -2514,7 +2663,7 @@ def test_data_split_page_loads_saved_results_for_current_target(tmp_path):
     )
     assert (
         page.feedback_label.text()
-        == "Saved split/imbalance data loaded for target column: target"
+        == "Saved split and imbalance stages loaded for target column: target"
     )
     assert "#F8FFF9" in page.feedback_card.styleSheet()
     window.close()
@@ -2613,7 +2762,7 @@ def test_data_split_page_success_notification_auto_dismisses(tmp_path):
     window.dataframe = pd.DataFrame({"feature": range(40), "target": [0, 1] * 20})
 
     page = window.data_split_imbalance_page
-    page.confirm_split_and_imbalance()
+    _complete_split_workflow(page)
     assert not page.feedback_card.isHidden()
 
     page.success_notification_timer.timeout.emit()
@@ -2823,7 +2972,7 @@ def test_data_split_page_blocks_invalid_percentage_total(tmp_path):
     page.train_percent.setValue(65)
     page.validation_percent.setValue(10)
     page.test_percent.setValue(20)
-    page.confirm_split_and_imbalance()
+    page.run_data_split()
 
     assert "Current total: 95%" in page.feedback_label.text()
     assert not (tmp_path / "outputs" / "data_split" / "split_indices.json").exists()
@@ -2856,7 +3005,7 @@ def test_data_split_page_after_table_uses_balanced_training_target(tmp_path):
     page = window.data_split_imbalance_page
     page.split_method.setCurrentText("stratified")
     page.imbalance_method.setCurrentText("random_oversample")
-    page.confirm_split_and_imbalance()
+    _complete_split_workflow(page)
 
     before_table = page.before_distribution_tables["Train Set"]
     after_table = page.after_distribution_tables["Train Set (Balanced)"]
@@ -2901,7 +3050,7 @@ def test_data_split_balancing_uses_only_training_class_set(tmp_path):
     page = window.data_split_imbalance_page
     page.refresh()
     page.imbalance_method.setCurrentText("random_oversample")
-    page.confirm_split_and_imbalance()
+    _complete_split_workflow(page)
 
     before_train = _table_counts(page.before_distribution_tables["Train Set"])
     before_validation = _table_counts(page.before_distribution_tables["Validation Set"])
@@ -2979,7 +3128,7 @@ def test_data_split_page_refreshes_when_saved_target_changes(tmp_path):
     page = window.data_split_imbalance_page
     page.refresh()
     assert page.current_target_label.text() == "Current target column: mixed_target"
-    assert page.before_distribution_tables["Full Dataset"].rowCount() == 2
+    assert page.before_distribution_tables["Full Dataset"].rowCount() == 0
 
     config = ProjectConfig.load(tmp_path / "target-refresh.avista")
     config.target_column = "new_target"
@@ -2990,7 +3139,7 @@ def test_data_split_page_refreshes_when_saved_target_changes(tmp_path):
 
     assert window.config.target_column == "new_target"
     assert page.current_target_label.text() == "Current target column: new_target"
-    assert page.before_distribution_tables["Full Dataset"].rowCount() == 2
+    assert page.before_distribution_tables["Full Dataset"].rowCount() == 0
     assert page.after_distribution_tables["Train Set (Balanced)"].rowCount() == 0
     window.close()
     assert app is not None
@@ -3026,19 +3175,19 @@ def test_data_split_page_rejects_saved_results_for_previous_target(tmp_path):
     )
 
     page = window.data_split_imbalance_page
-    page.confirm_split_and_imbalance()
+    _complete_split_workflow(page)
 
     updated = ProjectConfig.load(tmp_path / "changed-saved-target.avista")
     updated.target_column = "new_target"
     updated.save_json()
     page.refresh()
 
-    assert page.before_distribution_tables["Full Dataset"].rowCount() == 3
+    assert page.before_distribution_tables["Full Dataset"].rowCount() == 0
     assert page.after_distribution_tables["Train Set (Balanced)"].rowCount() == 0
     assert page.feedback_label.text() == ""
     assert (
         page.warning_label.text()
-        == "Warnings:\nTarget column changed. Please confirm split and imbalance again."
+        == "Warnings:\nSaved split settings are stale. Run Data Split again."
     )
     assert not page.warning_card.isHidden()
     window.close()
@@ -3078,7 +3227,7 @@ def test_edge_case_page_uses_confirmed_split_artifacts(tmp_path):
         data_dir / "modeling_subset.csv",
         index=False,
     )
-    window.data_split_imbalance_page.confirm_split_and_imbalance()
+    _complete_split_workflow(window.data_split_imbalance_page)
 
     page = window.edge_case_report_page
     page.refresh()
@@ -3302,7 +3451,7 @@ def test_training_page_shows_ready_confirmed_status(tmp_path):
     data_dir = tmp_path / "data"
     data_dir.mkdir()
     window.dataframe.to_csv(data_dir / "modeling_subset.csv", index=False)
-    window.data_split_imbalance_page.confirm_split_and_imbalance()
+    _complete_split_workflow(window.data_split_imbalance_page)
     window.edge_case_report_page.run_checks()
     edge_path = tmp_path / "outputs" / "edge_cases" / "edge_case_report.json"
     for _ in range(200):

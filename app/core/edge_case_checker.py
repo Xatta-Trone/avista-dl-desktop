@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 
 from app.core.error_handler import ERROR, FATAL, WARNING, EdgeCaseReport
+from app.core.preprocessing import categorical_feature_columns
 from app.core.splitter import (
     CLASS_COVERAGE_FIX,
     build_class_coverage_report,
@@ -169,7 +170,10 @@ def _check_confirmed_modeling_columns(
             "Reload the matching dataset or confirm Column Configuration again.",
         )
         return
+    categorical_columns = set(categorical_feature_columns(df, config))
     for column in feature_columns:
+        if column in categorical_columns:
+            continue
         _add_missing_column_issue(df[column], column, "features", report)
     _add_missing_column_issue(df[target_column], target_column, "target", report)
 
@@ -524,7 +528,10 @@ def _check_features(df: pd.DataFrame, config: Any, report: EdgeCaseReport) -> No
         )
 
     existing_features = [column for column in feature_columns if column in df.columns]
+    categorical_columns = set(categorical_feature_columns(df, config))
     for column in existing_features:
+        if column in categorical_columns:
+            continue
         _add_missing_column_issue(df[column], column, "features", report)
 
     id_like_features = [column for column in existing_features if column in id_columns or _looks_id_like(column, df[column])]
@@ -862,7 +869,12 @@ def selected_column_missing_counts(
 ) -> dict[str, tuple[int, float]]:
     """Return missing counts and percentages for selected features and target only."""
 
-    columns = list(getattr(config, "feature_columns", []) or [])
+    categorical_columns = set(categorical_feature_columns(df, config))
+    columns = [
+        column
+        for column in list(getattr(config, "feature_columns", []) or [])
+        if column not in categorical_columns
+    ]
     target_column = getattr(config, "target_column", None)
     if target_column:
         columns.append(target_column)

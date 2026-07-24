@@ -40,7 +40,89 @@ visible at scroll position zero. Focused Edge-Case UI verification passed:
 
 Installed PyInstaller builds now inspect bundled optional packages in-process. Creating or loading a project no longer relaunches `AVISTA.exe` with Python-only `-c` arguments, freezes the original window, or opens a second window with a command-line project error. Attempts to pip-install into the immutable packaged runtime are rejected with an actionable logged message instead of launching the GUI executable as Python.
 
-The Data Split & Imbalance page uses AVISTA-style subsection cards, compact distribution and coverage tables, a primary confirm action, and auto-dismissing compact success notifications. Warnings remain separate from successful save and load notifications, and errors remain visually distinct.
+Packaged deep-model training now launches a dedicated GUI-free
+`AVISTADeepWorker.exe` beside `AVISTA.exe`. Source mode continues to launch the
+active Python interpreter with the absolute worker-script path. A centralized
+launcher owns packaged detection, executable/path resolution, sanitized
+arguments, explicit working directories, and per-model log locations.
+`AVISTA.exe` defensively rejects worker-only arguments before creating a
+`QApplication`, preventing accidental recursive desktop startup.
+
+The complete v1.0.1 (`636e270`) → v1.0.2 (`ce9baf5`) → v1.0.3
+(`e8bf98a`) Git audit found no deep-worker launch-code change. All three tags
+use the initial-commit (`de7b61d`) command `sys.executable -u -m
+app.training.run_torch_model`, the same subprocess body, environment
+overrides, repository-root working directory, stdout/stderr pipes, and JSONL
+handling. `app/training/run_torch_model.py`,
+`packaging/avista_pyinstaller.spec`, `requirements_lock.txt`, and
+`app/utils/resources.py` have identical Git blob IDs across the three tags.
+
+The v1.0.1→v1.0.2 commits added update-check/download workers, installation
+directory preservation, theme initialization, numerical scaling, and release
+metadata. The 60 lines added to `app/gui/workers.py` are update workers;
+`git blame` attributes the complete deep-worker launcher and subprocess body
+to `de7b61d`. The v1.0.2→v1.0.3 commits changed branding, splash/release
+metadata, report/runtime metadata, theme styling, and Windows version
+resources. They did not change deep routing, command construction,
+`subprocess.Popen`, `main.py` argument parsing, process creation flags,
+working-directory selection, environment inheritance, or worker output
+handling.
+
+The tagged release workflow is PyInstaller onedir, not Nuitka. Commit
+`97b45a1` replaced the earlier Nuitka script with
+`packaging/build_pyinstaller.ps1` before v1.0.0. The PyInstaller specification
+and locked Torch/CUDA dependency file are identical in v1.0.1, v1.0.2, and
+v1.0.3; v1.0.3 only added centralized branding/version-resource propagation
+to the build script. Some older documentation still called the packaging
+workflow Nuitka even after the implementation changed.
+
+Therefore Git does not support claiming that v1.0.2 introduced the launcher
+defect. The unsafe command entered the repository in `de7b61d` and was present
+in every requested tag. In source mode `sys.executable` is Python; in a
+packaged process it is `AVISTA.exe`, which explains recursive GUI launches.
+The report that the v1.0.1 installer behaved differently may reflect a release
+artifact/runtime or test-path difference, but it cannot be attributed to a
+tracked v1.0.1→v1.0.2 code change without additional artifact-level evidence.
+Confidence is high for the unsafe packaged command and high that no source
+regression exists between the three tags; confidence is low about why the
+observed v1.0.1 installation did not reproduce it.
+
+Focused deep-worker, subprocess-diagnostic, packaging, cancellation, and
+startup-guard verification passed on July 24, 2026: `36 passed, 4 deselected`.
+The four deselected source-mode smoke tests were run separately and passed for
+MambaAttention, FT-Transformer, AutoInt, and TabResNet. Missing-checkpoint
+handling also passed (`1 passed`). PyInstaller-spec compilation and PowerShell
+build-script syntax parsing passed. A real standalone/installed build was not
+produced locally because PyInstaller is not installed in the project
+environment and no current standalone output exists; that smoke test remains
+assigned to the Windows release host.
+
+Selected categorical modeling features now use a fixed, persisted
+missing-value policy: `NaN`, `None`, `pandas.NA`, empty strings, and
+whitespace-only strings become `Unknown` before one-hot encoding. Encoders
+are fitted on training data only, include an explicit `Unknown` category, and
+are reused unchanged for validation, test, project reload, and future
+inference. Targets, numerical features, and unselected columns are not subject
+to this rule.
+
+The Data Split & Imbalance page now has three explicit saved stages: **Run
+Data Split**, **Apply Imbalance Handling**, and **Confirm Split &
+Imbalance**. Split and balancing metadata carry configuration signatures,
+tables and completion status restore after reopening a project, modeling or
+split changes invalidate both stages, and imbalance-only changes retain the
+valid split while invalidating only balancing. Validation and test artifacts
+remain unchanged when balancing is applied to training data.
+
+The existing **Generate Report** button now appears in a compact action card
+immediately below Report Summary and before the Model Performance Table.
+Report generation, saved-result loading, output filenames, diagnostics, and
+separate open/export actions are unchanged.
+
+Focused workflow verification passed on July 24, 2026: `30 passed` across
+categorical preprocessing, staged split/balance persistence and reload,
+configuration invalidation, train-only balancing, report action placement,
+and report generation. Python compilation and `git diff --check` also passed;
+the full suite was not run per request.
 
 MambaAttention, FT-Transformer, AutoInt, and TabResNet have real saved-artifact training with live curves and PyTorch state-dict persistence. TabPFN 2.5 now has capped saved-artifact training, optional cross-validation, decoded evaluation exports, subprocess isolation, and safe serialization fallback. A comprehensive Report page now combines saved model outputs into Markdown, PDF, CSV, and comparison figures without retraining. A PyInstaller onedir and Inno Setup Windows packaging workflow is implemented. AVISTA now has GitHub-hosted update metadata, background update checks, manual Help-menu update checking, installer download/hash validation, skip-version preferences, app-level update settings, install-directory preservation for update installers, and centralized Light/Dark theme support. XAI and robustness analysis are not implemented yet.
 
@@ -151,6 +233,13 @@ Focused checkbox-based numerical-scaling verification passed on July 3, 2026: `7
 - Common null markers such as `null`, `nan`, `N/A`, empty strings, and `""` are normalized and displayed as `null`.
 - Edge-case checker implemented with warning, error, and fatal levels.
 - Generic preprocessing implemented with imputation, one-hot encoding, configurable numerical scaling, target encoding, and joblib artifact persistence.
+  - selected categorical modeling features normalize null, empty, and
+    whitespace-only values to `Unknown`.
+  - categorical encoder categories, including `Unknown`, are fitted from the
+    training split only and reused for validation, test, reload, and inference.
+  - the categorical policy is stored in project preprocessing options and
+    fitted preprocessing metadata without modifying targets, numeric features,
+    or unselected columns.
 - Classification target encoding is centralized for saved split training:
   - one `LabelEncoder` is fitted or reused for the confirmed target.
   - mixed-type classification target labels are normalized to display strings before encoder fit/transform so sklearn never receives heterogeneous raw label types.
@@ -164,6 +253,13 @@ Focused checkbox-based numerical-scaling verification passed on July 3, 2026: `7
 - Imbalance handling implemented for none, class weights, random over/under sampling, SMOTE, and SMOTE-NC, with safe fallback when `imbalanced-learn` is unavailable.
 - Data Split & Imbalance page implemented:
   - validates that split percentages total exactly 100%.
+  - exposes independent **Run Data Split**, **Apply Imbalance Handling**, and
+    **Confirm Split & Imbalance** actions.
+  - persists split and balancing completion/signatures separately, restores
+    both table stages on reload, and confirms current artifacts without
+    recomputing them.
+  - invalidates split and balancing together for modeling/split changes while
+    retaining a current split when only imbalance settings change.
   - displays full, train, validation, and test class distributions before balancing.
   - uses AVISTA-style subsection cards for Split Configuration, Before Balancing, Class Coverage After Splitting, Imbalance Handling, After Balancing, and Confirmation / Status.
   - applies improved compact table styling with clean headers, alternating rows, subtle borders, aligned numeric values, and status-badge text for class coverage.
@@ -179,8 +275,9 @@ Focused checkbox-based numerical-scaling verification passed on July 3, 2026: `7
   - uses dynamic SMOTE neighbor validation and categorical feature indices for SMOTE-NC.
   - saves split indices, distribution CSVs, imbalance metadata, and NumPy data artifacts.
   - stores the target column in saved split and imbalance metadata.
-  - reloads saved distributions only when their target matches the latest project configuration.
-  - clears stale results and recomputes pre-balancing distributions when the target changes.
+  - reloads saved distributions only when their full configuration signatures
+    match the latest project configuration.
+  - clears stale results and requires the affected explicit stage to be rerun.
 - Classification-only model registry implemented with unique canonical names, display names, categories, capability metadata, defaults, optional-package requirements, enablement status, and descriptions.
 - Registered classification models:
   - Logistic Regression
@@ -270,11 +367,14 @@ Focused checkbox-based numerical-scaling verification passed on July 3, 2026: `7
   - when `tabpfn` is unavailable, saves `skip_reason.json` and returns the exact skipped status without crashing the GUI.
 - Torch/deep training is isolated from PySide6 on Windows:
   - `TrainingWorker` keeps sklearn/XGBoost in the existing in-process workflow.
-  - MambaAttention, FT-Transformer, AutoInt, TabResNet, and TabPFN 2.5 launch through `python -u -m app.training.run_torch_model`.
-  - the child process receives project, config, model, and output paths and emits JSON-lines progress over stdout.
+  - source-mode MambaAttention, FT-Transformer, AutoInt, TabResNet, and TabPFN 2.5 launch through the active Python interpreter with `-u` and the absolute `app/training/run_torch_model.py` path.
+  - packaged deep models launch through `AVISTADeepWorker.exe` resolved beside `AVISTA.exe`; the GUI executable is never treated as Python.
+  - the dedicated worker entry point does not import PySide6, create a `QApplication`, import the main window, or run update checking.
+  - the child process receives project, config, model, output, and log paths and emits flushed JSON-lines progress over stdout.
   - the GUI parses only text progress and compact result dictionaries; torch models, tensors, CUDA state, and large arrays never cross Qt signals.
-  - nonzero/native child exits create `failure_reason.json` with the return code and stderr tail while the GUI remains stable.
-  - subprocesses enable `PYTHONFAULTHANDLER` and limit OMP/MKL thread counts.
+  - nonzero/native child exits create structured failure records with decimal and hexadecimal return codes, known Windows status mapping, launch context, stdout/stderr tails, last JSON event, traceback data, runtime/CUDA details, and the complete worker-log path while the GUI remains stable.
+  - Windows `3221226505` is reported as `0xC0000409`, `STATUS_STACK_BUFFER_OVERRUN`, a native fast-fail termination rather than a normal Python exception.
+  - subprocesses enable immediate unbuffered logging and use an explicit project working directory.
 - All registered deep/foundation classification models now have training orchestration; missing optional TabPFN dependencies produce an explicit skipped result.
 - Model Selection page implemented after Data Split & Imbalance:
   - loads all classification models through `get_available_models(task_type="classification")`.
@@ -357,7 +457,11 @@ Focused checkbox-based numerical-scaling verification passed on July 3, 2026: `7
 - Per-model output folders save trained models, preprocessing artifacts, configuration snapshots, training metadata, metrics, reports, confusion matrices, predictions, probabilities, ROC/PR curves, and misclassified records.
 - Tree models save feature importance outputs; Logistic Regression saves coefficient and odds-ratio outputs.
 - Saved confusion matrices, ROC curves, precision-recall curves, and feature-importance plots use publication-oriented Matplotlib styling and are exported as 300-DPI PNG and PDF files.
-- Report page added after Training with AVISTA cards for Report Summary, Model Performance Table, ROC Curve Comparison, Precision-Recall Curve Comparison, Training/Loss Curves, Confusion Matrix Summary, Feature Importance Summary, and Export Report.
+- Report page added after Training with AVISTA cards for Report Summary, a
+  compact Generate Report action immediately below it, Model Performance
+  Table, ROC Curve Comparison, Precision-Recall Curve Comparison,
+  Training/Loss Curves, Confusion Matrix Summary, Feature Importance Summary,
+  and Export Report.
 - Report generation runs in a `QThread` and reads only saved project/training artifacts; it never retrains models.
 - Comprehensive report generation added under `outputs/report`:
   - `AVISTA_Report.md`
@@ -390,6 +494,9 @@ Focused checkbox-based numerical-scaling verification passed on July 3, 2026: `7
   - The Inno Setup output and release artifact use the stable filename `installer/AVISTA_Setup.exe`.
   - GitHub Actions packaging uses Python 3.12, NumPy 1.26.4, Captum 0.8.0, and a matched CUDA 12.6 trio: PyTorch 2.9.1, TorchVision 0.24.1, and TorchAudio 2.9.1. Python 3.12 and NumPy 1.26.4 avoid Captum's NumPy-below-2.0 resolver conflict. The build script fails immediately on native command errors and verifies PySide6/Torch/TabPFN imports before invoking PyInstaller.
   - The PyInstaller spec collects AVISTA assets, QtAwesome, Matplotlib, TabPFN package data, and dynamic ML imports for Torch, XGBoost, LightGBM, sklearn, imbalanced-learn, and Matplotlib.
+  - The PyInstaller spec builds `AVISTA.exe` and the GUI-free, console-enabled `AVISTADeepWorker.exe` into the same onedir folder, sharing packaged dependencies without shipping `.venv`.
+  - The build script generates separate Windows version resources and fails when either executable is missing; GitHub Actions verifies both before installer creation.
+  - Inno Setup installs the worker beside `AVISTA.exe` while shortcuts and the `.avista` file association continue to target only the desktop executable.
   - Optional-package checks in an installed packaged runtime use `importlib` in the current process instead of invoking `AVISTA.exe -c`; packaged pip requests fail safely because the frozen application is not a Python interpreter.
 - The app was launched successfully from the project `.venv`.
 
@@ -467,6 +574,58 @@ Tests:
 - `tests/test_theme.py`
 
 ## 6. Current Test Status
+
+Latest packaged deep-worker regression change set:
+
+- Runtime and entry points: `main.py`, `deep_worker_main.py`,
+  `app/training/deep_worker_launcher.py`,
+  `app/training/run_torch_model.py`, `app/gui/workers.py`, and
+  `app/utils/resources.py`.
+- Packaging and release: `packaging/avista_pyinstaller.spec`,
+  `packaging/build_pyinstaller.ps1`, `packaging/avista_installer.iss`,
+  `packaging/README_PACKAGING.md`, and
+  `.github/workflows/windows-release.yml`; `updates.json` includes the v1.0.4
+  worker-fix release notes.
+- Focused regression tests: `tests/test_torch_subprocess.py`,
+  `tests/test_main.py`, `tests/test_packaging.py`, and the existing
+  packaged-runtime cases in `tests/test_resources.py`.
+- Release documentation: `README.md`, `CHANGELOG.md`, `AGENTS.md`, and this
+  `PROJECT_STATUS.md`.
+
+Latest focused packaged deep-worker verification:
+
+```powershell
+.venv\Scripts\python.exe -m pytest tests/test_torch_subprocess.py -k "not success_smoke" tests/test_main.py::test_gui_rejects_deep_worker_arguments_before_qapplication tests/test_packaging.py tests/test_resources.py -q
+```
+
+Result:
+
+```text
+36 passed, 4 deselected
+```
+
+The four source-mode deep-model smoke tests were then run individually:
+
+```text
+MambaAttention: 1 passed
+FT-Transformer: 1 passed
+AutoInt: 1 passed
+TabResNet: 1 passed
+```
+
+Missing bundled-checkpoint handling also passed:
+
+```powershell
+.venv\Scripts\python.exe -m pytest tests/test_trainer_evaluator.py::test_tabpfn_missing_bundled_checkpoint_saves_failure_reason -q
+```
+
+Result: `1 passed`. PyInstaller-spec Python syntax and PowerShell build-script
+syntax also passed. The focused launcher tests simulate packaged mode for all
+four deep models and verify that commands target `AVISTADeepWorker.exe`, never
+`AVISTA.exe`. The centralized v1.0.4/update-feed checks also passed:
+`6 passed` from `tests/test_version_metadata.py`. A real installed-mode
+execution test remains pending on the Windows release host; the full suite was
+not run.
 
 Latest verified run in the project `.venv`:
 
@@ -813,7 +972,8 @@ This run covered centered half-width ROC/PR/training previews, the 900-pixel cap
 - MambaAttention, FT-Transformer, AutoInt, TabResNet, and TabPFN 2.5 training are implemented.
 - No XAI page or XAI computation is implemented yet.
 - The packaging workflow is implemented, but a full standalone build and installer smoke test remain pending on a Windows build host with Inno Setup 6.
-- Inno Setup 6 is not installed on the current development machine.
+- Inno Setup 6 is installed on the current development machine, but a complete
+  standalone/installer build has not been run for this worker change.
 
 ## 9. Next Immediate Task
 

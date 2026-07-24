@@ -1,17 +1,26 @@
-"""Run one torch model outside the PySide6 process."""
+"""Run one torch model outside the AVISTA desktop GUI process."""
 
 from __future__ import annotations
 
 import argparse
 import json
+import os
+import platform
 import sys
+import traceback
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+if __package__ in {None, ""}:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
 import pandas as pd
 
+from app.__version__ import APP_NAME, __version__
 from app.core.project_config import ProjectConfig
 from app.core.trainer import train_saved_models
+from app.utils.resources import is_packaged_application
 
 
 def _emit(payload: dict[str, Any]) -> None:
@@ -21,6 +30,51 @@ def _emit(payload: dict[str, Any]) -> None:
 def _failure_path(output_dir: Path) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
     return output_dir / "failure_reason.json"
+
+
+def _append_worker_log(
+    log_path: Path,
+    event: str,
+    message: str = "",
+    **details: Any,
+) -> None:
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    timestamp = datetime.now(timezone.utc).isoformat(timespec="milliseconds")
+    suffix = f" {json.dumps(details, default=str, sort_keys=True)}" if details else ""
+    with log_path.open("a", encoding="utf-8") as log_file:
+        log_file.write(f"[{timestamp}] {event}: {message}{suffix}\n")
+
+
+def _runtime_snapshot() -> dict[str, Any]:
+    snapshot: dict[str, Any] = {
+        "python_version": platform.python_version(),
+        "python_executable": sys.executable,
+        "torch_version": None,
+        "cuda_available": False,
+        "cuda_version": None,
+        "device": "cpu",
+    }
+    try:
+        import torch
+
+        cuda_available = bool(torch.cuda.is_available())
+        snapshot.update(
+            {
+                "torch_version": str(torch.__version__),
+                "cuda_available": cuda_available,
+                "cuda_version": str(torch.version.cuda or ""),
+                "device": (
+                    str(torch.cuda.get_device_name(0))
+                    if cuda_available
+                    else "cpu"
+                ),
+            }
+        )
+    except Exception as exc:
+        snapshot["torch_detection_error"] = (
+            f"{type(exc).__name__}: {exc}"
+        )
+    return snapshot
 
 
 def _save_training_history(
@@ -123,11 +177,22 @@ def main() -> int:
     parser.add_argument("--config", required=True)
     parser.add_argument("--model", required=True)
     parser.add_argument("--output-dir", required=True)
+    parser.add_argument("--log-path")
     args = parser.parse_args()
 
     project_dir = Path(args.project_dir).resolve()
     config_path = Path(args.config).resolve()
     output_dir = Path(args.output_dir).resolve()
+    log_path = (
+        Path(args.log_path).resolve()
+        if args.log_path
+        else (
+            project_dir
+            / "logs"
+            / "training"
+            / "deep_worker.log"
+        ).resolve()
+    )
     model_name = str(args.model).strip()
     history: list[dict[str, Any]] = []
     model_aliases = {
@@ -146,9 +211,40 @@ def main() -> int:
     display_name = model_info[1] if model_info else model_name
     output_name = model_info[2] if model_info else model_name
 
+    def emit(payload: dict[str, Any]) -> None:
+        _emit(payload)
+        _append_worker_log(
+            log_path,
+            str(payload.get("event") or "event"),
+            str(payload.get("message") or payload.get("stage") or ""),
+            payload=payload,
+        )
+
+    _append_worker_log(
+        log_path,
+        "startup",
+        f"{APP_NAME} deep-learning worker starting",
+        avista_version=__version__,
+        packaged=is_packaged_application(),
+        executable=sys.executable,
+        arguments=sys.argv[1:],
+        working_directory=os.getcwd(),
+        config_path=str(config_path),
+        output_directory=str(output_dir),
+    )
+    runtime = _runtime_snapshot()
+    emit({"event": "runtime", **runtime})
+
     try:
         if model_info is None:
             raise ValueError(f"Unsupported torch model '{model_name}'.")
+        emit(
+            {
+                "event": "stage",
+                "stage": "configuration_loading",
+                "model": display_name,
+            }
+        )
         config = ProjectConfig.load(config_path)
         config.project_dir = str(project_dir)
         config.selected_models = [canonical_name]
@@ -158,7 +254,28 @@ def main() -> int:
                 f"Output directory must be '{expected_output}', got '{output_dir}'."
             )
 
-        _emit({"event": "started", "model": display_name})
+        model_parameters = (
+            (config.model_params or {}).get(canonical_name) or {}
+        )
+        cuda_requested = str(model_parameters.get("device", "")).casefold().startswith(
+            "cuda"
+        ) or bool(model_parameters.get("use_gpu", False))
+        emit(
+            {
+                "event": "stage",
+                "stage": "dataset_loading",
+                "model": display_name,
+                "cuda_requested": cuda_requested,
+            }
+        )
+        emit(
+            {
+                "event": "stage",
+                "stage": "model_initialization",
+                "model": display_name,
+            }
+        )
+        emit({"event": "started", "model": display_name})
 
         def progress(payload: dict[str, Any]) -> None:
             event_name = (
@@ -185,7 +302,7 @@ def main() -> int:
                     "val_macro_f1",
                     event.get("validation_macro_f1"),
                 )
-                _emit(event)
+                emit(event)
                 if int(event.get("fold", 0)) == 0:
                     history.append(
                         {
@@ -218,8 +335,15 @@ def main() -> int:
                         save_plots=False,
                     )
                 return
-            _emit(event)
+            emit(event)
 
+        emit(
+            {
+                "event": "stage",
+                "stage": "training",
+                "model": display_name,
+            }
+        )
         summary = train_saved_models(
             config,
             save_outputs=True,
@@ -236,28 +360,44 @@ def main() -> int:
             model_name=display_name,
             save_plots=True,
         )
-        _emit(
+        emit(
             {
                 "event": "curve_saved",
                 "model": display_name,
                 "path": str(output_dir / "training_curves.png"),
             }
         )
-        _emit({"event": "result", "result": result})
-        _emit({"event": "complete", "model": display_name})
+        emit({"event": "result", "result": result})
+        emit({"event": "complete", "model": display_name})
+        _append_worker_log(
+            log_path,
+            "exit",
+            "Worker completed successfully",
+            return_code=0,
+        )
         return 0
     except Exception as exc:
+        traceback_text = traceback.format_exc()
         failure = {
             "model_name": display_name,
             "error": str(exc),
             "source": "torch_subprocess",
+            "exception_type": type(exc).__name__,
+            "traceback": traceback_text,
         }
         _failure_path(output_dir).write_text(
             json.dumps(failure, indent=2),
             encoding="utf-8",
         )
-        _emit({"event": "failed", **failure})
-        print(str(exc), file=sys.stderr, flush=True)
+        emit({"event": "failed", **failure})
+        print(traceback_text, file=sys.stderr, flush=True)
+        _append_worker_log(
+            log_path,
+            "exit",
+            "Worker failed",
+            return_code=1,
+            exception_type=type(exc).__name__,
+        )
         return 1
     finally:
         try:

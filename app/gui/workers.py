@@ -6,7 +6,6 @@ import csv
 import json
 import os
 import subprocess
-import sys
 import threading
 from datetime import datetime
 from pathlib import Path
@@ -30,6 +29,12 @@ from app.core.update_checker import (
     download_installer,
 )
 from app.core.user_settings import load_user_settings
+from app.training.deep_worker_launcher import (
+    DeepWorkerLaunch,
+    build_deep_worker_launch,
+    sanitized_worker_arguments,
+)
+from app.utils.resources import get_app_resource_path
 
 
 class UpdateCheckWorker(QObject):
@@ -368,13 +373,11 @@ class TrainingWorker(QObject):
     def _run_torch_subprocess(self, model_name: str) -> dict[str, Any]:
         spec = get_model_spec(model_name)
         display_name = spec.display_name
-        command = build_torch_subprocess_command(self.config, model_name)
-        output_dir = (
-            Path(self.config.project_dir)
-            / "outputs"
-            / "training"
-            / _torch_output_name(display_name)
-        )
+        launch = build_deep_worker_launch(self.config, model_name)
+        command = launch.command
+        output_dir = launch.output_directory
+        runtime = _worker_runtime_context(self.config, model_name)
+        launch_details = _launch_diagnostics(launch, runtime)
         environment = os.environ.copy()
         environment.update(
             {
@@ -384,11 +387,52 @@ class TrainingWorker(QObject):
                 "PYTHONUNBUFFERED": "1",
             }
         )
-        self._log(f"Starting {display_name} subprocess: {command[0]}")
+        launch.working_directory.mkdir(parents=True, exist_ok=True)
+        _append_worker_log(
+            launch.log_path,
+            "launch",
+            {
+                **launch_details,
+                "arguments": list(launch.arguments),
+                "environment_overrides": {
+                    key: environment[key]
+                    for key in (
+                        "PYTHONFAULTHANDLER",
+                        "OMP_NUM_THREADS",
+                        "MKL_NUM_THREADS",
+                        "PYTHONUNBUFFERED",
+                    )
+                },
+            },
+        )
+        self._log(
+            f"Starting {display_name} with {launch.executable.name} "
+            f"({launch.mode} mode). Worker log: {launch.log_path}"
+        )
+        if not _worker_target_exists(launch):
+            failure = _subprocess_failure_result(
+                display_name,
+                None,
+                "",
+                child_error=(
+                    "The packaged deep-learning worker is missing. "
+                    "Repair or reinstall AVISTA."
+                ),
+                launch=launch,
+                process_started=False,
+                runtime=runtime,
+                exception_type="FileNotFoundError",
+            )
+            _save_subprocess_failure(output_dir, failure)
+            _append_worker_log(launch.log_path, "launch_failed", failure)
+            self._log(failure["error"])
+            return failure
+
+        process_started = False
         try:
             self._torch_process = subprocess.Popen(
                 command,
-                cwd=str(Path(__file__).resolve().parents[2]),
+                cwd=str(launch.working_directory),
                 env=environment,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
@@ -397,13 +441,36 @@ class TrainingWorker(QObject):
                 errors="replace",
                 bufsize=1,
             )
-        except OSError as exc:
-            failure = _subprocess_failure_result(display_name, None, str(exc))
+            process_started = True
+            _append_worker_log(
+                launch.log_path,
+                "process_started",
+                {"pid": getattr(self._torch_process, "pid", None)},
+            )
+        except (OSError, ValueError) as exc:
+            failure = _subprocess_failure_result(
+                display_name,
+                None,
+                str(exc),
+                child_error=(
+                    f"{display_name} training could not start. "
+                    f"{type(exc).__name__}: {exc}"
+                ),
+                launch=launch,
+                process_started=False,
+                runtime=runtime,
+                exception_type=type(exc).__name__,
+            )
             _save_subprocess_failure(output_dir, failure)
-            self._log(f"{failure['error']} {exc}")
+            _append_worker_log(launch.log_path, "launch_failed", failure)
+            self._log(failure["error"])
             return failure
         result: dict[str, Any] | None = None
         child_error = ""
+        child_exception_type = ""
+        child_traceback = ""
+        last_valid_event: dict[str, Any] | None = None
+        stdout_lines: list[str] = []
         stderr_lines: list[str] = []
         assert self._torch_process.stderr is not None
         stderr_thread = threading.Thread(
@@ -415,17 +482,44 @@ class TrainingWorker(QObject):
         try:
             assert self._torch_process.stdout is not None
             for line in self._torch_process.stdout:
+                stdout_lines.append(line)
+                _append_worker_log(
+                    launch.log_path,
+                    "stdout",
+                    {"line": line.rstrip()},
+                )
                 if self._cancel_requested:
                     self._torch_process.terminate()
+                    _append_worker_log(
+                        launch.log_path,
+                        "cancelled",
+                        {"message": "Termination requested by the user."},
+                    )
                     raise TrainingCancelled("Training cancelled by user.")
                 payload = _parse_json_line(line)
                 if payload is None:
                     self._log(line.rstrip())
                     continue
+                last_valid_event = payload
                 event = payload.get("event")
                 if event in {"progress", "epoch_progress"}:
                     self._on_progress(_subprocess_progress(payload))
+                elif event == "runtime":
+                    for key in (
+                        "torch_version",
+                        "cuda_available",
+                        "cuda_version",
+                        "device",
+                    ):
+                        if key in payload:
+                            runtime[key] = payload[key]
+                    runtime["last_successful_stage"] = "runtime_detection"
+                elif event == "stage":
+                    runtime["last_successful_stage"] = str(
+                        payload.get("stage") or "worker_stage"
+                    )
                 elif event == "started":
+                    runtime["last_successful_stage"] = "worker_started"
                     self._on_progress(
                         {
                             "model": display_name,
@@ -446,6 +540,8 @@ class TrainingWorker(QObject):
                     child_error = str(
                         payload.get("error", f"{display_name} subprocess failed.")
                     )
+                    child_exception_type = str(payload.get("exception_type") or "")
+                    child_traceback = str(payload.get("traceback") or "")
                     self._log(child_error)
             return_code = self._torch_process.wait()
             stderr_thread.join(timeout=5)
@@ -453,19 +549,42 @@ class TrainingWorker(QObject):
             self._torch_process = None
 
         stderr_text = "".join(stderr_lines)
+        for line in stderr_lines:
+            _append_worker_log(
+                launch.log_path,
+                "stderr",
+                {"line": line.rstrip()},
+            )
         if return_code != 0 or result is None:
             failure = _subprocess_failure_result(
                 display_name,
                 return_code,
                 stderr_text,
                 child_error=child_error,
+                launch=launch,
+                process_started=process_started,
+                stdout_text="".join(stdout_lines),
+                last_valid_event=last_valid_event,
+                runtime=runtime,
+                exception_type=child_exception_type,
+                traceback_text=child_traceback,
             )
             _save_subprocess_failure(output_dir, failure)
+            _append_worker_log(launch.log_path, "process_failed", failure)
             self._log(
-                f"{failure['error']} Return code: {return_code}. "
-                f"stderr: {stderr_text[-1000:].strip()}"
+                f"{failure['error']} Worker log: {launch.log_path}"
             )
             return failure
+        result.setdefault("worker_log_path", str(launch.log_path))
+        result.setdefault("worker_mode", launch.mode)
+        _append_worker_log(
+            launch.log_path,
+            "process_complete",
+            {
+                "return_code": return_code,
+                "model_status": result.get("status"),
+            },
+        )
         return result
 
     def _on_progress(self, progress: dict[str, Any]) -> None:
@@ -487,26 +606,9 @@ class TrainingWorker(QObject):
 
 
 def build_torch_subprocess_command(config: Any, model_name: str) -> list[str]:
-    project_dir = Path(config.project_dir).resolve()
-    config_path = Path(config.project_file).resolve()
-    spec = get_model_spec(model_name)
-    output_dir = (
-        project_dir / "outputs" / "training" / _torch_output_name(spec.display_name)
-    )
-    return [
-        sys.executable,
-        "-u",
-        "-m",
-        "app.training.run_torch_model",
-        "--project-dir",
-        str(project_dir),
-        "--config",
-        str(config_path),
-        "--model",
-        spec.display_name,
-        "--output-dir",
-        str(output_dir),
-    ]
+    """Compatibility wrapper around the centralized deep-worker launcher."""
+
+    return build_deep_worker_launch(config, model_name).command
 
 
 def _parse_json_line(line: str) -> dict[str, Any] | None:
@@ -577,24 +679,178 @@ def _subprocess_failure_result(
     stderr_text: str,
     *,
     child_error: str = "",
+    launch: DeepWorkerLaunch | None = None,
+    process_started: bool = False,
+    stdout_text: str = "",
+    last_valid_event: dict[str, Any] | None = None,
+    runtime: dict[str, Any] | None = None,
+    exception_type: str = "",
+    traceback_text: str = "",
 ) -> dict[str, Any]:
+    runtime = runtime or {}
+    status_name, status_explanation = _windows_status(return_code)
+    return_code_hex = _return_code_hex(return_code)
+    if child_error:
+        error = child_error
+    elif return_code is not None and status_name:
+        process_name = (
+            launch.executable.name
+            if launch is not None
+            else "AVISTADeepWorker.exe"
+        )
+        error = (
+            f"{display_name} training could not start.\n\n"
+            "The packaged deep-learning worker terminated unexpectedly.\n\n"
+            f"Process: {process_name}\n"
+            f"Exit code: {return_code} ({return_code_hex})\n"
+            f"Windows status: {status_name} / {status_explanation}\n"
+            f"Worker log: {launch.log_path if launch is not None else 'Unavailable'}\n\n"
+            "No Python traceback was returned. Review the worker log for the "
+            "launch command, loaded libraries, CUDA status, and the last "
+            "successful initialization step."
+        )
+    else:
+        error = (
+            f"{display_name} deep-learning worker failed. "
+            f"Review the worker log for launch and runtime details."
+        )
     return {
         "model_name": display_name,
         "status": "failed",
-        "error": child_error
-        or f"{display_name} failed in subprocess. GUI remained stable.",
+        "error": error,
         "return_code": return_code,
+        "return_code_decimal": return_code,
+        "return_code_hex": return_code_hex,
+        "windows_status": status_name,
+        "windows_status_explanation": status_explanation,
+        "native_process_termination": bool(status_name),
+        "executable_path": str(launch.executable) if launch is not None else "",
+        "sanitized_arguments": (
+            sanitized_worker_arguments(launch.arguments)
+            if launch is not None
+            else []
+        ),
+        "working_directory": (
+            str(launch.working_directory) if launch is not None else ""
+        ),
+        "packaged_mode": launch.packaged if launch is not None else None,
+        "worker_mode": launch.mode if launch is not None else "unknown",
+        "process_start_success": process_started,
+        "worker_executable_exists": (
+            _worker_target_exists(launch) if launch is not None else False
+        ),
+        "worker_log_path": str(launch.log_path) if launch is not None else "",
+        "stderr_log_path": str(launch.log_path) if launch is not None else "",
+        "worker_config_path": (
+            str(launch.config_path) if launch is not None else ""
+        ),
+        "stdout_tail": stdout_text[-4000:],
         "stderr_tail": stderr_text[-4000:],
+        "last_valid_json_event": last_valid_event,
+        "exception_type": exception_type,
+        "traceback": traceback_text,
+        "required_assets": runtime.get("required_assets", {}),
+        "cuda_requested": runtime.get("cuda_requested"),
+        "torch_version": runtime.get("torch_version"),
+        "cuda_available": runtime.get("cuda_available"),
+        "cuda_version": runtime.get("cuda_version"),
+        "device": runtime.get("device"),
+        "last_successful_stage": runtime.get("last_successful_stage"),
         "saved": False,
     }
 
 
-def _torch_output_name(display_name: str) -> str:
-    if display_name == "FT-Transformer":
-        return display_name
-    if display_name == "TabPFN 2.5":
-        return "TabPFN_2_5"
-    return "".join(character for character in display_name if character.isalnum())
+def _windows_status(return_code: int | None) -> tuple[str, str]:
+    if return_code is None:
+        return "", ""
+    statuses = {
+        0xC0000409: (
+            "STATUS_STACK_BUFFER_OVERRUN",
+            "Native fast-fail termination",
+        ),
+        0xC0000374: (
+            "STATUS_HEAP_CORRUPTION",
+            "Native heap-corruption termination",
+        ),
+        0xC0000005: (
+            "STATUS_ACCESS_VIOLATION",
+            "Native access-violation termination",
+        ),
+    }
+    return statuses.get(return_code & 0xFFFFFFFF, ("", ""))
+
+
+def _return_code_hex(return_code: int | None) -> str:
+    return "" if return_code is None else f"0x{return_code & 0xFFFFFFFF:08X}"
+
+
+def _worker_target_exists(launch: DeepWorkerLaunch) -> bool:
+    if launch.packaged:
+        return launch.executable_exists
+    if not launch.executable_exists or len(launch.arguments) < 2:
+        return False
+    return Path(launch.arguments[1]).is_file()
+
+
+def _worker_runtime_context(config: Any, model_name: str) -> dict[str, Any]:
+    parameters = (
+        (getattr(config, "model_params", {}) or {}).get(model_name)
+        or {}
+    )
+    device = str(parameters.get("device") or "").strip()
+    cuda_requested = device.casefold().startswith("cuda") or bool(
+        parameters.get("use_gpu", False)
+    )
+    checkpoint = get_app_resource_path(
+        "app/assets/tabpfn-v2.5-classifier-v2.5_default.ckpt"
+    )
+    return {
+        "cuda_requested": cuda_requested,
+        "torch_version": None,
+        "cuda_available": None,
+        "cuda_version": None,
+        "device": device or "automatic",
+        "last_successful_stage": "launcher_initialized",
+        "required_assets": {
+            "tabpfn_checkpoint": {
+                "required": model_name == "tabpfn",
+                "exists": checkpoint.is_file(),
+            }
+        },
+    }
+
+
+def _launch_diagnostics(
+    launch: DeepWorkerLaunch,
+    runtime: dict[str, Any],
+) -> dict[str, Any]:
+    return {
+        "model_worker_mode": launch.mode,
+        "executable": str(launch.executable),
+        "sanitized_arguments": sanitized_worker_arguments(launch.arguments),
+        "working_directory": str(launch.working_directory),
+        "worker_executable_exists": _worker_target_exists(launch),
+        "worker_config_path": str(launch.config_path),
+        "worker_log_path": str(launch.log_path),
+        **runtime,
+    }
+
+
+def _append_worker_log(
+    log_path: Path,
+    event: str,
+    details: dict[str, Any],
+) -> None:
+    try:
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        timestamp = datetime.now().isoformat(timespec="milliseconds")
+        with log_path.open("a", encoding="utf-8") as log_file:
+            log_file.write(
+                f"[{timestamp}] {event}: "
+                f"{json.dumps(details, default=str, sort_keys=True)}\n"
+            )
+    except OSError:
+        return
 
 
 def _drain_stream(stream: Any, collected: list[str]) -> None:

@@ -12,6 +12,7 @@
 #endif
 #define MyAppPublisher "AVISTA Developers"
 #define MyAppExeName "AVISTA.exe"
+#define MyDeepWorkerExeName "AVISTADeepWorker.exe"
 
 [Setup]
 AppId={{B151A258-8635-4D51-8AD7-E83D99D7D272}

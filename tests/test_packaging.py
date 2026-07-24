@@ -64,6 +64,9 @@ def test_pyinstaller_build_uses_clean_environment_and_required_includes():
     assert '"--workpath", $BuildWorkDir' in script
     assert "AVISTA_PYINSTALLER_CONSOLE" in script
     assert "AVISTA_VERSION_FILE" in script
+    assert "AVISTA_WORKER_VERSION_FILE" in script
+    assert '"AVISTADeepWorker"' in script
+    assert "$BuiltWorkerExe" in script
     assert "app\\__version__.py" in script
     assert "Test-ValidIconFile" in script
     assert "create_logo_icon.py" in script
@@ -81,6 +84,14 @@ def test_pyinstaller_build_uses_clean_environment_and_required_includes():
     assert "Analysis(" in spec
     assert "COLLECT(" in spec
     assert '"app/assets"' in spec
+    assert "deep_worker_main.py" in spec
+    assert 'worker_name = "AVISTADeepWorker"' in spec
+    assert "MERGE(" in spec
+    assert "worker_exe = EXE(" in spec
+    assert "gui_analysis.dependencies" in spec
+    assert "worker_analysis.dependencies" in spec
+    assert "console=True" in spec
+    assert '"PySide6", "qtawesome", "app.gui"' in spec
     assert 'collect_submodules(package_name)' in spec
     assert '"torch"' in spec
     assert '"tabpfn"' in spec
@@ -113,6 +124,9 @@ def test_release_build_uses_build_pyinstaller_and_documents_file_association():
     assert "avista_pyinstaller.spec" in build_script
     assert "avista_installer.iss" in build_script
     assert "AVISTA_Setup.exe" in build_script
+    assert "AVISTADeepWorker.exe" in (
+        PROJECT_ROOT / ".github" / "workflows" / "windows-release.yml"
+    ).read_text(encoding="utf-8")
     assert "SkipInstaller" in build_script
     assert 'Subkey: "Software\\Classes\\.avista"' in installer
     assert "AVISTA.Project" in notes
@@ -145,6 +159,15 @@ def test_installer_uses_centralized_product_description():
     assert "AppComments={#MyAppDescription}" in installer
     assert "VersionInfoDescription={#MyAppDescription}" in installer
     assert "VersionInfoProductTextVersion=" in installer
+    assert '#define MyDeepWorkerExeName "AVISTADeepWorker.exe"' in installer
+    assert (
+        'ValueData: """{app}\\{#MyAppExeName}"" ""%1"""'
+        in installer
+    )
+    assert "MyDeepWorkerExeName" not in installer.split(
+        "[Registry]",
+        1,
+    )[1]
 
 
 def test_installer_release_documents_exist():
@@ -156,6 +179,23 @@ def test_installer_release_documents_exist():
         "CHANGELOG.md",
     ):
         assert (PROJECT_ROOT / name).is_file()
+
+
+def test_deep_worker_entrypoint_is_gui_free():
+    entrypoint = (PROJECT_ROOT / "deep_worker_main.py").read_text(
+        encoding="utf-8"
+    )
+    worker = (
+        PROJECT_ROOT / "app" / "training" / "run_torch_model.py"
+    ).read_text(encoding="utf-8")
+    combined = f"{entrypoint}\n{worker}"
+
+    assert "PySide6" not in combined
+    assert "QApplication" not in combined
+    assert "MainWindow" not in combined
+    assert "update_checker" not in combined
+    assert "multiprocessing.freeze_support()" in entrypoint
+    assert "flush=True" in worker
 
 
 def test_github_windows_release_workflow_builds_and_publishes_installer():

@@ -27,8 +27,11 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from app.core.preprocessing import invalidate_preprocessing_artifacts
-from app.core.target_encoding import invalidate_target_artifacts
+from app.core.preprocessing import (
+    ensure_categorical_missing_config,
+    invalidate_preprocessing_artifacts,
+)
+from app.core.split_artifacts import invalidate_split_artifacts
 from app.gui.icon_system import BACKGROUND, BORDER, PRIMARY, TEXT, icon
 from app.gui.theme import apply_matplotlib_theme
 
@@ -427,6 +430,9 @@ class ColumnConfigPage(QWidget):
 
         previous_target = config.target_column
         previous_features = list(config.feature_columns or [])
+        previous_label_encoding_columns = list(
+            config.label_encoding_columns or []
+        )
         previous_scaling_method = (
             (config.preprocessing_options or {}).get("numerical_scaling_method", "none")
         )
@@ -440,22 +446,25 @@ class ColumnConfigPage(QWidget):
         config.preprocessing_options["label_encoding_metadata"] = metadata
         config.preprocessing_options["numerical_scaling_method"] = scaling_method
         config.preprocessing_options["scaled_numerical_columns"] = scaled_numerical_columns
+        ensure_categorical_missing_config(config)
         subset_columns = list(features) + [target]
         data_dir = Path(config.project_dir) / "data"
         subset_path = data_dir / "modeling_subset.csv"
         try:
-            invalidate_target_artifacts(
-                Path(config.project_dir) / "outputs" / "data_split",
-                previous_target,
-                target,
-            )
-            if (
+            modeling_changed = (
                 previous_target != target
                 or previous_features != features
+                or previous_label_encoding_columns != label_encoding_columns
                 or previous_scaling_method != scaling_method
                 or previous_scaled_numerical_columns != scaled_numerical_columns
-            ):
+            )
+            if modeling_changed:
+                invalidate_split_artifacts(config.project_dir)
                 invalidate_preprocessing_artifacts(config.project_dir)
+                config.split_stage_completed = False
+                config.imbalance_stage_completed = False
+                config.split_state = {}
+                config.imbalance_state = {}
             data_dir.mkdir(parents=True, exist_ok=True)
             df.loc[:, subset_columns].to_csv(subset_path, index=False)
             config.save()

@@ -9,9 +9,12 @@ from pathlib import Path
 def is_packaged_application() -> bool:
     """Return whether AVISTA is running from a supported packaged build."""
 
+    main_module = sys.modules.get("__main__")
     return bool(
         getattr(sys, "frozen", False)
+        or getattr(sys, "_MEIPASS", None)
         or globals().get("__compiled__") is not None
+        or getattr(main_module, "__compiled__", None) is not None
     )
 
 

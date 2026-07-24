@@ -70,6 +70,10 @@ At the time this file was written:
   user-selected categorical/text columns for label encoding, plus a global
   numerical scaling method (`None`, `Min-Max Scaling`, or
   `Standardization`) and user-checked numeric feature columns for scaling.
+- Selected categorical modeling features normalize null, empty, and
+  whitespace-only values to `Unknown`; categorical encoders are fitted on the
+  training split only and preserve this category for validation, test, reload,
+  and inference without modifying targets or unselected columns.
 - Data splitting supports train/validation/test partitions and random,
   stratified, group, stratified-group, and time methods.
 - Imbalance handling supports none, random over/under sampling, SMOTE,
@@ -81,6 +85,10 @@ At the time this file was written:
   Missing-class conditions are informational warnings, not split errors.
 - Data Split & Imbalance success details use a green card. Warnings are shown
   separately in an orange card. Errors use a red card.
+- Data Split & Imbalance uses independent Run Data Split, Apply Imbalance
+  Handling, and Confirm Split & Imbalance stages. Their artifacts and
+  completion signatures persist and reload independently; imbalance-only
+  changes retain the valid split.
 - Saved split artifacts are target-aware, feature-aware, and stale results are
   rejected.
 - The selectable model registry contains 16 classification models across
@@ -89,7 +97,11 @@ At the time this file was written:
 - Built-in sklearn classifiers use a central factory. XGBoost, TabPFN, and
   PyTorch are imported only when the requested model requires them.
 - MambaAttention, FT-Transformer, AutoInt, and TabResNet architectures are
-  implemented and instantiable. Current training still skips torch models.
+  implemented, instantiable, and trainable from confirmed saved artifacts.
+- Source deep-model jobs launch the active Python interpreter and the GUI-free
+  worker script. Packaged jobs launch the dedicated `AVISTADeepWorker.exe`
+  installed beside `AVISTA.exe`; never use the packaged GUI executable as a
+  Python interpreter.
 - Deep architecture, optimization, monitoring, checkpoint, and early-stopping
   parameters are editable and persisted by Model Selection, but do not yet
   change training behavior.
@@ -111,8 +123,9 @@ At the time this file was written:
     ML, XAI, and TabPFN package set. GPU PyTorch is installed separately.
 - Existing basic sklearn-compatible classification and legacy regression
   training/evaluation remain operational.
-- Deep training integration, XAI, robustness workflows, export/report pages,
-  packaging, and real training cancellation remain unfinished.
+- XAI and robustness workflows remain unfinished. Deep training, report
+  export, packaging definitions, and cooperative subprocess cancellation are
+  implemented.
 - The latest focused verification for numerical scaling is `19 passed`
   (`tests/test_preprocessing.py`, the relevant Column Configuration smoke
   slice, one saved-training regression test, and one report-generation test).

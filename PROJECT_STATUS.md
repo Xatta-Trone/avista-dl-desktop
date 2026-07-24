@@ -18,8 +18,8 @@ The project has a working modular backend and PySide6 desktop GUI. Core tabular 
 
 The GUI can create or load projects, inspect and repair GPU environments with user confirmation, import large datasets with a paginated preview, select modeling and target columns, save label-encoding choices for categorical modeling columns, configure global numerical scaling for user-checked numeric features with selectable histogram inspection, configure train/validation/test splits, apply train-class-only imbalance handling, select classification models and edit their saved parameters, restore matching saved split artifacts, run edge-case checks, and train sklearn-compatible models from confirmed saved artifacts through a `QThread` worker.
 
-The current AVISTA application and update-feed version is `1.0.4`, with the
-release date centralized as July 23, 2026. Focused centralized-version,
+The current AVISTA application and update-feed version is `1.0.5`, with the
+release date centralized as July 24, 2026. Focused centralized-version,
 update-feed, report metadata, and splash-screen verification passed:
 `7 passed`.
 
@@ -680,7 +680,7 @@ overflow, responsive scroll-content width, and immediate visibility of the
 at 1200 x 760. Light and Dark page renders were also reviewed. Per request,
 the full suite was not run.
 
-Latest focused AVISTA 1.0.4 version synchronization verification:
+Latest focused AVISTA 1.0.5 version synchronization verification:
 
 ```text
 7 passed

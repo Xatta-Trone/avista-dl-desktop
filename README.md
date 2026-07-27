@@ -8,6 +8,18 @@ The launch screen and About dialog identify the current release as **Version
 1.0.6**, released **July 27, 2026**. Product name, description, version, and
 release date come from `app/__version__.py`.
 
+## Repository and Documentation
+
+- **Source repository:** [Xatta-Trone/avista-dl-desktop](https://github.com/Xatta-Trone/avista-dl-desktop)
+- **License:** [Apache License 2.0](LICENSE.txt)
+- **Developer guide:** [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md)
+- **Current implementation status and roadmap:** [PROJECT_STATUS.md](PROJECT_STATUS.md)
+- **Windows packaging guide:** [packaging/README_PACKAGING.md](packaging/README_PACKAGING.md)
+- **Release history:** [CHANGELOG.md](CHANGELOG.md)
+- **Third-party licenses:** [THIRD_PARTY_NOTICES.txt](THIRD_PARTY_NOTICES.txt)
+
+
+
 ## Project Files
 
 AVISTA uses JSON-formatted `.avista` project files containing:
@@ -76,7 +88,14 @@ test remains required on the Windows release host.
 
 See [PROJECT_STATUS.md](PROJECT_STATUS.md) for the authoritative implementation status and roadmap.
 
-## Dependencies
+## System Requirements and Dependencies
+
+- Windows 10 or Windows 11, 64-bit.
+- Python 3.12 is recommended for source execution and required for the
+  reproducible Windows release build.
+- At least 8 GB RAM is recommended; deep-learning workloads may require more.
+- A compatible NVIDIA GPU and driver are optional. AVISTA supports CPU
+  execution when CUDA is unavailable.
 
 - `requirements_ml.txt`: classical ML, XGBoost, imbalance handling, and analysis.
 - `requirements_deep_cpu.txt`: CPU PyTorch packages.
@@ -84,6 +103,21 @@ See [PROJECT_STATUS.md](PROJECT_STATUS.md) for the authoritative implementation 
 - `requirements_full.txt`: complete CPU-installable application environment.
 
 GPU PyTorch is installed separately using `requirements_deep_gpu.txt`.
+
+## Install from Source
+
+```powershell
+git clone https://github.com/Xatta-Trone/avista-dl-desktop.git
+cd avista-dl-desktop
+
+py -3.12 -m venv .venv
+.venv\Scripts\python.exe -m pip install --upgrade pip
+.venv\Scripts\python.exe -m pip install -r requirements_full.txt
+```
+
+For an explicit CPU PyTorch installation, also install
+`requirements_deep_cpu.txt`. For CUDA-enabled PyTorch, follow
+`requirements_deep_gpu.txt` instead.
 
 ## Run
 
@@ -98,6 +132,17 @@ Open a project directly:
 ```
 
 Packaged Windows installers can associate `.avista` with `AVISTA.exe`. Legacy `.xtab` command-line files are accepted and migrated automatically.
+
+## Typical Workflow
+
+1. Create or load an `.avista` project.
+2. Inspect the active Python, CPU, memory, and optional GPU environment.
+3. Import a tabular dataset and select modeling features and the target.
+4. Configure categorical encoding and numerical scaling.
+5. Run the data split, then apply optional training-only imbalance handling.
+6. Run the Edge-Case Report and resolve blocking issues.
+7. Select and train models.
+8. Generate the saved Markdown, PDF, metrics, and diagnostic reports.
 
 ## Updates
 
@@ -140,3 +185,9 @@ AVISTA is licensed under the Apache License, Version 2.0
 [LICENSE.txt](LICENSE.txt) for the complete license terms. Third-party
 components remain subject to the licenses listed in
 [THIRD_PARTY_NOTICES.txt](THIRD_PARTY_NOTICES.txt).
+
+
+## Support
+
+For AVISTA support, contact Md Monzurul Islam at
+[monzurul@txstate.edu](mailto:monzurul@txstate.edu).

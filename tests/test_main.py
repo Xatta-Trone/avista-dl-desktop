@@ -11,6 +11,7 @@ from main import (
     contains_deep_worker_arguments,
     create_splash_screen,
     load_startup_project,
+    run_requested_packaging_smoke,
 )
 
 
@@ -101,3 +102,30 @@ def test_gui_rejects_deep_worker_arguments_before_qapplication(monkeypatch):
     )
 
     assert main_module.main() == 2
+
+
+def test_packaging_smoke_request_runs_without_qapplication(
+    tmp_path,
+    monkeypatch,
+):
+    import app.core.packaging_smoke as smoke_module
+
+    output_path = tmp_path / "smoke.json"
+    calls = []
+    monkeypatch.setattr(
+        smoke_module,
+        "run_packaging_smoke",
+        lambda kind, path: calls.append((kind, path)) or 0,
+    )
+
+    result = run_requested_packaging_smoke(
+        [
+            "--packaging-smoke-test",
+            "xgboost",
+            "--smoke-output",
+            str(output_path),
+        ]
+    )
+
+    assert result == 0
+    assert calls == [("xgboost", str(output_path))]

@@ -25,6 +25,8 @@ from app.gui.theme import apply_theme, load_theme_setting
 DEEP_WORKER_ARGUMENTS = frozenset(
     {"--project-dir", "--config", "--model", "--output-dir", "--log-path"}
 )
+PACKAGING_SMOKE_ARGUMENT = "--packaging-smoke-test"
+PACKAGING_SMOKE_OUTPUT_ARGUMENT = "--smoke-output"
 
 
 def contains_deep_worker_arguments(arguments: list[str]) -> bool:
@@ -36,6 +38,29 @@ def contains_deep_worker_arguments(arguments: list[str]) -> bool:
         if argument in DEEP_WORKER_ARGUMENTS
     }
     return {"--config", "--model", "--output-dir"}.issubset(supplied)
+
+
+def run_requested_packaging_smoke(arguments: list[str]) -> int | None:
+    """Run a frozen-runtime smoke check without creating QApplication."""
+
+    if PACKAGING_SMOKE_ARGUMENT not in arguments:
+        return None
+    try:
+        kind = arguments[arguments.index(PACKAGING_SMOKE_ARGUMENT) + 1]
+        output_path = arguments[
+            arguments.index(PACKAGING_SMOKE_OUTPUT_ARGUMENT) + 1
+        ]
+    except (ValueError, IndexError):
+        print(
+            "Packaging smoke usage: --packaging-smoke-test <kind> "
+            "--smoke-output <path>",
+            file=sys.stderr,
+            flush=True,
+        )
+        return 2
+    from app.core.packaging_smoke import run_packaging_smoke
+
+    return run_packaging_smoke(kind, output_path)
 
 
 def load_startup_project(arguments: list[str]) -> ProjectConfig | None:
@@ -95,6 +120,9 @@ def create_splash_screen() -> QSplashScreen:
 
 
 def main() -> int:
+    smoke_exit_code = run_requested_packaging_smoke(sys.argv[1:])
+    if smoke_exit_code is not None:
+        return smoke_exit_code
     if contains_deep_worker_arguments(sys.argv[1:]):
         print(
             "AVISTA.exe cannot execute deep-learning worker arguments. "

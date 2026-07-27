@@ -34,7 +34,10 @@ from app.training.deep_worker_launcher import (
     build_deep_worker_launch,
     sanitized_worker_arguments,
 )
-from app.utils.resources import get_app_resource_path
+from app.utils.resources import (
+    resolve_tabpfn_checkpoint,
+    tabpfn_checkpoint_candidates,
+)
 
 
 class UpdateCheckWorker(QObject):
@@ -801,9 +804,10 @@ def _worker_runtime_context(config: Any, model_name: str) -> dict[str, Any]:
     cuda_requested = device.casefold().startswith("cuda") or bool(
         parameters.get("use_gpu", False)
     )
-    checkpoint = get_app_resource_path(
-        "app/assets/tabpfn-v2.5-classifier-v2.5_default.ckpt"
-    )
+    try:
+        checkpoint = resolve_tabpfn_checkpoint()
+    except FileNotFoundError:
+        checkpoint = tabpfn_checkpoint_candidates()[0]
     return {
         "cuda_requested": cuda_requested,
         "torch_version": None,

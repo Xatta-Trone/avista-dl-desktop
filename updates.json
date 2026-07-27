@@ -1,16 +1,13 @@
 {
-  "latest_version": "1.0.5",
-  "release_date": "July 24, 2026",
+  "latest_version": "1.0.6",
+  "release_date": "July 27, 2026",
   "release_notes": [
-    "Added centralized release metadata preparation and CI tag/version validation",
-    "Added Unknown-value handling for missing selected categorical modeling features",
-    "Added separate Run Data Split, Apply Imbalance Handling, and Confirm Split & Imbalance stages",
-    "Restored saved split and balancing tables and completion status when reopening projects",
-    "Added configuration-aware split and imbalance artifact invalidation",
-    "Kept balancing restricted to training data while preserving validation and test data",
-    "Moved Generate Report directly below Report Summary"
+    "Fixed packaged XGBoost by bundling and auditing its native xgboost.dll",
+    "Fixed TabPFN 2.5 support in AVISTADeepWorker.exe by bundling required modules, package data, and dependencies",
+    "Centralized TabPFN checkpoint resolution for source and installed builds",
+    "Added release-blocking package diagnostics, artifact audits, and tiny packaged XGBoost and TabPFN training smoke tests"
   ],
-  "installer_url": "https://github.com/Xatta-Trone/avista-dl-desktop/releases/download/v1.0.5/AVISTA_Setup.exe",
+  "installer_url": "https://github.com/Xatta-Trone/avista-dl-desktop/releases/download/v1.0.6/AVISTA_Setup.exe",
   "sha256": "",
   "mandatory": false
 }

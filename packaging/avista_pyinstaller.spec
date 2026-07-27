@@ -5,7 +5,12 @@
 import os
 from pathlib import Path
 
-from PyInstaller.utils.hooks import collect_data_files, collect_submodules
+from PyInstaller.utils.hooks import (
+    collect_all,
+    collect_data_files,
+    collect_dynamic_libs,
+    collect_submodules,
+)
 
 from app.__version__ import APP_NAME
 
@@ -25,8 +30,51 @@ worker_name = "AVISTADeepWorker"
 shared_datas = [
     (str(assets_dir), "app/assets"),
 ]
-for package_name in ("qtawesome", "matplotlib", "tabpfn"):
+for package_name in ("qtawesome", "matplotlib"):
     shared_datas += collect_data_files(package_name)
+
+tabpfn_datas, tabpfn_binaries, tabpfn_hiddenimports = collect_all(
+    "tabpfn",
+    on_error="raise",
+)
+(
+    tabpfn_utils_datas,
+    tabpfn_utils_binaries,
+    tabpfn_utils_hiddenimports,
+) = collect_all(
+    "tabpfn_common_utils",
+    on_error="raise",
+)
+shared_datas += tabpfn_datas
+shared_datas += tabpfn_utils_datas
+
+xgboost_binaries = collect_dynamic_libs("xgboost")
+xgboost_dlls = [
+    source
+    for source, _destination in xgboost_binaries
+    if Path(source).name.casefold() == "xgboost.dll"
+]
+if not xgboost_dlls:
+    raise RuntimeError(
+        "The installed xgboost package contains no discoverable "
+        "xgboost.dll; refusing to build an incomplete AVISTA release."
+    )
+xgboost_binaries = [
+    (
+        source,
+        (
+            "xgboost/lib"
+            if Path(source).name.casefold() == "xgboost.dll"
+            else destination
+        ),
+    )
+    for source, destination in xgboost_binaries
+]
+shared_binaries = (
+    xgboost_binaries
+    + tabpfn_binaries
+    + tabpfn_utils_binaries
+)
 
 gui_hiddenimports = []
 for package_name in (
@@ -42,6 +90,7 @@ for package_name in (
     "matplotlib",
 ):
     gui_hiddenimports += collect_submodules(package_name)
+gui_hiddenimports += tabpfn_hiddenimports
 
 worker_hiddenimports = []
 for package_name in (
@@ -49,19 +98,26 @@ for package_name in (
     "torchvision",
     "torchaudio",
     "tabpfn",
-    "xgboost",
     "lightgbm",
     "sklearn",
-    "imblearn",
+    "joblib",
+    "safetensors",
+    "einops",
+    "huggingface_hub",
+    "pydantic",
+    "pydantic_settings",
+    "tabpfn_common_utils",
     "matplotlib",
 ):
     worker_hiddenimports += collect_submodules(package_name)
+worker_hiddenimports += tabpfn_hiddenimports
+worker_hiddenimports += tabpfn_utils_hiddenimports
 
 
 gui_analysis = Analysis(
     [str(project_root / "main.py")],
     pathex=[str(project_root)],
-    binaries=[],
+    binaries=shared_binaries,
     datas=shared_datas,
     hiddenimports=gui_hiddenimports,
     hookspath=[],
@@ -75,7 +131,7 @@ gui_analysis = Analysis(
 worker_analysis = Analysis(
     [str(project_root / "deep_worker_main.py")],
     pathex=[str(project_root)],
-    binaries=[],
+    binaries=shared_binaries,
     datas=shared_datas,
     hiddenimports=worker_hiddenimports,
     hookspath=[],
@@ -86,17 +142,11 @@ worker_analysis = Analysis(
     optimize=0,
 )
 
-MERGE(
-    (gui_analysis, APP_NAME, APP_NAME),
-    (worker_analysis, worker_name, worker_name),
-)
-
 gui_pyz = PYZ(gui_analysis.pure)
 worker_pyz = PYZ(worker_analysis.pure)
 
 gui_exe = EXE(
     gui_pyz,
-    gui_analysis.dependencies,
     gui_analysis.scripts,
     [],
     exclude_binaries=True,
@@ -117,7 +167,6 @@ gui_exe = EXE(
 
 worker_exe = EXE(
     worker_pyz,
-    worker_analysis.dependencies,
     worker_analysis.scripts,
     [],
     exclude_binaries=True,

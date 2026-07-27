@@ -18,8 +18,8 @@ The project has a working modular backend and PySide6 desktop GUI. Core tabular 
 
 The GUI can create or load projects, inspect and repair GPU environments with user confirmation, import large datasets with a paginated preview, select modeling and target columns, save label-encoding choices for categorical modeling columns, configure global numerical scaling for user-checked numeric features with selectable histogram inspection, configure train/validation/test splits, apply train-class-only imbalance handling, select classification models and edit their saved parameters, restore matching saved split artifacts, run edge-case checks, and train sklearn-compatible models from confirmed saved artifacts through a `QThread` worker.
 
-The current AVISTA application and update-feed version is `1.0.5`, with the
-release date centralized as July 24, 2026. Focused centralized-version,
+The current AVISTA application and update-feed version is `1.0.6`, with the
+release date centralized as July 27, 2026. Focused centralized-version,
 update-feed, report metadata, and splash-screen verification passed:
 `7 passed`.
 
@@ -57,6 +57,52 @@ launcher owns packaged detection, executable/path resolution, sanitized
 arguments, explicit working directories, and per-model log locations.
 `AVISTA.exe` defensively rejects worker-only arguments before creating a
 `QApplication`, preventing accidental recursive desktop startup.
+
+The installed v1.0.5 training log exposed two frozen-dependency failures.
+XGBoost's Python package was present but `_internal/xgboost/lib/xgboost.dll`
+was absent. The dedicated worker started normally but could not import
+TabPFN, so it stopped before checkpoint validation. The active release system
+is PyInstaller onedir, not Nuitka.
+
+The packaging fix dynamically discovers XGBoost DLLs from the installed wheel,
+places `xgboost.dll` at `_internal/xgboost/lib/xgboost.dll`, and treats it as a
+binary so PyInstaller analyzes dependent libraries. TabPFN modules, package
+data, and inspected dynamic dependencies are collected for both analyses.
+PyInstaller `MERGE` was removed so `AVISTADeepWorker.exe` retains its own
+pure-Python dependency archive in the shared onedir folder. The checkpoint is
+resolved centrally from supported source and `_internal/app/assets` paths.
+Missing packaged TabPFN dependencies now produce a packaging failure; only
+intentional/source optional absence remains skipped.
+
+Git history shows v1.0.1–v1.0.3 share PyInstaller spec blob `d24a688` and
+identical locked XGBoost/TabPFN versions. They used one GUI executable. Commit
+`b60f8e7` introduced the dedicated worker and `MERGE` in v1.0.5. XGBoost
+native-library collection was never explicit in either spec, while the
+worker-only TabPFN failure became possible with the new merged second
+analysis. Inno Setup already copied the full release tree recursively and was
+not the component omitting these files.
+
+Release builds now run a pre-build package/architecture diagnostic and a
+post-build audit requiring AMD64 `AVISTA.exe`, `AVISTADeepWorker.exe`, the
+XGBoost DLL, and the TabPFN checkpoint. The frozen GUI must fit a tiny XGBoost
+dataset, and the frozen worker must fit a tiny two-estimator CPU TabPFN
+dataset, before Inno Setup or GitHub publication can proceed.
+
+Focused XGBoost/TabPFN packaging verification passed on July 24, 2026:
+`36 passed`. This includes resource resolution, packaging declarations,
+startup smoke routing, packaged failure semantics, real source-mode XGBoost
+and TabPFN tiny fits, package/DLL architecture diagnostics, and the selected
+deep-worker subprocess checks. Both source smoke entry points also passed
+directly and wrote structured JSON results. Python compilation, PyInstaller
+specification compilation, PowerShell syntax parsing, and `git diff --check`
+passed.
+
+A local frozen build was attempted but stopped during environment setup:
+the development host only provides Python 3.13, while the locked release
+stack intentionally uses NumPy 1.26.4 and Python 3.12. The GitHub Windows
+release job supplies Python 3.12 and now owns the definitive frozen-executable
+and installer gates. A completed installer has not yet been verified on a
+clean Windows machine.
 
 The complete v1.0.1 (`636e270`) → v1.0.2 (`ce9baf5`) → v1.0.3
 (`e8bf98a`) Git audit found no deep-worker launch-code change. All three tags
@@ -385,7 +431,10 @@ Focused checkbox-based numerical-scaling verification passed on July 3, 2026: `7
   - nonzero/native child exits create structured failure records with decimal and hexadecimal return codes, known Windows status mapping, launch context, stdout/stderr tails, last JSON event, traceback data, runtime/CUDA details, and the complete worker-log path while the GUI remains stable.
   - Windows `3221226505` is reported as `0xC0000409`, `STATUS_STACK_BUFFER_OVERRUN`, a native fast-fail termination rather than a normal Python exception.
   - subprocesses enable immediate unbuffered logging and use an explicit project working directory.
-- All registered deep/foundation classification models now have training orchestration; missing optional TabPFN dependencies produce an explicit skipped result.
+- All registered deep/foundation classification models now have training
+  orchestration. Missing optional TabPFN dependencies are skipped in source
+  mode but are failed as release-packaging defects when the bundled worker is
+  expected to provide TabPFN.
 - Model Selection page implemented after Data Split & Imbalance:
   - loads all classification models through `get_available_models(task_type="classification")`.
   - uses AVISTA-style cards for Model Library, Model Parameters, Global Training Options, and Confirmation / Status.
@@ -502,9 +551,13 @@ Focused checkbox-based numerical-scaling verification passed on July 3, 2026: `7
   - Uninstall behavior remains application-focused; user project folders outside the installation directory are preserved.
   - `.github/workflows/windows-release.yml` builds the Windows installer on `windows-latest` for manual dispatches and `v*` tags, caches pip downloads, installs Inno Setup, runs only packaging/resource/version tests, uploads `AVISTA_Setup.exe`, resolves a release tag from tagged pushes or the manual `release_tag` input, and publishes it to GitHub Releases with overwrite enabled for reruns.
   - The Inno Setup output and release artifact use the stable filename `installer/AVISTA_Setup.exe`.
-  - GitHub Actions packaging uses Python 3.12, NumPy 1.26.4, Captum 0.8.0, and a matched CUDA 12.6 trio: PyTorch 2.9.1, TorchVision 0.24.1, and TorchAudio 2.9.1. Python 3.12 and NumPy 1.26.4 avoid Captum's NumPy-below-2.0 resolver conflict. The build script fails immediately on native command errors and verifies PySide6/Torch/TabPFN imports before invoking PyInstaller.
-  - The PyInstaller spec collects AVISTA assets, QtAwesome, Matplotlib, TabPFN package data, and dynamic ML imports for Torch, XGBoost, LightGBM, sklearn, imbalanced-learn, and Matplotlib.
-  - The PyInstaller spec builds `AVISTA.exe` and the GUI-free, console-enabled `AVISTADeepWorker.exe` into the same onedir folder, sharing packaged dependencies without shipping `.venv`.
+  - GitHub Actions packaging uses Python 3.12, NumPy 1.26.4, Captum 0.8.0, and a matched CUDA 12.6 trio: PyTorch 2.9.1, TorchVision 0.24.1, and TorchAudio 2.9.1. Python 3.12 and NumPy 1.26.4 avoid Captum's NumPy-below-2.0 resolver conflict. The build script fails immediately on native command errors and logs package paths, versions, wheel/PE architecture, XGBoost DLL discovery, and TabPFN package data before invoking PyInstaller.
+  - The PyInstaller spec collects AVISTA assets, QtAwesome, Matplotlib,
+    TabPFN modules/package data, inspected TabPFN dependencies, and the
+    installed XGBoost wheel's native DLLs.
+  - The PyInstaller spec builds `AVISTA.exe` and the GUI-free,
+    console-enabled `AVISTADeepWorker.exe` through independent analyses in the
+    same shared onedir folder without `MERGE` or shipping `.venv`.
   - The build script generates separate Windows version resources and fails when either executable is missing; GitHub Actions verifies both before installer creation.
   - Inno Setup installs the worker beside `AVISTA.exe` while shortcuts and the `.avista` file association continue to target only the desktop executable.
   - Optional-package checks in an installed packaged runtime use `importlib` in the current process instead of invoking `AVISTA.exe -c`; packaged pip requests fail safely because the frozen application is not a Python interpreter.
@@ -983,7 +1036,9 @@ This run covered centered half-width ROC/PR/training previews, the 900-pixel cap
 - No XAI page or XAI computation is implemented yet.
 - The packaging workflow is implemented, but a full standalone build and installer smoke test remain pending on a Windows build host with Inno Setup 6.
 - Inno Setup 6 is installed on the current development machine, but a complete
-  standalone/installer build has not been run for this worker change.
+  standalone/installer build has not been run for this worker change. The
+  local host only has Python 3.13; the locked Python 3.12/NumPy 1.26.4 release
+  build is verified by the Windows release workflow.
 
 ## 9. Next Immediate Task
 

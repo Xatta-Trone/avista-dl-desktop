@@ -13,10 +13,14 @@ from app.__version__ import (
     RELEASE_DATE,
     __version__,
 )
-from app.utils.resources import get_app_resource_path, is_packaged_application
+from app.utils.resources import (
+    get_app_resource_path,
+    is_packaged_application,
+    resolve_tabpfn_checkpoint,
+    tabpfn_checkpoint_candidates,
+)
 
 
-TABPFN_CHECKPOINT = "app/assets/tabpfn-v2.5-classifier-v2.5_default.ckpt"
 APP_LOGO = "app/assets/logo.png"
 
 
@@ -26,7 +30,10 @@ def collect_runtime_verification(
     """Collect packaged-runtime, optional-package, and asset availability."""
 
     gpu = gpu_info or {}
-    checkpoint = get_app_resource_path(TABPFN_CHECKPOINT)
+    try:
+        checkpoint = resolve_tabpfn_checkpoint()
+    except FileNotFoundError:
+        checkpoint = tabpfn_checkpoint_candidates()[0]
     logo = get_app_resource_path(APP_LOGO)
     return {
         "app_name": APP_NAME,

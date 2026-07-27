@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import shutil
+import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable
@@ -39,7 +40,11 @@ from app.utils.plotting import (
     plot_pr_curve_publication,
     plot_roc_curve_publication,
 )
-from app.utils.resources import get_app_resource_path
+from app.utils.resources import (
+    is_packaged_application,
+    resolve_tabpfn_checkpoint,
+    tabpfn_checkpoint_candidates,
+)
 from app.models.sklearn_models import create_sklearn_model
 
 
@@ -1324,16 +1329,58 @@ def _train_saved_tabpfn(
     total_units: int,
 ) -> tuple[dict[str, Any], int]:
     display_name = "TabPFN 2.5"
+    raw_params = dict(
+        (getattr(config, "model_params", {}) or {}).get(
+            "tabpfn",
+            (getattr(config, "model_params", {}) or {}).get(display_name, {}),
+        )
+    )
+    n_estimators = int(raw_params.get("n_estimators", 8))
     skip_reason = "TabPFN skipped: package tabpfn is not installed."
     try:
+        import tabpfn
         from tabpfn import TabPFNClassifier
-    except ImportError:
+    except ImportError as exc:
+        packaged = is_packaged_application()
+        checkpoint_candidates = tabpfn_checkpoint_candidates()
+        checkpoint = next(
+            (path for path in checkpoint_candidates if path.is_file()),
+            checkpoint_candidates[0],
+        )
+        if packaged:
+            reason = (
+                "TabPFN 2.5 could not start because the TabPFN Python "
+                "package is missing from AVISTADeepWorker.exe.\n\n"
+                f"Checkpoint found: {'Yes' if checkpoint.is_file() else 'No'}\n"
+                f"Checkpoint path: {checkpoint}\n"
+                "TabPFN package import: Failed\n"
+                f"Import error: {type(exc).__name__}: {exc}\n"
+                f"Worker: {Path(sys.executable).resolve()}\n\n"
+                "This is an AVISTA packaging error, not a dataset or "
+                "model-parameter error."
+            )
+            status = "failed"
+            artifact_name = "failure_reason.json"
+            result_key = "error"
+            step = "failed"
+        else:
+            reason = skip_reason
+            status = "skipped"
+            artifact_name = "skip_reason.json"
+            result_key = "reason"
+            step = "skipped"
         output_dir.mkdir(parents=True, exist_ok=True)
         _write_json(
-            output_dir / "skip_reason.json",
+            output_dir / artifact_name,
             {
                 "model_name": display_name,
-                "reason": skip_reason,
+                result_key: reason,
+                "packaged": packaged,
+                "tabpfn_import_succeeded": False,
+                "import_error": f"{type(exc).__name__}: {exc}",
+                "checkpoint_found": checkpoint.is_file(),
+                "checkpoint_path": str(checkpoint),
+                "worker": str(Path(sys.executable).resolve()),
                 **_project_metadata(config),
             },
         )
@@ -1342,32 +1389,26 @@ def _train_saved_tabpfn(
             model=display_name,
             fold=0,
             total_folds=0,
-            step="skipped",
+            step=step,
             percent=min(100, int((completed_units + 1) / max(1, total_units) * 100)),
-            message=skip_reason,
+            message=reason,
         )
         return (
             {
                 "model_name": display_name,
-                "status": "skipped",
-                "reason": skip_reason,
+                "status": status,
+                result_key: reason,
                 "saved": False,
                 "output_dir": str(output_dir),
             },
             1,
         )
 
-    raw_params = dict(
-        (getattr(config, "model_params", {}) or {}).get(
-            "tabpfn",
-            (getattr(config, "model_params", {}) or {}).get(display_name, {}),
-        )
-    )
-    n_estimators = int(raw_params.get("n_estimators", 8))
-    model_path = get_app_resource_path(
-        "app/assets/tabpfn-v2.5-classifier-v2.5_default.ckpt"
-    )
-    if not model_path.is_file():
+    try:
+        model_path = resolve_tabpfn_checkpoint()
+    except FileNotFoundError:
+        candidates = tabpfn_checkpoint_candidates()
+        model_path = candidates[0]
         checkpoint_reason = "Bundled TabPFN checkpoint not found in app/assets."
         output_dir.mkdir(parents=True, exist_ok=True)
         _write_json(
@@ -1398,6 +1439,16 @@ def _train_saved_tabpfn(
             },
             1,
         )
+    import torch
+
+    selected_device = "cuda" if torch.cuda.is_available() else "cpu"
+    tabpfn_version = str(getattr(tabpfn, "__version__", "unknown"))
+    tabpfn_file = getattr(tabpfn, "__file__", None)
+    tabpfn_path = (
+        str(Path(tabpfn_file).resolve())
+        if tabpfn_file
+        else "unknown"
+    )
     random_state = int(getattr(config, "random_state", 42))
     rng = np.random.RandomState(random_state)
 
@@ -1422,7 +1473,13 @@ def _train_saved_tabpfn(
         percent=int(completed_units / max(1, total_units) * 100),
         message=(
             f"{display_name} package available; "
+            f"package version={tabpfn_version}; "
+            f"package path={tabpfn_path}; "
+            f"packaged={is_packaged_application()}; "
+            f"selected device={selected_device}; "
             f"n_estimators={n_estimators}; "
+            f"checkpoint exists={model_path.is_file()}; "
+            f"checkpoint size={model_path.stat().st_size}; "
             f"bundled checkpoint={model_path}; "
             f"internal maximum training samples={TABPFN_MAX_SAMPLES}; "
             f"internal prediction batch size={TABPFN_PREDICTION_BATCH_SIZE}"
@@ -1471,6 +1528,7 @@ def _train_saved_tabpfn(
             fold_model = TabPFNClassifier(
                 n_estimators=n_estimators,
                 model_path=str(model_path),
+                device=selected_device,
             )
             fold_model.fit(X_train[train_pos][subset], y_train[train_pos][subset])
             fold_probabilities = predict_probabilities(
@@ -1522,6 +1580,7 @@ def _train_saved_tabpfn(
     final_model = TabPFNClassifier(
         n_estimators=n_estimators,
         model_path=str(model_path),
+        device=selected_device,
     )
     final_model.fit(X_train[final_subset], y_train[final_subset])
     units += 1
@@ -1606,8 +1665,14 @@ def _train_saved_tabpfn(
                 **_project_metadata(config),
                 "report_footer": report_footer(),
                 "package_available": True,
+                "tabpfn_version": tabpfn_version,
+                "tabpfn_package_path": tabpfn_path,
                 "tabpfn_checkpoint_source": "bundled_app_asset",
                 "tabpfn_checkpoint_path": str(model_path),
+                "tabpfn_checkpoint_size": model_path.stat().st_size,
+                "packaged_mode": is_packaged_application(),
+                "selected_device": selected_device,
+                "n_estimators": n_estimators,
                 "feature_count": int(X_train.shape[1]),
                 "num_classes": num_classes,
                 "train_size": int(len(y_train)),

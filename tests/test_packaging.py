@@ -74,25 +74,35 @@ def test_pyinstaller_build_uses_clean_environment_and_required_includes():
     assert "APP_DESCRIPTION" in script
     assert "RELEASE_DATE" in script
     assert "'$ApplicationDescription'" in script
+    assert "diagnose_packaging_runtime.py" in script
+    assert "audit_packaged_release.py" in script
     icon_generator = (
         PROJECT_ROOT / "packaging" / "create_logo_icon.py"
     ).read_text(encoding="utf-8")
     assert "Image.open" in icon_generator
     assert "format=\"ICO\"" in icon_generator
     assert "Invoke-CheckedCommand" in script
-    assert "Packaging imports verified" in script
     assert "Analysis(" in spec
     assert "COLLECT(" in spec
     assert '"app/assets"' in spec
     assert "deep_worker_main.py" in spec
     assert 'worker_name = "AVISTADeepWorker"' in spec
-    assert "MERGE(" in spec
+    assert "MERGE(" not in spec
     assert "worker_exe = EXE(" in spec
-    assert "gui_analysis.dependencies" in spec
-    assert "worker_analysis.dependencies" in spec
+    assert "gui_analysis.dependencies" not in spec
+    assert "worker_analysis.dependencies" not in spec
     assert "console=True" in spec
     assert '"PySide6", "qtawesome", "app.gui"' in spec
     assert 'collect_submodules(package_name)' in spec
+    assert 'collect_dynamic_libs("xgboost")' in spec
+    assert 'collect_all(' in spec and '"tabpfn"' in spec
+    assert '"tabpfn_common_utils"' in spec
+    assert "tabpfn_utils_hiddenimports" in spec
+    assert "tabpfn_utils_binaries" in spec
+    assert '"xgboost/lib"' in spec
+    assert "shared_binaries" in spec
+    assert '"huggingface_hub"' in spec
+    assert '"safetensors"' in spec
     assert '"torch"' in spec
     assert '"tabpfn"' in spec
     assert 'collect_data_files(package_name)' in spec
@@ -128,6 +138,11 @@ def test_release_build_uses_build_pyinstaller_and_documents_file_association():
         PROJECT_ROOT / ".github" / "workflows" / "windows-release.yml"
     ).read_text(encoding="utf-8")
     assert "SkipInstaller" in build_script
+    assert (
+        'Source: "..\\release\\AVISTA\\*"; DestDir: "{app}"; '
+        "Flags: ignoreversion recursesubdirs createallsubdirs"
+        in installer
+    )
     assert 'Subkey: "Software\\Classes\\.avista"' in installer
     assert "AVISTA.Project" in notes
     assert 'AVISTA.exe" "%1' in notes
@@ -217,6 +232,13 @@ def test_github_windows_release_workflow_builds_and_publishes_installer():
     assert "tests/test_main.py" in workflow
     assert "tests/test_version_metadata.py" in workflow
     assert "installer/AVISTA_Setup.exe" in workflow
+    assert "release/AVISTA/_internal/xgboost/lib/xgboost.dll" in workflow
+    assert (
+        "release/AVISTA/_internal/app/assets/"
+        "tabpfn-v2.5-classifier-v2.5_default.ckpt"
+        in workflow
+    )
+    assert "scripts/audit_packaged_release.py" in workflow
     assert "actions/upload-artifact@v7" in workflow
     assert "archive: false" in workflow
     assert "Resolve release tag" in workflow

@@ -1,7 +1,10 @@
 from pathlib import Path
 
 import app.utils.resources as resources
-from app.utils.resources import get_app_resource_path
+from app.utils.resources import (
+    get_app_resource_path,
+    resolve_tabpfn_checkpoint,
+)
 
 
 def test_app_resource_path_resolves_development_checkpoint():
@@ -45,3 +48,46 @@ def test_app_resource_path_resolves_packaged_standalone_asset(tmp_path, monkeypa
 
     assert resources.is_packaged_application()
     assert resolved == asset.resolve()
+
+
+def test_tabpfn_checkpoint_resolver_supports_pyinstaller_internal_root(
+    tmp_path,
+    monkeypatch,
+):
+    checkpoint = (
+        tmp_path
+        / "app"
+        / "assets"
+        / "tabpfn-v2.5-classifier-v2.5_default.ckpt"
+    )
+    checkpoint.parent.mkdir(parents=True)
+    checkpoint.write_bytes(b"checkpoint")
+    monkeypatch.setattr("sys._MEIPASS", str(tmp_path), raising=False)
+
+    assert resolve_tabpfn_checkpoint() == checkpoint.resolve()
+
+
+def test_tabpfn_checkpoint_resolver_reports_checked_paths(
+    tmp_path,
+    monkeypatch,
+):
+    executable = tmp_path / "AVISTADeepWorker.exe"
+    executable.write_bytes(b"worker")
+    monkeypatch.delattr("sys._MEIPASS", raising=False)
+    monkeypatch.setattr("sys.executable", str(executable))
+    monkeypatch.setitem(resources.__dict__, "__compiled__", object())
+    monkeypatch.setitem(
+        resources.__dict__,
+        "__file__",
+        str(tmp_path / "_internal" / "app" / "utils" / "resources.py"),
+    )
+
+    try:
+        resolve_tabpfn_checkpoint()
+    except FileNotFoundError as exc:
+        message = str(exc)
+    else:
+        raise AssertionError("Missing checkpoint must raise FileNotFoundError.")
+
+    assert "app\\assets\\tabpfn-v2.5-classifier-v2.5_default.ckpt" in message
+    assert "assets\\tabpfn-v2.5-classifier-v2.5_default.ckpt" in message

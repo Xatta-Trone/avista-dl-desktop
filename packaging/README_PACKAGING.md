@@ -60,9 +60,26 @@ For a console-enabled troubleshooting build:
 - `installer\AVISTA_Setup.exe`: Inno Setup installer.
 - `release\AVISTA_Setup.exe`: release copy of the installer.
 
-The PyInstaller specification uses two analyses and entry points, then merges
-their shared dependencies into one onedir application folder. Inno Setup's
-application-folder rule installs both executables side by side.
+The PyInstaller specification uses two independent analyses and entry points
+in one shared `COLLECT`. It intentionally does not use `MERGE`: each
+executable retains the pure-Python modules it imports, while the shared onedir
+folder de-duplicates collected binary/data files. This prevents the deep
+worker from depending on Python modules stored only in the GUI executable.
+Inno Setup's recursive application-folder rule installs both executables and
+the complete `_internal` tree side by side.
+
+Required packaged model resources are:
+
+```text
+release\AVISTA\_internal\xgboost\lib\xgboost.dll
+release\AVISTA\_internal\app\assets\tabpfn-v2.5-classifier-v2.5_default.ckpt
+```
+
+The spec discovers XGBoost DLLs from the installed wheel with
+`collect_dynamic_libs("xgboost")`; it does not assume a source-wheel path.
+TabPFN uses `collect_all("tabpfn")` plus explicitly inspected dynamic
+dependencies such as `tabpfn_common_utils`, Hugging Face Hub, safetensors,
+einops, Pydantic, sklearn, joblib, LightGBM, and Torch.
 
 ## Deep-Worker Launch Modes
 
@@ -95,6 +112,21 @@ model-initialization, and training stages.
 
 ## Test The Standalone Build
 
+Every supported build automatically:
+
+1. Runs `scripts\diagnose_packaging_runtime.py` in `build_env` to log Python
+   architecture, XGBoost/TabPFN versions and package locations, the installed
+   wheel tag, recursively discovered XGBoost DLLs, DLL PE architecture, and
+   TabPFN package data.
+2. Runs `scripts\audit_packaged_release.py` after PyInstaller to require
+   `AVISTA.exe`, `AVISTADeepWorker.exe`, the XGBoost DLL, and TabPFN
+   checkpoint in the final `_internal` layout.
+3. Executes a two-tree XGBoost fit through packaged `AVISTA.exe` and a
+   two-estimator CPU TabPFN fit through packaged `AVISTADeepWorker.exe`.
+
+The build stops before Inno Setup if any import, artifact, architecture, or
+tiny fit fails.
+
 1. Run `release\AVISTA\AVISTA.exe`.
 2. Confirm `release\AVISTA\AVISTADeepWorker.exe` exists beside it.
 3. Confirm the Environment page displays the completed startup check.
@@ -109,7 +141,34 @@ model-initialization, and training stages.
 7. Verify success, cancel, Python exception, missing checkpoint/asset, and
    native-process failure handling. Confirm every failure points to a complete
    worker log.
-8. Test both an NVIDIA system and a CPU-only Windows VM.
+8. Train XGBoost and TabPFN 2.5 and confirm neither reports a missing package,
+   native library, or checkpoint.
+9. Test both an NVIDIA system and a CPU-only Windows VM.
+
+The current release path is PyInstaller onedir. Historical references to
+Nuitka do not describe the active build implementation.
+
+## XGBoost And TabPFN Packaging Regression
+
+The v1.0.1, v1.0.2, and v1.0.3 tags use the same PyInstaller spec blob
+(`d24a688`) and the same locked XGBoost/TabPFN requirements. Those releases
+have one GUI executable and no dedicated worker. The spec listed XGBoost as a
+hidden import but never passed its wheel DLLs through `binaries`, so native
+library inclusion was implicit and not release-audited.
+
+Commit `b60f8e7` introduced `AVISTADeepWorker.exe` for v1.0.5 and added
+PyInstaller `MERGE`. `MERGE` assigns common dependencies to the first analysis
+and leaves later executables with external references. The installed log
+shows the worker starting correctly but being unable to import `tabpfn`, while
+the GUI-side XGBoost package exists without its DLL. Requirements did not
+change; the regression is in frozen dependency collection, not the checkpoint
+or wheel installation.
+
+The fix explicitly collects the XGBoost native library, gives both analyses
+their required binary/data inputs, removes `MERGE`, and release-gates the
+actual frozen executables. Inno Setup already used `recursesubdirs
+createallsubdirs`, so it did not selectively omit `_internal`; the incomplete
+files originated in the PyInstaller output.
 
 To verify command-line project loading:
 

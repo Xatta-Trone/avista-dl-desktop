@@ -77,15 +77,9 @@ def _create_tabpfn_model(params: dict[str, Any], device: str | None) -> Any:
             "Install tabpfn to use this model."
         ) from exc
 
-    from app.utils.resources import get_app_resource_path
+    from app.utils.resources import resolve_tabpfn_checkpoint
 
-    checkpoint_path = get_app_resource_path(
-        "app/assets/tabpfn-v2.5-classifier-v2.5_default.ckpt"
-    )
-    if not checkpoint_path.is_file():
-        raise FileNotFoundError(
-            "Bundled TabPFN checkpoint not found in app/assets."
-        )
+    checkpoint_path = resolve_tabpfn_checkpoint()
     model_params = {
         "n_estimators": int(params.get("n_estimators", 8)),
         "model_path": str(checkpoint_path),

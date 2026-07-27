@@ -351,6 +351,28 @@ def test_optional_package_missing_behavior_is_clear(monkeypatch):
         create_model("XGBoost")
 
 
+def test_packaged_xgboost_native_library_failure_is_actionable(monkeypatch):
+    real_import = builtins.__import__
+
+    def fake_import(name, *args, **kwargs):
+        if name == "xgboost":
+            raise RuntimeError("Cannot find XGBoost Library: xgboost.dll")
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", fake_import)
+    monkeypatch.setattr(
+        "app.models.sklearn_models.is_packaged_application",
+        lambda: True,
+    )
+    monkeypatch.setattr(
+        "app.models.sklearn_models.expected_packaged_xgboost_dll",
+        lambda: "C:/Program Files/AVISTA/_internal/xgboost/lib/xgboost.dll",
+    )
+
+    with pytest.raises(RuntimeError, match="AVISTA packaging error"):
+        create_model("XGBoost")
+
+
 def test_tabpfn_missing_behavior_is_clear(monkeypatch):
     real_import = builtins.__import__
 

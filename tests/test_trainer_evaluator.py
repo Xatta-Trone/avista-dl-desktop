@@ -871,6 +871,43 @@ def test_tabpfn_missing_dependency_creates_skip_reason(tmp_path, monkeypatch):
     assert skip["reason"] == expected_reason
 
 
+def test_packaged_tabpfn_missing_dependency_is_a_failure(
+    tmp_path,
+    monkeypatch,
+):
+    config = make_config(
+        tmp_path,
+        task_type="auto",
+        selected_models=["tabpfn"],
+    )
+    save_encoded_string_training_bundle(tmp_path, config)
+    real_import = builtins.__import__
+
+    def missing_tabpfn(name, *args, **kwargs):
+        if name == "tabpfn":
+            raise ImportError("No module named tabpfn")
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", missing_tabpfn)
+    monkeypatch.setattr(
+        "app.core.trainer.is_packaged_application",
+        lambda: True,
+    )
+
+    result = train_saved_models(config)
+
+    model_result = result["results"][0]
+    output_dir = tmp_path / "outputs" / "training" / "TabPFN_2_5"
+    assert model_result["status"] == "failed"
+    assert "missing from AVISTADeepWorker.exe" in model_result["error"]
+    assert "This is an AVISTA packaging error" in model_result["error"]
+    failure = json.loads(
+        (output_dir / "failure_reason.json").read_text(encoding="utf-8")
+    )
+    assert failure["packaged"] is True
+    assert failure["tabpfn_import_succeeded"] is False
+
+
 def test_tabpfn_uses_one_estimator_value_and_internal_batching(tmp_path, monkeypatch):
     n_estimators = 12
     config = make_config(
@@ -897,9 +934,10 @@ def test_tabpfn_uses_one_estimator_value_and_internal_batching(tmp_path, monkeyp
         instances = []
         prediction_batch_sizes = []
 
-        def __init__(self, n_estimators, model_path):
+        def __init__(self, n_estimators, model_path, device):
             self.n_estimators = n_estimators
             self.model_path = model_path
+            self.device = device
             self.fit_size = 0
             self.__class__.instances.append(self)
 
@@ -940,6 +978,9 @@ def test_tabpfn_uses_one_estimator_value_and_internal_batching(tmp_path, monkeyp
     assert {
         instance.model_path for instance in FakeTabPFNClassifier.instances
     } == {str(checkpoint.resolve())}
+    assert {
+        instance.device for instance in FakeTabPFNClassifier.instances
+    }.issubset({"cpu", "cuda"})
     assert all(size <= 500 for size in FakeTabPFNClassifier.prediction_batch_sizes)
     assert 500 in FakeTabPFNClassifier.prediction_batch_sizes
     saved_config = json.loads(
@@ -996,8 +1037,14 @@ def test_tabpfn_missing_bundled_checkpoint_saves_failure_reason(
     fake_module.TabPFNClassifier = object
     monkeypatch.setitem(sys.modules, "tabpfn", fake_module)
     monkeypatch.setattr(
-        "app.core.trainer.get_app_resource_path",
-        lambda *_args, **_kwargs: missing_checkpoint,
+        "app.core.trainer.resolve_tabpfn_checkpoint",
+        lambda: (_ for _ in ()).throw(
+            FileNotFoundError("missing checkpoint")
+        ),
+    )
+    monkeypatch.setattr(
+        "app.core.trainer.tabpfn_checkpoint_candidates",
+        lambda: [missing_checkpoint],
     )
 
     result = train_saved_models(config)

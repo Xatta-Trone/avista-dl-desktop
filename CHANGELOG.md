@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.6 - 2026-07-27
+
+- Fixed packaged XGBoost by bundling and auditing its native xgboost.dll
+- Fixed TabPFN 2.5 support in AVISTADeepWorker.exe by bundling required modules, package
+  data, and dependencies
+- Centralized TabPFN checkpoint resolution for source and installed builds
+- Added release-blocking package diagnostics, artifact audits, and tiny packaged XGBoost
+  and TabPFN training smoke tests
+
+## Unreleased
+
 ## 1.0.5 - 2026-07-24
 
 - Added a centralized release-preparation command that synchronizes application

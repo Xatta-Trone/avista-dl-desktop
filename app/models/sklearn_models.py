@@ -19,6 +19,10 @@ from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 
 from app.core.model_registry import get_model_spec
+from app.utils.resources import (
+    expected_packaged_xgboost_dll,
+    is_packaged_application,
+)
 
 
 _SKLEARN_CLASSIFIERS = {
@@ -66,7 +70,19 @@ def create_sklearn_model(
 def _create_xgboost_classifier(params: dict[str, Any]) -> Any:
     try:
         from xgboost import XGBClassifier
-    except ImportError as exc:
+    except Exception as exc:
+        if is_packaged_application():
+            expected_dll = expected_packaged_xgboost_dll()
+            raise RuntimeError(
+                "XGBoost could not start because its native library was not "
+                "included in the AVISTA installation.\n\n"
+                f"Expected file:\n{expected_dll}\n\n"
+                f"Package import error: {type(exc).__name__}: {exc}\n\n"
+                "This is an AVISTA packaging error, not a dataset or "
+                "model-parameter error. Review the AVISTA training log."
+            ) from exc
+        if not isinstance(exc, ImportError):
+            raise
         raise ImportError(
             "Optional package 'xgboost' is required for XGBoost. Install xgboost to use this model."
         ) from exc

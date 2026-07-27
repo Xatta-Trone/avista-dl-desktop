@@ -22,6 +22,8 @@ $LogoPng = Join-Path $ProjectRoot "app\assets\logo.png"
 $LogoIco = Join-Path $ProjectRoot "app\assets\logo.ico"
 $LogoIconGenerator = Join-Path $PSScriptRoot "create_logo_icon.py"
 $SpecFile = Join-Path $PSScriptRoot "avista_pyinstaller.spec"
+$PackagingDiagnostics = Join-Path $ProjectRoot "scripts\diagnose_packaging_runtime.py"
+$PackagedArtifactAudit = Join-Path $ProjectRoot "scripts\audit_packaged_release.py"
 $VersionInfoFile = Join-Path $DistDir "avista_version_info.txt"
 $WorkerVersionInfoFile = Join-Path $DistDir "avista_deep_worker_version_info.txt"
 $WorkerName = "AVISTADeepWorker"
@@ -192,9 +194,8 @@ Invoke-CheckedCommand $BuildPython @(
     "-m", "pip", "install", "PyInstaller==6.17.0"
 ) "Could not install PyInstaller build dependency."
 Invoke-CheckedCommand $BuildPython @(
-    "-c",
-    "import PySide6, qtawesome, torch, torchvision, torchaudio, tabpfn; print('Packaging imports verified')"
-) "Required packaging imports are unavailable."
+    $PackagingDiagnostics
+) "Required packaging packages, native libraries, or architectures are invalid."
 
 if (-not (Test-ValidIconFile $LogoIco)) {
     New-LogoIcon
@@ -252,6 +253,11 @@ if (-not (Test-Path -LiteralPath $BuiltExe)) {
 if (-not (Test-Path -LiteralPath $BuiltWorkerExe)) {
     throw "PyInstaller completed but $BuiltWorkerExe was not found."
 }
+Invoke-CheckedCommand $BuildPython @(
+    $PackagedArtifactAudit,
+    "--dist-dir",
+    $BuiltAppDir
+) "Packaged XGBoost/TabPFN artifact audit or model smoke test failed."
 
 Remove-BuildPath $ReleaseAppDir
 New-Item -ItemType Directory -Path $ReleaseAppDir -Force | Out-Null

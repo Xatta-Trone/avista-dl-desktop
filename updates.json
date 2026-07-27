@@ -2,7 +2,7 @@
   "latest_version": "1.0.6",
   "release_date": "July 27, 2026",
   "release_notes": [
-    "Fixed packaged XGBoost by bundling and auditing its native xgboost.dll",
+    "Fixed packaged XGBoost by bundling and auditing its required VERSION package data and native xgboost.dll",
     "Fixed TabPFN 2.5 support in AVISTADeepWorker.exe by bundling required modules, package data, and dependencies",
     "Centralized TabPFN checkpoint resolution for source and installed builds",
     "Added release-blocking package diagnostics, artifact audits, and tiny packaged XGBoost and TabPFN training smoke tests"

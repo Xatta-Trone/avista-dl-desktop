@@ -30,6 +30,7 @@ def expected_artifacts(dist_dir: Path) -> dict[str, Path]:
     return {
         "application": dist_dir / "AVISTA.exe",
         "deep_worker": dist_dir / "AVISTADeepWorker.exe",
+        "xgboost_version": internal / "xgboost" / "VERSION",
         "xgboost_dll": internal / "xgboost" / "lib" / "xgboost.dll",
         "tabpfn_checkpoint": (
             internal / "app" / "assets" / CHECKPOINT_FILENAME

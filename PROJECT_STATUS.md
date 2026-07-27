@@ -65,8 +65,12 @@ TabPFN, so it stopped before checkpoint validation. The active release system
 is PyInstaller onedir, not Nuitka.
 
 The packaging fix dynamically discovers XGBoost DLLs from the installed wheel,
-places `xgboost.dll` at `_internal/xgboost/lib/xgboost.dll`, and treats it as a
-binary so PyInstaller analyzes dependent libraries. TabPFN modules, package
+places `xgboost.dll` at `_internal/xgboost/lib/xgboost.dll`, treats it as a
+binary so PyInstaller analyzes dependent libraries, and collects the required
+`_internal/xgboost/VERSION` package data. The first v1.0.6 workflow attempt
+proved the DLL was present but failed during XGBoost import because this
+seven-byte version file was absent; the pre-build diagnostic, post-build
+audit, and workflow artifact list now all require it. TabPFN modules, package
 data, and inspected dynamic dependencies are collected for both analyses.
 PyInstaller `MERGE` was removed so `AVISTADeepWorker.exe` retains its own
 pure-Python dependency archive in the shared onedir folder. The checkpoint is
@@ -84,9 +88,15 @@ not the component omitting these files.
 
 Release builds now run a pre-build package/architecture diagnostic and a
 post-build audit requiring AMD64 `AVISTA.exe`, `AVISTADeepWorker.exe`, the
-XGBoost DLL, and the TabPFN checkpoint. The frozen GUI must fit a tiny XGBoost
-dataset, and the frozen worker must fit a tiny two-estimator CPU TabPFN
-dataset, before Inno Setup or GitHub publication can proceed.
+XGBoost `VERSION` data and DLL, and the TabPFN checkpoint. The frozen GUI must
+fit a tiny XGBoost dataset, and the frozen worker must fit a tiny two-estimator
+CPU TabPFN dataset, before Inno Setup or GitHub publication can proceed.
+
+Focused verification for the XGBoost `VERSION` package-data regression passed
+on July 27, 2026: `20 passed`. This covered the PyInstaller declaration,
+pre-build package diagnostics, expected onedir artifact paths, GitHub workflow
+release gates, source XGBoost/TabPFN model smokes, and synchronized v1.0.6
+metadata. Python and PyInstaller-spec compilation also passed.
 
 Focused XGBoost/TabPFN packaging verification passed on July 24, 2026:
 `36 passed`. This includes resource resolution, packaging declarations,

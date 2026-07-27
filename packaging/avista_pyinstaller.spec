@@ -48,6 +48,18 @@ tabpfn_datas, tabpfn_binaries, tabpfn_hiddenimports = collect_all(
 shared_datas += tabpfn_datas
 shared_datas += tabpfn_utils_datas
 
+xgboost_version_data = [
+    entry
+    for entry in collect_data_files("xgboost", includes=["VERSION"])
+    if Path(entry[0]).name.casefold() == "version"
+]
+if not xgboost_version_data:
+    raise RuntimeError(
+        "The installed xgboost package contains no VERSION data file; "
+        "refusing to build an incomplete AVISTA release."
+    )
+shared_datas += xgboost_version_data
+
 xgboost_binaries = collect_dynamic_libs("xgboost")
 xgboost_dlls = [
     source

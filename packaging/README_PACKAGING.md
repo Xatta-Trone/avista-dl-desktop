@@ -71,12 +71,16 @@ the complete `_internal` tree side by side.
 Required packaged model resources are:
 
 ```text
+release\AVISTA\_internal\xgboost\VERSION
 release\AVISTA\_internal\xgboost\lib\xgboost.dll
 release\AVISTA\_internal\app\assets\tabpfn-v2.5-classifier-v2.5_default.ckpt
 ```
 
-The spec discovers XGBoost DLLs from the installed wheel with
-`collect_dynamic_libs("xgboost")`; it does not assume a source-wheel path.
+The spec collects XGBoost's required `VERSION` package data and discovers its
+DLLs from the installed wheel with `collect_dynamic_libs("xgboost")`; it does
+not assume a source-wheel path. XGBoost 3.2.0 reads `xgboost\VERSION` while
+importing its native library, so the Python modules and DLL are not sufficient
+without this file.
 TabPFN uses `collect_all("tabpfn")` plus explicitly inspected dynamic
 dependencies such as `tabpfn_common_utils`, Hugging Face Hub, safetensors,
 einops, Pydantic, sklearn, joblib, LightGBM, and Torch.
@@ -116,11 +120,11 @@ Every supported build automatically:
 
 1. Runs `scripts\diagnose_packaging_runtime.py` in `build_env` to log Python
    architecture, XGBoost/TabPFN versions and package locations, the installed
-   wheel tag, recursively discovered XGBoost DLLs, DLL PE architecture, and
-   TabPFN package data.
+   wheel tag, required XGBoost `VERSION` data, recursively discovered XGBoost
+   DLLs, DLL PE architecture, and TabPFN package data.
 2. Runs `scripts\audit_packaged_release.py` after PyInstaller to require
-   `AVISTA.exe`, `AVISTADeepWorker.exe`, the XGBoost DLL, and TabPFN
-   checkpoint in the final `_internal` layout.
+   `AVISTA.exe`, `AVISTADeepWorker.exe`, XGBoost's `VERSION` file and DLL, and
+   the TabPFN checkpoint in the final `_internal` layout.
 3. Executes a two-tree XGBoost fit through packaged `AVISTA.exe` and a
    two-estimator CPU TabPFN fit through packaged `AVISTADeepWorker.exe`.
 
@@ -164,11 +168,11 @@ the GUI-side XGBoost package exists without its DLL. Requirements did not
 change; the regression is in frozen dependency collection, not the checkpoint
 or wheel installation.
 
-The fix explicitly collects the XGBoost native library, gives both analyses
-their required binary/data inputs, removes `MERGE`, and release-gates the
-actual frozen executables. Inno Setup already used `recursesubdirs
-createallsubdirs`, so it did not selectively omit `_internal`; the incomplete
-files originated in the PyInstaller output.
+The fix explicitly collects XGBoost's native library and required `VERSION`
+package data, gives both analyses their required binary/data inputs, removes
+`MERGE`, and release-gates the actual frozen executables. Inno Setup already
+used `recursesubdirs createallsubdirs`, so it did not selectively omit
+`_internal`; the incomplete files originated in the PyInstaller output.
 
 To verify command-line project loading:
 
@@ -266,9 +270,19 @@ The workflow creates the release if it does not exist and uploads
 Tagged release:
 
 ```powershell
-git tag vX.Y.Z
-git push origin vX.Y.Z
+.venv\Scripts\python.exe scripts\prepare_release.py --check --expected-tag v1.0.6
+
+git add -A
+git commit -m "fix(packaging): bundle XGBoost and TabPFN for AVISTA v1.0.6"
+git push origin main
+
+git tag -a v1.0.6 -m "AVISTA v1.0.6"
+git push origin v1.0.6
 ```
+
+For future releases, replace `1.0.6` in the check, commit message, and tag
+commands with the new centralized version. Push the release commit before
+pushing its tag so the tag references the synchronized release state.
 
 Tags matching `v*` build the installer, create a GitHub Release, generate
 release notes, and attach `AVISTA_Setup.exe`.

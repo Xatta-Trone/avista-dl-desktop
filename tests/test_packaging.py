@@ -94,6 +94,8 @@ def test_pyinstaller_build_uses_clean_environment_and_required_includes():
     assert "console=True" in spec
     assert '"PySide6", "qtawesome", "app.gui"' in spec
     assert 'collect_submodules(package_name)' in spec
+    assert 'collect_data_files("xgboost", includes=["VERSION"])' in spec
+    assert "xgboost_version_data" in spec
     assert 'collect_dynamic_libs("xgboost")' in spec
     assert 'collect_all(' in spec and '"tabpfn"' in spec
     assert '"tabpfn_common_utils"' in spec
@@ -233,6 +235,7 @@ def test_github_windows_release_workflow_builds_and_publishes_installer():
     assert "tests/test_version_metadata.py" in workflow
     assert "installer/AVISTA_Setup.exe" in workflow
     assert "release/AVISTA/_internal/xgboost/lib/xgboost.dll" in workflow
+    assert "release/AVISTA/_internal/xgboost/VERSION" in workflow
     assert (
         "release/AVISTA/_internal/app/assets/"
         "tabpfn-v2.5-classifier-v2.5_default.ckpt"

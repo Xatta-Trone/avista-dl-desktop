@@ -103,6 +103,7 @@ jobs:
             "installer/AVISTA_Setup.exe",
             "release/AVISTA/AVISTA.exe",
             "release/AVISTA/AVISTADeepWorker.exe",
+            "release/AVISTA/_internal/xgboost/VERSION",
             "release/AVISTA/_internal/xgboost/lib/xgboost.dll",
             "release/AVISTA/_internal/app/assets/tabpfn-v2.5-classifier-v2.5_default.ckpt"
           )

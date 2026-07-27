@@ -38,6 +38,12 @@ def collect_packaging_diagnostics() -> dict[str, Any]:
     import xgboost
 
     xgboost_dir = Path(xgboost.__file__).resolve().parent
+    xgboost_version_file = xgboost_dir / "VERSION"
+    if not xgboost_version_file.is_file():
+        raise FileNotFoundError(
+            f"xgboost is installed at {xgboost_dir}, but its required "
+            "VERSION package data file is missing."
+        )
     xgboost_dlls = sorted(xgboost_dir.rglob("xgboost.dll"))
     if not xgboost_dlls:
         raise FileNotFoundError(
@@ -81,6 +87,10 @@ def collect_packaging_diagnostics() -> dict[str, Any]:
             "version": str(xgboost.__version__),
             "package_file": str(Path(xgboost.__file__).resolve()),
             "package_directory": str(xgboost_dir),
+            "version_file": str(xgboost_version_file),
+            "version_file_value": xgboost_version_file.read_text(
+                encoding="utf-8"
+            ).strip(),
             "dll_paths": [str(path.resolve()) for path in xgboost_dlls],
             "dll_machines": dll_machines,
             "wheel_metadata": wheel_metadata.strip().splitlines(),

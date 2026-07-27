@@ -2,7 +2,8 @@
 
 ## 1.0.6 - 2026-07-27
 
-- Fixed packaged XGBoost by bundling and auditing its native xgboost.dll
+- Fixed packaged XGBoost by bundling and auditing its required `VERSION`
+  package data and native `xgboost.dll`.
 - Fixed TabPFN 2.5 support in AVISTADeepWorker.exe by bundling required modules, package
   data, and dependencies
 - Centralized TabPFN checkpoint resolution for source and installed builds

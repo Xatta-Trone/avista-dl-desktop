@@ -58,6 +58,10 @@ def test_packaging_diagnostics_find_amd64_xgboost_and_tabpfn_data():
     diagnostics = collect_packaging_diagnostics()
 
     assert diagnostics["python"]["bits"] == 64
+    assert diagnostics["xgboost"]["version_file_value"] == (
+        diagnostics["xgboost"]["version"]
+    )
+    assert Path(diagnostics["xgboost"]["version_file"]).is_file()
     assert diagnostics["xgboost"]["dll_paths"]
     assert all(
         machine == "0x8664"
@@ -77,6 +81,13 @@ def test_packaged_artifact_audit_uses_pyinstaller_internal_layout(tmp_path):
     assert artifacts["application"] == tmp_path / "AVISTA" / "AVISTA.exe"
     assert artifacts["deep_worker"] == (
         tmp_path / "AVISTA" / "AVISTADeepWorker.exe"
+    )
+    assert artifacts["xgboost_version"] == (
+        tmp_path
+        / "AVISTA"
+        / "_internal"
+        / "xgboost"
+        / "VERSION"
     )
     assert artifacts["xgboost_dll"] == (
         tmp_path

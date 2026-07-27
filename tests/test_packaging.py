@@ -198,6 +198,24 @@ def test_installer_release_documents_exist():
         assert (PROJECT_ROOT / name).is_file()
 
 
+def test_application_uses_apache_license_2_0():
+    license_text = (PROJECT_ROOT / "LICENSE.txt").read_text(encoding="utf-8")
+    readme = (PROJECT_ROOT / "README.md").read_text(encoding="utf-8")
+    installer = (
+        PROJECT_ROOT / "packaging" / "avista_installer.iss"
+    ).read_text(encoding="utf-8")
+
+    assert "Apache License" in license_text
+    assert "Version 2.0, January 2004" in license_text
+    assert "TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION" in (
+        license_text
+    )
+    assert "END OF TERMS AND CONDITIONS" in license_text
+    assert "AVISTA Proprietary License" not in license_text
+    assert "Apache-2.0" in readme
+    assert "LicenseFile=..\\LICENSE.txt" in installer
+
+
 def test_deep_worker_entrypoint_is_gui_free():
     entrypoint = (PROJECT_ROOT / "deep_worker_main.py").read_text(
         encoding="utf-8"

@@ -23,6 +23,13 @@ release date centralized as July 27, 2026. Focused centralized-version,
 update-feed, report metadata, and splash-screen verification passed:
 `7 passed`.
 
+AVISTA is licensed under the Apache License, Version 2.0 (`Apache-2.0`).
+`LICENSE.txt` contains the canonical license text, the Windows installer
+displays and installs it, and dependency licenses remain documented separately
+in `THIRD_PARTY_NOTICES.txt`. Focused license, packaging-document, centralized
+version, and release-metadata verification passed on July 27, 2026:
+`23 passed`.
+
 Release preparation is centralized through
 `scripts/prepare_release.py`. A single command sets the canonical version and
 release date in `app/__version__.py`, synchronizes `updates.json`, the

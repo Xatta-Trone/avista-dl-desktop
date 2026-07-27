@@ -2,6 +2,8 @@
 
 ## 1.0.6 - 2026-07-27
 
+- Replaced the former proprietary AVISTA license with the Apache License,
+  Version 2.0 (`Apache-2.0`), while preserving separate third-party notices.
 - Fixed packaged XGBoost by bundling and auditing its required `VERSION`
   package data and native `xgboost.dll`.
 - Fixed TabPFN 2.5 support in AVISTADeepWorker.exe by bundling required modules, package

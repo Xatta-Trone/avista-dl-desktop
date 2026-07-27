@@ -130,3 +130,13 @@ post-commit action.
 The Windows installer stores the selected install folder in
 `Software\AVISTA\InstallDir` and uses that value as the default for future
 updates, so custom locations such as `D:\AVISTA\` are preserved.
+
+## License
+
+Copyright 2026 AVISTA Developers.
+
+AVISTA is licensed under the Apache License, Version 2.0
+([SPDX: Apache-2.0](https://spdx.org/licenses/Apache-2.0.html)). See
+[LICENSE.txt](LICENSE.txt) for the complete license terms. Third-party
+components remain subject to the licenses listed in
+[THIRD_PARTY_NOTICES.txt](THIRD_PARTY_NOTICES.txt).

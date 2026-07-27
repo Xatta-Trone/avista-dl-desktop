@@ -2,6 +2,7 @@
   "latest_version": "1.0.6",
   "release_date": "July 27, 2026",
   "release_notes": [
+    "Licensed AVISTA under the Apache License, Version 2.0 (Apache-2.0)",
     "Fixed packaged XGBoost by bundling and auditing its required VERSION package data and native xgboost.dll",
     "Fixed TabPFN 2.5 support in AVISTADeepWorker.exe by bundling required modules, package data, and dependencies",
     "Centralized TabPFN checkpoint resolution for source and installed builds",

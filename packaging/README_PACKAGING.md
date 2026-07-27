@@ -306,6 +306,10 @@ and `AVISTADeepWorker.exe` were produced before compiling or publishing the
 installer. If the checkpoint is stored with Git LFS, ensure GitHub LFS storage
 and bandwidth are available; checkout enables LFS downloads.
 
+The installer displays and installs the repository's `LICENSE.txt`, which is
+the Apache License, Version 2.0 (`Apache-2.0`). `THIRD_PARTY_NOTICES.txt`
+remains separate and documents licenses for bundled dependencies.
+
 ## Update Metadata
 
 AVISTA reads update metadata from:

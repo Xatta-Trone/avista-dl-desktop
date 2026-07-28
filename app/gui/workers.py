@@ -39,6 +39,8 @@ from app.utils.resources import (
     tabpfn_checkpoint_candidates,
 )
 
+WINDOWS_CREATE_NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+
 
 class UpdateCheckWorker(QObject):
     """Check GitHub update metadata without blocking the GUI."""
@@ -443,6 +445,7 @@ class TrainingWorker(QObject):
                 encoding="utf-8",
                 errors="replace",
                 bufsize=1,
+                **_deep_worker_process_options(launch),
             )
             process_started = True
             _append_worker_log(
@@ -606,6 +609,16 @@ class TrainingWorker(QObject):
         with (log_dir / "training_log.txt").open("a", encoding="utf-8") as log_file:
             log_file.write(f"[{timestamp}] {message}\n")
         self.progress_message.emit(message)
+
+
+def _deep_worker_process_options(
+    launch: DeepWorkerLaunch,
+) -> dict[str, int]:
+    """Hide the packaged Windows worker console while preserving its pipes."""
+
+    if launch.packaged and WINDOWS_CREATE_NO_WINDOW:
+        return {"creationflags": WINDOWS_CREATE_NO_WINDOW}
+    return {}
 
 
 def build_torch_subprocess_command(config: Any, model_name: str) -> list[str]:

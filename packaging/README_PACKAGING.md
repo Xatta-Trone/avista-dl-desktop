@@ -7,11 +7,13 @@ TabPFN, AVISTA assets, and the bundled TabPFN checkpoint. It contains two
 entry-point executables:
 
 - `AVISTA.exe`: the windowed PySide6 desktop application.
-- `AVISTADeepWorker.exe`: the console-enabled, GUI-free deep-training worker.
+- `AVISTADeepWorker.exe`: the console-capable, GUI-free deep-training worker.
 
 The worker is installed beside the desktop executable. It is not a general
 Python interpreter, is not used for `.avista` file association, and must not
-initialize PySide6 or the AVISTA main window.
+initialize PySide6 or the AVISTA main window. Its console subsystem is retained
+for the captured JSON Lines stdout/stderr protocol, while packaged GUI launches
+use Windows `CREATE_NO_WINDOW` so users do not see a blank terminal.
 
 ## Prerequisites
 

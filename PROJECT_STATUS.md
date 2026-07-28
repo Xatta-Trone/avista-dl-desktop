@@ -64,6 +64,13 @@ launcher owns packaged detection, executable/path resolution, sanitized
 arguments, explicit working directories, and per-model log locations.
 `AVISTA.exe` defensively rejects worker-only arguments before creating a
 `QApplication`, preventing accidental recursive desktop startup.
+The worker remains a console-subsystem executable so its JSON Lines stdout and
+stderr pipes remain available, but packaged Windows launches use
+`CREATE_NO_WINDOW`; deep training therefore runs without displaying a blank
+terminal window. Source-mode process behavior is unchanged. Focused packaged
+worker window/launch, missing-worker, native-failure, cancellation, and
+PyInstaller-definition verification passed on July 28, 2026:
+`8 passed, 19 deselected`.
 
 The installed v1.0.5 training log exposed two frozen-dependency failures.
 XGBoost's Python package was present but `_internal/xgboost/lib/xgboost.dll`

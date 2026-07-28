@@ -12,7 +12,11 @@ pytest.importorskip("PySide6")
 
 from app.core.project_config import ProjectConfig
 from app.core.trainer import TrainingCancelled
-from app.gui.workers import TrainingWorker, build_torch_subprocess_command
+from app.gui.workers import (
+    TrainingWorker,
+    _deep_worker_process_options,
+    build_torch_subprocess_command,
+)
 from app.training import run_torch_model
 from app.training.deep_worker_launcher import (
     DEEP_WORKER_EXECUTABLE,
@@ -98,6 +102,36 @@ def test_packaged_deep_worker_command_never_relaunches_avista(
     assert launch.arguments[launch.arguments.index("--model") + 1] == model_name
     assert "run_torch_model.py" not in " ".join(launch.arguments)
     assert launch.working_directory == tmp_path.resolve()
+
+
+def test_packaged_deep_worker_hides_windows_console(
+    tmp_path,
+    monkeypatch,
+):
+    config = make_config(tmp_path)
+    source_launch = build_deep_worker_launch(config, "mamba_attention")
+    app_executable = tmp_path / "installed" / "AVISTA.exe"
+    app_executable.parent.mkdir()
+    app_executable.write_bytes(b"gui")
+    monkeypatch.setattr(
+        "app.training.deep_worker_launcher.is_packaged_application",
+        lambda: True,
+    )
+    monkeypatch.setattr(
+        "app.training.deep_worker_launcher.sys.executable",
+        str(app_executable),
+    )
+    monkeypatch.setattr(
+        "app.gui.workers.WINDOWS_CREATE_NO_WINDOW",
+        0x08000000,
+    )
+
+    packaged_launch = build_deep_worker_launch(config, "mamba_attention")
+
+    assert _deep_worker_process_options(source_launch) == {}
+    assert _deep_worker_process_options(packaged_launch) == {
+        "creationflags": 0x08000000
+    }
 
 
 def test_missing_packaged_worker_fails_without_starting_gui(

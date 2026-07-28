@@ -14,6 +14,9 @@
 
 ## Unreleased
 
+- Hid the packaged `AVISTADeepWorker.exe` console window during training while
+  preserving its captured JSON Lines stdout and stderr protocol.
+
 ## 1.0.5 - 2026-07-24
 
 - Added a centralized release-preparation command that synchronizes application

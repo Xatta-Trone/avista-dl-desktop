@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+## 1.0.7 - 2026-07-28
+
+- Hid the packaged AVISTADeepWorker.exe terminal window during training while preserving
+  captured JSON Lines stdout and stderr
+
 ## 1.0.6 - 2026-07-27
 
 - Replaced the former proprietary AVISTA license with the Apache License,
@@ -11,11 +18,6 @@
 - Centralized TabPFN checkpoint resolution for source and installed builds
 - Added release-blocking package diagnostics, artifact audits, and tiny packaged XGBoost
   and TabPFN training smoke tests
-
-## Unreleased
-
-- Hid the packaged `AVISTADeepWorker.exe` console window during training while
-  preserving its captured JSON Lines stdout and stderr protocol.
 
 ## 1.0.5 - 2026-07-24
 

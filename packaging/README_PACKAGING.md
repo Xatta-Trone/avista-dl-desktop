@@ -272,19 +272,21 @@ The workflow creates the release if it does not exist and uploads
 Tagged release:
 
 ```powershell
-.venv\Scripts\python.exe scripts\prepare_release.py --check --expected-tag v1.0.6
+$version = .venv\Scripts\python.exe -c "from app.__version__ import __version__; print(__version__)"
+$tag = "v$version"
 
+.venv\Scripts\python.exe scripts\prepare_release.py --check --expected-tag $tag
 git add -A
-git commit -m "fix(packaging): bundle XGBoost and TabPFN for AVISTA v1.0.6"
+git commit -m "release: prepare AVISTA $tag"
 git push origin main
 
-git tag -a v1.0.6 -m "AVISTA v1.0.6"
-git push origin v1.0.6
+git tag -a $tag -m "AVISTA $tag"
+git push origin $tag
 ```
 
-For future releases, replace `1.0.6` in the check, commit message, and tag
-commands with the new centralized version. Push the release commit before
-pushing its tag so the tag references the synchronized release state.
+The commands derive the tag from the centralized version. Push the release
+commit before pushing its tag so the tag references the synchronized release
+state.
 
 Tags matching `v*` build the installer, create a GitHub Release, generate
 release notes, and attach `AVISTA_Setup.exe`.

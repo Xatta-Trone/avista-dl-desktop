@@ -1,14 +1,10 @@
 {
-  "latest_version": "1.0.6",
-  "release_date": "July 27, 2026",
+  "latest_version": "1.0.7",
+  "release_date": "July 28, 2026",
   "release_notes": [
-    "Licensed AVISTA under the Apache License, Version 2.0 (Apache-2.0)",
-    "Fixed packaged XGBoost by bundling and auditing its required VERSION package data and native xgboost.dll",
-    "Fixed TabPFN 2.5 support in AVISTADeepWorker.exe by bundling required modules, package data, and dependencies",
-    "Centralized TabPFN checkpoint resolution for source and installed builds",
-    "Added release-blocking package diagnostics, artifact audits, and tiny packaged XGBoost and TabPFN training smoke tests"
+    "Hid the packaged AVISTADeepWorker.exe terminal window during training while preserving captured JSON Lines stdout and stderr"
   ],
-  "installer_url": "https://github.com/Xatta-Trone/avista-dl-desktop/releases/download/v1.0.6/AVISTA_Setup.exe",
+  "installer_url": "https://github.com/Xatta-Trone/avista-dl-desktop/releases/download/v1.0.7/AVISTA_Setup.exe",
   "sha256": "",
   "mandatory": false
 }

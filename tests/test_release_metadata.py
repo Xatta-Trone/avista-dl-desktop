@@ -71,8 +71,8 @@ def _release_project(tmp_path: Path) -> Path:
 def test_repository_release_metadata_is_synchronized():
     assert check_release_metadata(PROJECT_ROOT) == []
     metadata = read_central_metadata(PROJECT_ROOT)
-    assert metadata.version == "1.0.6"
-    assert metadata.release_date == "July 27, 2026"
+    assert metadata.version == "1.0.7"
+    assert metadata.release_date == "July 28, 2026"
 
 
 def test_prepare_release_updates_central_and_derived_metadata(tmp_path):

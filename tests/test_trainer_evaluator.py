@@ -26,6 +26,8 @@ from app.core.trainer import (
     _deep_cv_inner_validation_fraction,
     _prepare_cv_fold,
     _prepare_deep_cv_fold,
+    _validate_tabpfn_input,
+    prepare_tabpfn_training_rows,
     train_saved_models,
     train_selected_models,
 )
@@ -1020,36 +1022,44 @@ def test_tabpfn_uses_one_estimator_value_and_internal_batching(tmp_path, monkeyp
         enable_cross_validation=True,
         cv_folds=2,
         random_state=17,
+        imbalance_method="smote",
         model_params={"tabpfn": {"n_estimators": n_estimators}},
     )
     split_dir = save_encoded_string_training_bundle(tmp_path, config)
-    test_features = np.load(split_dir / "X_test.npy")
-    test_targets = np.load(split_dir / "y_test_encoded.npy")
-    test_labels = np.load(
-        split_dir / "y_test_original.npy",
-        allow_pickle=True,
-    )
-    np.save(split_dir / "X_test.npy", np.tile(test_features, (126, 1)))
-    np.save(split_dir / "y_test_encoded.npy", np.tile(test_targets, 126))
-    np.save(split_dir / "y_test_original.npy", np.tile(test_labels, 126))
+    np.save(split_dir / "X_train_balanced.npy", np.full((12, 9), -999.0))
 
     class FakeTabPFNClassifier:
         instances = []
         prediction_batch_sizes = []
+        fit_frames = []
+        prediction_frames = []
 
-        def __init__(self, n_estimators, model_path, device):
+        def __init__(
+            self,
+            n_estimators,
+            model_path,
+            device,
+            categorical_features_indices,
+            random_state,
+        ):
             self.n_estimators = n_estimators
             self.model_path = model_path
             self.device = device
+            self.categorical_features_indices = categorical_features_indices
+            self.random_state = random_state
             self.fit_size = 0
             self.__class__.instances.append(self)
 
         def fit(self, features, targets):
+            assert isinstance(features, pd.DataFrame)
+            self.__class__.fit_frames.append(features.copy())
             self.fit_size = len(features)
             self.classes_ = np.unique(targets)
             return self
 
         def predict_proba(self, features):
+            assert isinstance(features, pd.DataFrame)
+            self.__class__.prediction_frames.append(features.copy())
             self.__class__.prediction_batch_sizes.append(len(features))
             probabilities = np.full(
                 (len(features), len(self.classes_)),
@@ -1058,8 +1068,16 @@ def test_tabpfn_uses_one_estimator_value_and_internal_batching(tmp_path, monkeyp
             return probabilities
 
     fake_module = types.ModuleType("tabpfn")
+    fake_module.__version__ = "8.0.8"
     fake_module.TabPFNClassifier = FakeTabPFNClassifier
     monkeypatch.setitem(sys.modules, "tabpfn", fake_module)
+    monkeypatch.setattr(
+        trainer_module,
+        "_prepare_cv_fold",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            AssertionError("TabPFN must not use generic preprocessing/resampling")
+        ),
+    )
 
     result = train_saved_models(config)
 
@@ -1085,7 +1103,11 @@ def test_tabpfn_uses_one_estimator_value_and_internal_batching(tmp_path, monkeyp
         instance.device for instance in FakeTabPFNClassifier.instances
     }.issubset({"cpu", "cuda"})
     assert all(size <= 500 for size in FakeTabPFNClassifier.prediction_batch_sizes)
-    assert 500 in FakeTabPFNClassifier.prediction_batch_sizes
+    assert all(list(frame.columns) == ["x1", "x2", "cat"] for frame in FakeTabPFNClassifier.fit_frames)
+    assert all("cat_a" not in frame.columns for frame in FakeTabPFNClassifier.fit_frames)
+    assert all(frame["cat"].isin(["a", "b"]).all() for frame in FakeTabPFNClassifier.fit_frames)
+    assert [instance.categorical_features_indices for instance in FakeTabPFNClassifier.instances] == [[2], [2], [2]]
+    assert [instance.random_state for instance in FakeTabPFNClassifier.instances] == [17, 17, 17]
     saved_config = json.loads(
         (output_dir / "model_config.json").read_text(encoding="utf-8")
     )
@@ -1098,8 +1120,40 @@ def test_tabpfn_uses_one_estimator_value_and_internal_batching(tmp_path, monkeyp
     training_metadata = json.loads(
         (output_dir / "training_metadata.json").read_text(encoding="utf-8")
     )
-    assert training_metadata["tabpfn_checkpoint_source"] == "bundled_app_asset"
+    assert training_metadata["tabpfn_checkpoint_source"] == "bundled_legacy"
     assert training_metadata["tabpfn_checkpoint_path"] == str(checkpoint.resolve())
+    assert training_metadata["tabpfn_input_representation"] == "raw_dataframe"
+    assert training_metadata["tabpfn_external_one_hot_encoding"] is False
+    assert training_metadata["tabpfn_external_scaling"] is False
+    assert training_metadata["tabpfn_external_resampling_applied"] is False
+    assert training_metadata["project_imbalance_method"] == "smote"
+    assert training_metadata["available_training_rows"] == 12
+    assert training_metadata["effective_training_rows"] == 12
+    assert training_metadata["training_row_limit"] == 50_000
+    assert training_metadata["training_subsampled"] is False
+    assert [len(frame) for frame in FakeTabPFNClassifier.fit_frames] == [6, 6, 12]
+    source = pd.read_csv(config.input_file)
+    for frame in FakeTabPFNClassifier.fit_frames:
+        assert set(frame.index).issubset(set(source.index[:12]))
+    raw_training_labels = LabelEncoder().fit_transform(source.loc[:11, "target"])
+    expected_folds = list(
+        StratifiedKFold(n_splits=2, shuffle=True, random_state=17).split(
+            np.zeros(12),
+            raw_training_labels,
+        )
+    )
+    for frame, validation_frame, (train_positions, validation_positions) in zip(
+        FakeTabPFNClassifier.fit_frames[:2],
+        FakeTabPFNClassifier.prediction_frames[:2],
+        expected_folds,
+    ):
+        assert set(frame.index) == set(train_positions)
+        assert set(validation_frame.index) == set(validation_positions)
+        assert set(frame.index).isdisjoint(validation_frame.index)
+    cv_rows = pd.read_csv(output_dir / "cv_results.csv")
+    assert list(cv_rows["available_training_rows"]) == [6, 6]
+    assert list(cv_rows["effective_training_rows"]) == [6, 6]
+    assert not cv_rows["training_subsampled"].any()
     assert (output_dir / "cv_results.csv").exists()
     assert (output_dir / "cv_summary.json").exists()
     assert (
@@ -1124,6 +1178,156 @@ def test_tabpfn_uses_one_estimator_value_and_internal_batching(tmp_path, monkeyp
         "Assisted_Driving",
         "Partial_Automation",
     }
+
+
+def test_tabpfn_row_limit_keeps_all_rows_between_3000_and_50000():
+    X = pd.DataFrame({"value": np.arange(5_000), "category": ["a", "b"] * 2_500})
+    y = np.array([0, 1] * 2_500)
+
+    selected_X, selected_y, metadata = prepare_tabpfn_training_rows(
+        X,
+        y,
+        random_state=17,
+    )
+
+    assert selected_X is X
+    assert np.array_equal(selected_y, y)
+    assert metadata == {
+        "available_training_rows": 5_000,
+        "effective_training_rows": 5_000,
+        "training_subsampled": False,
+        "training_subsampling_strategy": "none",
+        "training_subsampling_seed": 17,
+        "training_row_limit": 50_000,
+    }
+
+
+def test_tabpfn_fit_receives_all_5000_raw_rows(tmp_path, monkeypatch):
+    fit_frames = []
+
+    class FakeTabPFNClassifier:
+        def __init__(self, **kwargs):
+            self.kwargs = kwargs
+
+        def fit(self, features, targets):
+            fit_frames.append(features.copy())
+            self.classes_ = np.unique(targets)
+            return self
+
+        def predict_proba(self, features):
+            return np.full((len(features), 2), 0.5)
+
+    fake_module = types.ModuleType("tabpfn")
+    fake_module.__version__ = "8.0.8"
+    fake_module.TabPFNClassifier = FakeTabPFNClassifier
+    monkeypatch.setitem(sys.modules, "tabpfn", fake_module)
+
+    config = make_config(
+        tmp_path,
+        selected_models=["tabpfn"],
+        random_state=19,
+    )
+    raw_categories = ["a", "b"] * 2_500
+    raw_categories[0] = None
+    raw_train = pd.DataFrame(
+        {
+            "x1": np.arange(5_000),
+            "x2": np.arange(5_000) % 7,
+            "cat": raw_categories,
+            "target": [0, 1] * 2_500,
+        }
+    )
+    raw_validation = raw_train.iloc[:4].copy()
+    raw_test = raw_train.iloc[4:8].copy()
+    data = {
+        "cv_raw_train": raw_train,
+        "cv_y_train": raw_train["target"].to_numpy(),
+        "raw_validation": raw_validation,
+        "raw_y_validation": raw_validation["target"].to_numpy(),
+        "raw_test": raw_test,
+        "raw_y_test": raw_test["target"].to_numpy(),
+        "class_labels": [0, 1],
+        "target_encoder": None,
+        "split_metadata": {
+            "validation_index": raw_validation.index.tolist(),
+            "test_index": raw_test.index.tolist(),
+        },
+    }
+
+    result, _ = trainer_module._train_saved_tabpfn(
+        config,
+        data,
+        tmp_path / "unused",
+        False,
+        None,
+        None,
+        0,
+        4,
+    )
+
+    assert result["status"] == "trained"
+    assert result["available_training_rows"] == 5_000
+    assert result["effective_training_rows"] == 5_000
+    assert result["training_subsampled"] is False
+    assert len(fit_frames) == 1
+    assert len(fit_frames[0]) == 5_000
+    assert list(fit_frames[0].columns) == ["x1", "x2", "cat"]
+    assert fit_frames[0]["cat"].isna().sum() == 1
+
+
+def test_tabpfn_row_limit_stratifies_exactly_50000_reproducibly():
+    row_count = 60_013
+    y = np.concatenate(
+        [
+            np.zeros(42_000, dtype=int),
+            np.ones(18_012, dtype=int),
+            np.array([2]),
+        ]
+    )
+    X = pd.DataFrame({"row_id": np.arange(row_count)})
+
+    first_X, first_y, metadata = prepare_tabpfn_training_rows(
+        X,
+        y,
+        random_state=42,
+    )
+    repeated_X, repeated_y, _ = prepare_tabpfn_training_rows(
+        X,
+        y,
+        random_state=42,
+    )
+    different_X, _, _ = prepare_tabpfn_training_rows(
+        X,
+        y,
+        random_state=43,
+    )
+
+    assert len(first_X) == len(first_y) == 50_000
+    assert np.array_equal(first_X.index, repeated_X.index)
+    assert np.array_equal(first_y, repeated_y)
+    assert not np.array_equal(first_X.index, different_X.index)
+    assert set(np.unique(first_y)) == {0, 1, 2}
+    original_share = np.mean(y == 1)
+    sampled_share = np.mean(first_y == 1)
+    assert abs(original_share - sampled_share) < 0.001
+    assert metadata["training_subsampled"] is True
+    assert metadata["training_subsampling_strategy"] == "stratified"
+    assert metadata["effective_training_rows"] == 50_000
+
+
+def test_tabpfn_limits_report_clear_errors():
+    with pytest.raises(ValueError, match="at most 2,000 input features"):
+        _validate_tabpfn_input(
+            pd.DataFrame(np.zeros((20, 2_001))),
+            np.array([0, 1] * 10),
+            context="test data",
+        )
+    with pytest.raises(ValueError, match="at most 10 target classes"):
+        _validate_tabpfn_input(
+            pd.DataFrame({"x": range(22)}),
+            np.tile(np.arange(11), 2),
+            context="test data",
+        )
 
 
 def test_tabpfn_missing_bundled_checkpoint_saves_failure_reason(
@@ -1151,12 +1355,22 @@ def test_tabpfn_missing_bundled_checkpoint_saves_failure_reason(
         "app.core.trainer.tabpfn_checkpoint_candidates",
         lambda: [missing_checkpoint],
     )
+    monkeypatch.setattr(
+        "app.core.trainer.get_tabpfn_model_status",
+        lambda: types.SimpleNamespace(
+            cache_path=missing_checkpoint,
+            active_checkpoint_source="unavailable",
+        ),
+    )
 
     result = train_saved_models(config)
 
     model_result = result["results"][0]
     output_dir = tmp_path / "outputs" / "training" / "TabPFN_2_5"
-    expected = "Bundled TabPFN checkpoint not found in app/assets."
+    expected = (
+        "TabPFN 2.5 is not currently available. Use Model Selection or "
+        "Help > TabPFN Model Status to set it up."
+    )
     assert model_result["status"] == "failed"
     assert model_result["error"] == expected
     failure = json.loads(

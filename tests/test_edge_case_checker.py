@@ -188,7 +188,9 @@ def test_split_and_imbalance_errors(tmp_path):
 
 
 def test_environment_checks_for_gpu_and_tabpfn(tmp_path):
-    df = pd.DataFrame({"feature": range(3001), "target": [0, 1] * 1500 + [1]})
+    df = pd.DataFrame(
+        {"feature": range(50_001), "target": [0, 1] * 25_000 + [1]}
+    )
     config = make_config(
         tmp_path,
         selected_models=["tabpfn"],
@@ -198,7 +200,7 @@ def test_environment_checks_for_gpu_and_tabpfn(tmp_path):
     report = run_edge_case_checks(df, config, environment_info={"cuda_available": False})
 
     assert any("CUDA is unavailable" in issue.message for issue in report.errors)
-    assert any("TabPFN" in issue.message for issue in report.warnings)
+    assert any("more than 50,000 rows" in issue.message for issue in report.warnings)
     assert report.can_continue is False
 
 

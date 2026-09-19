@@ -8,7 +8,9 @@ from app.__version__ import APP_DESCRIPTION, RELEASE_DATE
 from app.core.project_config import ProjectConfig
 from app.core.report_generator import (
     PERFORMANCE_COLUMNS,
+    build_markdown_report,
     collect_model_performance,
+    collect_report_summary,
     create_curve_comparison,
     create_deep_training_comparison,
     generate_project_report,
@@ -223,6 +225,41 @@ def test_report_model_performance_table_combines_saved_results(tmp_path):
     assert frame.iloc[0]["Model"] == "Decision Tree"
     assert frame.iloc[0]["Test Macro-F1"] == 0.87
     assert frame.iloc[0]["CV Accuracy Std"] == 0.02
+
+
+def test_report_includes_tabpfn_raw_input_and_effective_rows(tmp_path):
+    config = _report_project(tmp_path)
+    tabpfn_dir = tmp_path / "outputs" / "training" / "TabPFN_2_5"
+    tabpfn_dir.mkdir(parents=True)
+    (tabpfn_dir / "training_metadata.json").write_text(
+        json.dumps(
+            {
+                "tabpfn_version": "8.0.8",
+                "tabpfn_model_version": "2.5",
+                "tabpfn_input_representation": "raw_dataframe",
+                "tabpfn_external_resampling_applied": False,
+                "available_training_rows": 73_200,
+                "effective_training_rows": 50_000,
+                "training_row_limit": 50_000,
+                "training_subsampled": True,
+                "training_subsampling_strategy": "stratified",
+                "training_subsampling_seed": 42,
+                "feature_count": 14,
+                "num_classes": 3,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    summary = collect_report_summary(config)
+    markdown = build_markdown_report(config, summary, pd.DataFrame(), {}, {}, {}, {})
+
+    assert "## TabPFN 2.5 Input Protocol" in markdown
+    assert "Python package version: 8.0.8" in markdown
+    assert "Input representation: raw_dataframe" in markdown
+    assert "External resampling applied: No" in markdown
+    assert "Available external-training rows: 73200" in markdown
+    assert "Effective training rows: 50000" in markdown
 
 
 def test_report_roc_and_pr_comparisons_have_no_sd_band(tmp_path, monkeypatch):

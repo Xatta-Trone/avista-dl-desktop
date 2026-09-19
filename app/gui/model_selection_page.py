@@ -33,6 +33,7 @@ from PySide6.QtWidgets import (
 
 from app.core.dependency_manager import check_optional_packages
 from app.core.model_registry import ModelSpec, get_available_models
+from app.core.tabpfn_model_manager import get_tabpfn_model_status
 from app.gui.icon_system import BACKGROUND, BORDER, PRIMARY, TEXT, icon
 from app.gui.workers import DependencyInstallWorker
 
@@ -428,6 +429,8 @@ class ModelSelectionPage(QWidget):
         self.dependency_labels: dict[str, QLabel] = {}
         self.dependency_install_buttons: dict[str, QPushButton] = {}
         self.dependency_status: dict[str, bool] = {}
+        self.tabpfn_checkpoint_status_label: QLabel | None = None
+        self.tabpfn_setup_button: QPushButton | None = None
         self.install_threads: dict[str, QThread] = {}
         self.install_workers: dict[str, DependencyInstallWorker] = {}
         self.category_cards: dict[str, QWidget] = {}
@@ -701,6 +704,21 @@ class ModelSelectionPage(QWidget):
                 )
                 self.model_checkboxes[spec.name] = checkbox
                 row_layout.addWidget(checkbox, stretch=1)
+                if spec.name == "tabpfn":
+                    self.tabpfn_checkpoint_status_label = QLabel("Checking...")
+                    self.tabpfn_checkpoint_status_label.setObjectName(
+                        "tabpfnCheckpointStatusLabel"
+                    )
+                    self.tabpfn_setup_button = QPushButton("Set Up TabPFN 2.5")
+                    self.tabpfn_setup_button.setObjectName(
+                        "primaryModelSelectionButton"
+                    )
+                    self.tabpfn_setup_button.setVisible(False)
+                    self.tabpfn_setup_button.clicked.connect(
+                        self._open_tabpfn_setup
+                    )
+                    row_layout.addWidget(self.tabpfn_checkpoint_status_label)
+                    row_layout.addWidget(self.tabpfn_setup_button)
                 if spec.requires_optional_package:
                     dependency_label = QLabel("")
                     dependency_label.setObjectName("modelDependencyLabel")
@@ -848,6 +866,47 @@ class ModelSelectionPage(QWidget):
                 result.get("packages", {}).get(package, False)
             )
         self._render_dependency_status(result.get("error"))
+        self.refresh_tabpfn_status()
+
+    def refresh_tabpfn_status(self, _status: object | None = None) -> None:
+        """Refresh TabPFN's checkpoint-specific selection state."""
+
+        if self.tabpfn_checkpoint_status_label is None or self.tabpfn_setup_button is None:
+            return
+        status = get_tabpfn_model_status()
+        usable = status.active_checkpoint_path is not None
+        package_ready = self.dependency_status.get("tabpfn", False)
+        checkbox = self.model_checkboxes["tabpfn"]
+
+        if usable and status.active_checkpoint_source == "user_cache":
+            label = "Ready"
+            label_state = "ready"
+        elif usable:
+            label = "Legacy model available"
+            label_state = "legacy"
+        else:
+            label = "Setup required"
+            label_state = "missing"
+
+        self.tabpfn_checkpoint_status_label.setText(label)
+        self.tabpfn_checkpoint_status_label.setProperty("status", label_state)
+        self.tabpfn_checkpoint_status_label.style().unpolish(
+            self.tabpfn_checkpoint_status_label
+        )
+        self.tabpfn_checkpoint_status_label.style().polish(
+            self.tabpfn_checkpoint_status_label
+        )
+        self.tabpfn_setup_button.setVisible(not usable)
+        checkbox.setEnabled(package_ready and usable)
+        if not usable:
+            checkbox.setChecked(False)
+            if self.parameter_stack.currentWidget() is self.parameter_panels["tabpfn"]:
+                self._show_first_checked_panel()
+
+    def _open_tabpfn_setup(self) -> None:
+        """Open the existing centralized TabPFN model-status dialog."""
+
+        self.main_window.show_tabpfn_model_status()
 
     def confirm_dependency_install(self, package_name: str) -> None:
         config = self.main_window.config
@@ -1475,6 +1534,17 @@ class ModelSelectionPage(QWidget):
             QLabel#modelDependencyLabel {{
                 color: #B45309;
                 font-size: 12px;
+            }}
+            QLabel#tabpfnCheckpointStatusLabel {{
+                color: #B45309;
+                font-size: 12px;
+                font-weight: 600;
+            }}
+            QLabel#tabpfnCheckpointStatusLabel[status="ready"] {{
+                color: {SUCCESS_COLOR};
+            }}
+            QLabel#tabpfnCheckpointStatusLabel[status="legacy"] {{
+                color: #B45309;
             }}
             QLabel#modelSelectionEmptyMessage {{
                 color: #5B6573;

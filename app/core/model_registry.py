@@ -1019,7 +1019,7 @@ MODEL_SPECS: tuple[ModelSpec, ...] = (
         default_params=_tabpfn_defaults(),
         parameter_metadata=_tabpfn_metadata(),
         enabled=True,
-        description="Reference-backed TabPFN 2.5 classifier for capped tabular datasets.",
+        description="TabPFN 2.5 classifier with native tabular preprocessing and supported limits.",
     ),
 )
 

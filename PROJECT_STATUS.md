@@ -23,8 +23,8 @@ training partition from the project dataset and saved split indices. Every
 stratified fold fits feature preprocessing on fold-training rows, transforms
 the untouched fold-validation rows with those artifacts, and applies the
 configured resampling strategy only to fold-training. This protocol is shared
-by sklearn/XGBoost, PyTorch tabular, and TabPFN training; final model fitting
-continues to use the prepared balanced-training artifacts. CV feasibility is
+by sklearn/XGBoost and PyTorch tabular training; final fitting for those model
+families continues to use the prepared balanced-training artifacts. CV feasibility is
 checked against original external-training labels, and saved model/training
 metadata records the fold-local protocol. Focused preprocessing and trainer
 verification passed on September 19, 2026: `47 passed`. A broader non-GUI run
@@ -42,6 +42,42 @@ falls back to the outer scoring fold. Final deep-model training still uses the
 project's external validation partition for checkpoint selection, while the
 external test partition remains final-evaluation-only. Focused nested deep-CV
 verification passed on September 19, 2026: `14 passed`.
+
+TabPFN 2.5 now reconstructs raw pandas train/validation/test frames from the
+saved external split indices and delegates feature preparation to TabPFN. It
+does not use AVISTA's one-hot/scaled/balanced matrices or external resampling.
+All training rows are retained through 50,000; larger fit partitions receive
+deterministic stratified subsampling to exactly 50,000. Focused TabPFN trainer,
+edge-case, registry, and report verification passed on September 19, 2026:
+`12 passed`.
+
+TabPFN 2.5 checkpoint management is in a staged migration. Runtime resolution
+prefers a structurally valid official user-cache checkpoint and retains the
+existing bundled checkpoint as a legacy fallback. Startup checks only status;
+when the cached copy is absent it offers setup without blocking AVISTA or
+starting a silent download. Help now includes **TabPFN Model Status**, with
+license, cache, download/re-download, verification, and cache-folder actions.
+Downloads and tiny verification runs use a QThread worker and the pinned
+`tabpfn==8.0.8` v2.5 downloader/browser-auth flow. AVISTA stores no credentials;
+the TabPFN package owns its authentication cache. The separate TabPFN-2.5
+License v1.1 is identified in the UI and third-party notices. The first real
+empty-cache download attempt reached the official license gate and stopped
+because no Prior Labs/Hugging Face authentication or accepted license was
+available in the unattended test process; no checkpoint was downloaded or
+altered. Focused checkpoint-manager, resource, trainer, packaging/runtime, and
+main-window verification passed on September 19, 2026: `25 passed, 36
+deselected` across four targeted pytest invocations.
+
+Model Selection now keeps TabPFN 2.5 visible while resolving checkpoint
+readiness through the centralized model manager. User-cache and temporary
+legacy-bundled checkpoints enable normal selection with concise source-aware
+status; complete absence disables and clears the TabPFN selection and exposes
+**Set Up TabPFN 2.5**, which opens the existing status dialog. Main-window
+status signals refresh the row after setup without restarting AVISTA. Training
+preflight and the existing trainer checkpoint resolution prevent stale
+selections from starting a TabPFN fit. Focused Model Selection, training
+preflight, trainer, and existing GUI regression verification passed on
+September 19, 2026: `9 passed`.
 
 The current AVISTA application and update-feed version is `1.0.7`, with the
 release date centralized as July 28, 2026. Focused centralized-version,
@@ -456,15 +492,17 @@ Focused checkbox-based numerical-scaling verification passed on July 3, 2026: `7
   - saves state dict, configuration, metadata, history, curves, split evaluations, and optional CV summaries under `outputs/training/TabResNet`.
   - creates `failure_reason.json` with the exact Python training error when training fails.
 - TabPFN 2.5 is trainable from confirmed saved split artifacts:
+  - uses the locked `tabpfn==8.0.8` Python package with the official TabPFN 2.5 classifier checkpoint, preferring the official user-cache copy and retaining the bundled copy as a temporary legacy fallback; the package version and model version are recorded separately.
   - exposes only `n_estimators`; checkpoint selection is not user-editable.
-  - resolves the bundled `app/assets/tabpfn-v2.5-classifier-v2.5_default.ckpt` in development and packaged modes and passes it to every CV/final `TabPFNClassifier`.
-  - missing bundled checkpoints create `failure_reason.json` with a clear error and do not attempt the default automatic download path.
+  - resolves a structurally valid `%APPDATA%/tabpfn/tabpfn-v2.5-classifier-v2.5_default.ckpt` (or `TABPFN_MODEL_CACHE_DIR`) first, then the bundled `app/assets/tabpfn-v2.5-classifier-v2.5_default.ckpt` in development and packaged modes, and passes the selected path to every CV/final `TabPFNClassifier`.
+  - when neither the user-cache nor bundled checkpoint is usable, training creates `failure_reason.json` with a clear error and does not trigger a download; download remains an explicit user action under **Help > TabPFN Model Status**.
   - Model Selection exposes only `n_estimators`, with the installed TabPFN package default of `8` and an allowed range of 1 through 100.
   - the same selected `n_estimators` value is used for both CV and final training.
-  - the 3,000-row training cap and 500-row prediction batching remain fixed internal implementation details; randomness comes from the global experiment seed.
-  - saved `model_config.json` contains only the selected `n_estimators`.
-  - uses balanced encoded training arrays and saved validation/test arrays.
-  - caps each CV and final training subset with deterministic sampling from the experiment seed.
+  - reconstructs raw pandas feature frames from the saved external train/validation/test indices, supplies configured categorical indices to TabPFN, and leaves feature preprocessing to TabPFN.
+  - does not apply AVISTA one-hot encoding, scaling, imputation, SMOTE, or other external resampling to TabPFN inputs; training metadata records the project imbalance setting and this model-specific exception.
+  - uses every available training row through 50,000; larger final/CV training partitions are reduced to exactly 50,000 with deterministic stratified sampling from the experiment seed while retaining every class.
+  - validates the TabPFN 2.5 range of at most 2,000 input features and 10 classes before fitting.
+  - saved model/training metadata records raw input representation, categorical columns, available/effective training counts, row limit, subsampling strategy/seed, and feature/class counts.
   - predicts validation/test probabilities in bounded batches and decodes reports to original class labels.
   - saves validation/test metrics, reports, confusion matrices, predictions, probabilities, and optional CV summaries under `outputs/training/TabPFN_2_5`.
   - saves `trained_model.joblib` when serialization succeeds, otherwise records `model_not_serialized_reason.json`.

@@ -273,6 +273,25 @@ def theme_qss(tokens: ThemeTokens) -> str:
             background: {tokens.selection};
             border-color: {tokens.primary};
         }}
+        QPushButton[avistaButtonRole="secondary"]:pressed {{
+            background: {tokens.elevated};
+            border-color: {tokens.primary};
+        }}
+        QPushButton[avistaButtonRole="primary"] {{
+            color: #FFFFFF;
+            background: {tokens.primary};
+            border: 1px solid {tokens.primary};
+            border-radius: 6px;
+            font-weight: 600;
+        }}
+        QPushButton[avistaButtonRole="primary"]:hover {{
+            background: {tokens.accent};
+            border-color: {tokens.accent};
+        }}
+        QPushButton[avistaButtonRole="primary"]:pressed {{
+            background: {tokens.primary};
+            border-color: {tokens.accent};
+        }}
         QPushButton:disabled {{
             color: {tokens.disabled_text};
             background: {tokens.disabled_bg};

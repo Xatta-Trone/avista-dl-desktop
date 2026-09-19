@@ -32,6 +32,7 @@ from PySide6.QtWidgets import (
 )
 
 from app.core.project_config import ProjectConfig
+from app.core.tabpfn_model_manager import get_tabpfn_model_status
 from app.gui.icon_system import (
     BACKGROUND,
     BORDER,
@@ -654,6 +655,16 @@ class TrainingPage(QWidget):
             messages.append("Resolve blocking Edge-Case Report issues.")
         if not config.selected_models:
             messages.append("Select at least one model.")
+        if any(
+            str(model_name).strip().casefold() in {"tabpfn", "tabpfn 2.5"}
+            for model_name in config.selected_models
+        ):
+            tabpfn_status = get_tabpfn_model_status()
+            if tabpfn_status.active_checkpoint_path is None:
+                messages.append(
+                    "TabPFN 2.5 is not currently available. Use Model Selection "
+                    "or Help > TabPFN Model Status to set it up."
+                )
         if split_confirmed and config.enable_cross_validation:
             counts = pd_series_counts(split_dir / "y_train_balanced.npy")
             insufficient = counts[counts < int(config.cv_folds)]

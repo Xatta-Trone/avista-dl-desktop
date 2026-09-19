@@ -95,16 +95,12 @@ def tabpfn_checkpoint_candidates() -> list[Path]:
 
 
 def resolve_tabpfn_checkpoint() -> Path:
-    """Resolve the bundled TabPFN checkpoint or report every checked path."""
+    """Resolve the official user-cache checkpoint, then the bundled fallback."""
 
-    candidates = tabpfn_checkpoint_candidates()
-    for candidate in candidates:
-        if candidate.is_file():
-            return candidate.resolve()
-    raise FileNotFoundError(
-        "Bundled TabPFN checkpoint was not found. Checked: "
-        + ", ".join(str(path) for path in candidates)
-    )
+    from app.core.tabpfn_model_manager import resolve_tabpfn_model_checkpoint
+
+    path, _source = resolve_tabpfn_model_checkpoint()
+    return path
 
 
 def expected_packaged_xgboost_dll() -> Path:

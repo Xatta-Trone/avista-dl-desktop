@@ -21,6 +21,11 @@ from app.core.gpu_checker import check_gpu, repair_gpu_torch
 from app.core.model_registry import get_model_spec
 from app.core.project_config import ProjectConfig
 from app.core.runtime_verification import collect_runtime_verification
+from app.core.tabpfn_model_manager import (
+    download_tabpfn_model,
+    get_tabpfn_model_status,
+    verify_tabpfn_checkpoint,
+)
 from app.core.trainer import TrainingCancelled, train_saved_models
 from app.core.update_checker import (
     UPDATE_METADATA_URL,
@@ -40,6 +45,44 @@ from app.utils.resources import (
 )
 
 WINDOWS_CREATE_NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+
+
+class TabPFNModelWorker(QObject):
+    """Download or explicitly verify TabPFN without blocking the GUI thread."""
+
+    progress = Signal(str)
+    finished = Signal(object, object)
+    failed = Signal(str, object)
+
+    def __init__(self, *, action: str) -> None:
+        super().__init__()
+        self.action = action
+
+    @Slot()
+    def run(self) -> None:
+        try:
+            if self.action == "download":
+                result = download_tabpfn_model(
+                    progress_callback=self.progress.emit,
+                    run_smoke_test=True,
+                )
+            elif self.action == "verify":
+                status = get_tabpfn_model_status()
+                if status.active_checkpoint_path is None:
+                    raise FileNotFoundError("No TabPFN 2.5 checkpoint is available.")
+                self.progress.emit("Verifying TabPFN 2.5 checkpoint...")
+                result = verify_tabpfn_checkpoint(
+                    status.active_checkpoint_path,
+                    run_smoke_test=True,
+                )
+                if not result.valid:
+                    raise RuntimeError(result.error)
+            else:
+                raise ValueError(f"Unsupported TabPFN model action: {self.action}")
+        except Exception as exc:
+            self.failed.emit(str(exc), get_tabpfn_model_status())
+            return
+        self.finished.emit(result, get_tabpfn_model_status())
 
 
 class UpdateCheckWorker(QObject):

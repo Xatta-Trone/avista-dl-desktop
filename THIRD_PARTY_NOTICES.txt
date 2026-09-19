@@ -26,4 +26,11 @@ Primary project license references:
 - TabPFN: https://github.com/PriorLabs/TabPFN/blob/main/LICENSE
 - Nuitka: https://nuitka.net/doc/License.html
 
+TabPFN model weights are separate from the Apache-2.0 licensed AVISTA source.
+The bundled legacy TabPFN 2.5 checkpoint and independently downloaded TabPFN
+2.5 weights are distributed by Prior Labs GmbH under the TabPFN-2.5 License
+v1.1 for non-commercial/non-production use. Users must review and accept the
+official terms; AVISTA does not grant that license:
+https://huggingface.co/Prior-Labs/tabpfn_2_5
+
 This notice is informational and is not a substitute for legal review.

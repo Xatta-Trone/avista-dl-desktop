@@ -36,12 +36,17 @@ from app.core.imbalance import apply_imbalance_strategy
 from app.core.model_registry import get_model_spec
 from app.core.preprocessing import (
     build_preprocessing_pipeline,
+    categorical_feature_columns,
     fit_split_preprocessing,
     save_artifacts,
     transform_split_features,
 )
 from app.core.splitter import split_data
 from app.core.target_encoding import decode_target, encode_target
+from app.core.tabpfn_model_manager import (
+    checkpoint_sha256,
+    get_tabpfn_model_status,
+)
 from app.utils.plotting import (
     plot_confusion_matrix_publication,
     plot_feature_importance_publication,
@@ -58,7 +63,9 @@ from app.models.sklearn_models import create_sklearn_model
 
 ProgressCallback = Callable[[dict[str, Any]], None]
 CancelCallback = Callable[[], bool]
-TABPFN_MAX_SAMPLES = 3000
+TABPFN_MAX_SAMPLES = 50_000
+TABPFN_MAX_FEATURES = 2_000
+TABPFN_MAX_CLASSES = 10
 TABPFN_PREDICTION_BATCH_SIZE = 500
 CV_PROTOCOL_METADATA = {
     "cv_preprocessing_scope": "fold_training_only",
@@ -156,8 +163,16 @@ def train_saved_models(
         )
     cv_folds = int(getattr(config, "cv_folds", 5))
     cv_enabled = bool(getattr(config, "enable_cross_validation", False))
+    tabpfn_selected = any(
+        get_model_spec(model_name).name == "tabpfn" for model_name in selected_models
+    )
+    if cv_enabled or tabpfn_selected:
+        _load_cv_training_source(
+            config,
+            data,
+            include_holdouts=tabpfn_selected,
+        )
     if cv_enabled:
-        _load_cv_training_source(config, data)
         _validate_cv_counts(data["cv_y_train"], cv_folds)
 
     output_root = Path(config.project_dir) / "outputs" / "training"
@@ -404,8 +419,13 @@ def _load_saved_training_data(
     return data
 
 
-def _load_cv_training_source(config: Any, data: dict[str, Any]) -> None:
-    """Load exactly the raw outer-training rows needed for leakage-safe CV."""
+def _load_cv_training_source(
+    config: Any,
+    data: dict[str, Any],
+    *,
+    include_holdouts: bool = False,
+) -> None:
+    """Load raw saved-split rows for leakage-safe CV and model-specific input."""
 
     dataset_path = project_dataset_path(config)
     if dataset_path is not None and dataset_path.is_file():
@@ -414,8 +434,8 @@ def _load_cv_training_source(config: Any, data: dict[str, Any]) -> None:
         subset_path = Path(config.project_dir) / "data" / "modeling_subset.csv"
         if not subset_path.is_file():
             raise ValueError(
-                "Cross-validation requires the project dataset or data/modeling_subset.csv "
-                "to reconstruct the original external training partition."
+                "Training requires the project dataset or data/modeling_subset.csv "
+                "to reconstruct the original saved data split."
             )
         raw_dataset = load_dataset(subset_path)
 
@@ -427,7 +447,7 @@ def _load_cv_training_source(config: Any, data: dict[str, Any]) -> None:
     ]
     if not target_column or missing_columns:
         raise ValueError(
-            "Cross-validation source data does not match the saved modeling configuration. "
+            "Raw source data does not match the saved modeling configuration. "
             f"Missing columns: {missing_columns}."
         )
 
@@ -435,33 +455,51 @@ def _load_cv_training_source(config: Any, data: dict[str, Any]) -> None:
     train_index = list(split_metadata.get("train_index") or [])
     validation_index = list(split_metadata.get("validation_index") or [])
     test_index = list(split_metadata.get("test_index") or [])
+    split_indices = {"train": train_index}
+    if include_holdouts:
+        split_indices.update(
+            {"validation": validation_index, "test": test_index}
+        )
     if not train_index:
-        raise ValueError("Saved split metadata contains no external training rows for CV.")
-    if len(train_index) != len(set(train_index)):
-        raise ValueError("Saved external training indices contain duplicates.")
+        raise ValueError("Saved split metadata contains no external training rows.")
+    duplicate_splits = [
+        name for name, indices in split_indices.items() if len(indices) != len(set(indices))
+    ]
+    if duplicate_splits:
+        raise ValueError(f"Saved split indices contain duplicates: {duplicate_splits}.")
     if set(train_index) & (set(validation_index) | set(test_index)):
         raise ValueError(
             "Saved split metadata overlaps external training with validation/test rows."
         )
-    missing_indices = [index for index in train_index if index not in raw_dataset.index]
+    if include_holdouts and (
+        set(validation_index) & set(test_index)
+    ):
+        raise ValueError(
+            "Saved split metadata contains overlapping train/validation/test rows."
+        )
+    all_indices = [index for indices in split_indices.values() for index in indices]
+    missing_indices = [index for index in all_indices if index not in raw_dataset.index]
     if missing_indices:
         raise ValueError(
-            "Saved external training indices are not present in the project dataset. "
+            "Saved split indices are not present in the project dataset. "
             "Confirm Data Split & Imbalance again."
         )
 
-    raw_train = raw_dataset.loc[train_index, required_columns].copy()
-    if data["target_encoder"] is not None:
-        encoded_target = encode_target(
-            data["target_encoder"],
-            raw_train[target_column],
-        )
-    else:
-        encoded_target = pd.Series(
-            raw_train[target_column].to_numpy(),
-            index=raw_train.index,
-            name=target_column,
-        )
+    raw_splits = {
+        name: raw_dataset.loc[indices, required_columns].copy()
+        for name, indices in split_indices.items()
+    }
+
+    def encode_raw_target(frame: pd.DataFrame) -> np.ndarray:
+        if data["target_encoder"] is not None:
+            return np.asarray(
+                encode_target(data["target_encoder"], frame[target_column])
+            )
+        return frame[target_column].to_numpy()
+
+    encoded_targets = {
+        name: encode_raw_target(frame) for name, frame in raw_splits.items()
+    }
     split_dir = Path(config.project_dir) / "outputs" / "data_split"
     saved_target_path = split_dir / (
         "y_train_encoded.npy"
@@ -470,16 +508,32 @@ def _load_cv_training_source(config: Any, data: dict[str, Any]) -> None:
     )
     if saved_target_path.is_file():
         saved_target = np.load(saved_target_path, allow_pickle=True)
-        if len(saved_target) != len(encoded_target) or not np.array_equal(
+        if len(saved_target) != len(encoded_targets["train"]) or not np.array_equal(
             np.asarray(saved_target),
-            np.asarray(encoded_target),
+            encoded_targets["train"],
         ):
             raise ValueError(
                 "The raw external training rows do not match the saved split target. "
                 "Confirm Data Split & Imbalance again."
             )
-    data["cv_raw_train"] = raw_train
-    data["cv_y_train"] = np.asarray(encoded_target)
+    if include_holdouts:
+        for split_name, saved_key in (("validation", "y_val"), ("test", "y_test")):
+            if len(data[saved_key]) != len(encoded_targets[split_name]) or not np.array_equal(
+                np.asarray(data[saved_key]),
+                encoded_targets[split_name],
+            ):
+                raise ValueError(
+                    f"The raw external {split_name} rows do not match the saved split target. "
+                    "Confirm Data Split & Imbalance again."
+                )
+    data["raw_dataset_rows"] = int(len(raw_dataset))
+    data["cv_raw_train"] = raw_splits["train"]
+    data["cv_y_train"] = encoded_targets["train"]
+    if include_holdouts:
+        data["raw_validation"] = raw_splits["validation"]
+        data["raw_test"] = raw_splits["test"]
+        data["raw_y_validation"] = encoded_targets["validation"]
+        data["raw_y_test"] = encoded_targets["test"]
 
 
 def _prepare_cv_fold(
@@ -1829,6 +1883,113 @@ def _save_model_outputs(
     )
 
 
+def prepare_tabpfn_training_rows(
+    X: pd.DataFrame,
+    y: np.ndarray,
+    *,
+    max_rows: int = TABPFN_MAX_SAMPLES,
+    random_state: int = 42,
+) -> tuple[pd.DataFrame, np.ndarray, dict[str, Any]]:
+    """Apply TabPFN's supported row cap with deterministic stratified sampling."""
+
+    if not isinstance(X, pd.DataFrame):
+        raise TypeError("TabPFN training features must be a pandas DataFrame.")
+    y_array = np.asarray(y).reshape(-1)
+    if len(X) != len(y_array):
+        raise ValueError("TabPFN training X/y row counts do not match.")
+    if max_rows < 1:
+        raise ValueError("TabPFN maximum row count must be positive.")
+
+    available_rows = len(X)
+    metadata = {
+        "available_training_rows": int(available_rows),
+        "effective_training_rows": int(min(available_rows, max_rows)),
+        "training_subsampled": available_rows > max_rows,
+        "training_subsampling_strategy": (
+            "stratified" if available_rows > max_rows else "none"
+        ),
+        "training_subsampling_seed": int(random_state),
+        "training_row_limit": int(max_rows),
+    }
+    if available_rows <= max_rows:
+        return X, y_array, metadata
+
+    classes, inverse, counts = np.unique(
+        y_array,
+        return_inverse=True,
+        return_counts=True,
+    )
+    if len(classes) > max_rows:
+        raise ValueError(
+            "TabPFN stratified row limiting cannot retain every class because the "
+            "class count exceeds the row limit."
+        )
+
+    ideal = counts.astype(float) * (max_rows / available_rows)
+    quotas = np.minimum(counts, np.floor(ideal).astype(int))
+    quotas = np.maximum(quotas, 1)
+    while int(quotas.sum()) > max_rows:
+        candidates = np.flatnonzero(quotas > 1)
+        remove_index = candidates[np.argmax(quotas[candidates] - ideal[candidates])]
+        quotas[remove_index] -= 1
+    remaining = max_rows - int(quotas.sum())
+    remainders = ideal - np.floor(ideal)
+    while remaining > 0:
+        candidates = np.flatnonzero(quotas < counts)
+        if not len(candidates):
+            raise ValueError("Unable to construct the requested TabPFN row sample.")
+        order = sorted(
+            candidates.tolist(),
+            key=lambda index: (remainders[index], counts[index] - quotas[index]),
+            reverse=True,
+        )
+        for index in order:
+            if remaining == 0:
+                break
+            if quotas[index] < counts[index]:
+                quotas[index] += 1
+                remaining -= 1
+
+    rng = np.random.RandomState(random_state)
+    selected_parts = [
+        rng.choice(np.flatnonzero(inverse == class_index), size=quota, replace=False)
+        for class_index, quota in enumerate(quotas)
+    ]
+    selected_positions = np.sort(np.concatenate(selected_parts).astype(int))
+    return (
+        X.iloc[selected_positions].copy(),
+        y_array[selected_positions],
+        metadata,
+    )
+
+
+def _validate_tabpfn_input(X: pd.DataFrame, y: np.ndarray, *, context: str) -> None:
+    feature_count = int(X.shape[1])
+    class_count = int(len(np.unique(np.asarray(y))))
+    if feature_count > TABPFN_MAX_FEATURES:
+        raise ValueError(
+            f"TabPFN 2.5 supports at most {TABPFN_MAX_FEATURES:,} input features; "
+            f"{context} has {feature_count:,}."
+        )
+    if class_count > TABPFN_MAX_CLASSES:
+        raise ValueError(
+            f"TabPFN 2.5 supports at most {TABPFN_MAX_CLASSES} target classes; "
+            f"{context} has {class_count}."
+        )
+    if class_count < 2:
+        raise ValueError(f"TabPFN 2.5 requires at least two classes in {context}.")
+
+
+def _tabpfn_categorical_indices(X: pd.DataFrame, config: Any) -> list[int]:
+    categorical = set(categorical_feature_columns(X, config))
+    categorical.update(
+        column
+        for column in list(getattr(config, "label_encoding_columns", []) or [])
+        if column in X.columns
+    )
+    return [index for index, column in enumerate(X.columns) if column in categorical]
+
+
 def _train_saved_tabpfn(
     config: Any,
     data: dict[str, Any],
@@ -1853,11 +2014,8 @@ def _train_saved_tabpfn(
         from tabpfn import TabPFNClassifier
     except ImportError as exc:
         packaged = is_packaged_application()
-        checkpoint_candidates = tabpfn_checkpoint_candidates()
-        checkpoint = next(
-            (path for path in checkpoint_candidates if path.is_file()),
-            checkpoint_candidates[0],
-        )
+        checkpoint_status = get_tabpfn_model_status()
+        checkpoint = checkpoint_status.active_checkpoint_path or checkpoint_status.cache_path
         if packaged:
             reason = (
                 "TabPFN 2.5 could not start because the TabPFN Python "
@@ -1917,10 +2075,16 @@ def _train_saved_tabpfn(
 
     try:
         model_path = resolve_tabpfn_checkpoint()
+        checkpoint_status = get_tabpfn_model_status()
+        checkpoint_source = checkpoint_status.active_checkpoint_source
     except FileNotFoundError:
-        candidates = tabpfn_checkpoint_candidates()
-        model_path = candidates[0]
-        checkpoint_reason = "Bundled TabPFN checkpoint not found in app/assets."
+        checkpoint_status = get_tabpfn_model_status()
+        model_path = checkpoint_status.cache_path
+        checkpoint_source = "unavailable"
+        checkpoint_reason = (
+            "TabPFN 2.5 is not currently available. Use Model Selection or "
+            "Help > TabPFN Model Status to set it up."
+        )
         output_dir.mkdir(parents=True, exist_ok=True)
         _write_json(
             output_dir / "failure_reason.json",
@@ -1961,19 +2125,34 @@ def _train_saved_tabpfn(
         else "unknown"
     )
     random_state = int(getattr(config, "random_state", 42))
-    rng = np.random.RandomState(random_state)
-
-    X_train = np.asarray(data["X_train"])
-    y_train = np.asarray(data["y_train"], dtype=np.int64).reshape(-1)
-    X_val = np.asarray(data["X_val"])
-    y_val = np.asarray(data["y_val"], dtype=np.int64).reshape(-1)
-    X_test = np.asarray(data["X_test"])
-    y_test = np.asarray(data["y_test"], dtype=np.int64).reshape(-1)
+    feature_columns = list(getattr(config, "feature_columns", []) or [])
+    X_train = data["cv_raw_train"].loc[:, feature_columns].copy()
+    y_train = np.asarray(data["cv_y_train"], dtype=np.int64).reshape(-1)
+    X_val = data["raw_validation"].loc[:, feature_columns].copy()
+    y_val = np.asarray(data["raw_y_validation"], dtype=np.int64).reshape(-1)
+    X_test = data["raw_test"].loc[:, feature_columns].copy()
+    y_test = np.asarray(data["raw_y_test"], dtype=np.int64).reshape(-1)
     num_classes = int(len(data["class_labels"]))
-    if num_classes < 2:
-        raise ValueError("TabPFN 2.5 requires at least two target classes.")
+    _validate_tabpfn_input(X_train, y_train, context="external training data")
+    if num_classes > TABPFN_MAX_CLASSES:
+        raise ValueError(
+            f"TabPFN 2.5 supports at most {TABPFN_MAX_CLASSES} target classes; "
+            f"the saved target encoder contains {num_classes}."
+        )
     if not 1 <= n_estimators <= 100:
         raise ValueError("TabPFN n_estimators must be between 1 and 100.")
+
+    categorical_indices = _tabpfn_categorical_indices(X_train, config)
+    project_imbalance_method = str(
+        getattr(config, "imbalance_method", "none") or "none"
+    )
+    prepared_train, prepared_y_train, final_row_metadata = (
+        prepare_tabpfn_training_rows(
+            X_train,
+            y_train,
+            random_state=random_state,
+        )
+    )
 
     _emit(
         progress_callback,
@@ -1992,23 +2171,27 @@ def _train_saved_tabpfn(
             f"checkpoint exists={model_path.is_file()}; "
             f"checkpoint size={model_path.stat().st_size}; "
             f"bundled checkpoint={model_path}; "
-            f"internal maximum training samples={TABPFN_MAX_SAMPLES}; "
+            f"supported maximum training samples={TABPFN_MAX_SAMPLES}; "
+            "input representation=raw pandas DataFrame; "
+            "AVISTA external preprocessing/resampling=disabled; "
             f"internal prediction batch size={TABPFN_PREDICTION_BATCH_SIZE}"
         ),
     )
 
-    def subset_positions(row_count: int) -> np.ndarray:
-        return rng.choice(
-            row_count,
-            min(TABPFN_MAX_SAMPLES, row_count),
-            replace=False,
+    def create_classifier() -> Any:
+        return TabPFNClassifier(
+            n_estimators=n_estimators,
+            categorical_features_indices=categorical_indices,
+            model_path=str(model_path),
+            device=selected_device,
+            random_state=random_state,
         )
 
-    def predict_probabilities(model: Any, features: np.ndarray) -> np.ndarray:
+    def predict_probabilities(model: Any, features: pd.DataFrame) -> np.ndarray:
         batches = [
             np.asarray(
                 model.predict_proba(
-                    features[start : start + TABPFN_PREDICTION_BATCH_SIZE]
+                    features.iloc[start : start + TABPFN_PREDICTION_BATCH_SIZE]
                 )
             )
             for start in range(0, len(features), TABPFN_PREDICTION_BATCH_SIZE)
@@ -2036,24 +2219,31 @@ def _train_saved_tabpfn(
             start=1,
         ):
             _raise_if_cancelled(should_cancel)
-            fold_data = _prepare_cv_fold(data, config, train_pos, eval_pos)
-            subset = subset_positions(len(fold_data["X_train"]))
-            fold_model = TabPFNClassifier(
-                n_estimators=n_estimators,
-                model_path=str(model_path),
-                device=selected_device,
+            fold_X_train = X_train.iloc[train_pos].copy()
+            fold_y_train = y_train[train_pos]
+            fold_X_validation = X_train.iloc[eval_pos].copy()
+            fold_y_validation = y_train[eval_pos]
+            _validate_tabpfn_input(
+                fold_X_train,
+                fold_y_train,
+                context=f"CV fold {fold} training data",
             )
-            fold_model.fit(
-                fold_data["X_train"][subset],
-                fold_data["y_train"][subset],
+            prepared_fold_X, prepared_fold_y, fold_row_metadata = (
+                prepare_tabpfn_training_rows(
+                    fold_X_train,
+                    fold_y_train,
+                    random_state=random_state,
+                )
             )
+            fold_model = create_classifier()
+            fold_model.fit(prepared_fold_X, prepared_fold_y)
             fold_probabilities = predict_probabilities(
                 fold_model,
-                fold_data["X_validation"],
+                fold_X_validation,
             )
             fold_predictions = fold_probabilities.argmax(axis=1)
             fold_metrics = evaluate_predictions(
-                fold_data["y_validation"],
+                fold_y_validation,
                 fold_predictions,
                 fold_probabilities,
                 class_labels=list(range(num_classes)),
@@ -2061,7 +2251,8 @@ def _train_saved_tabpfn(
             cv_rows.append(
                 {
                     "fold": fold,
-                    "subset_size": int(len(subset)),
+                    **fold_row_metadata,
+                    "validation_rows": int(len(fold_X_validation)),
                     **{
                         key: fold_metrics.get(key)
                         for key in (
@@ -2087,18 +2278,15 @@ def _train_saved_tabpfn(
                 ),
                 message=(
                     f"{display_name} fold {fold}/{cv_folds}: "
-                    f"subset size used={len(subset)}"
+                    f"available/effective training rows="
+                    f"{fold_row_metadata['available_training_rows']}/"
+                    f"{fold_row_metadata['effective_training_rows']}"
                 ),
             )
 
     _raise_if_cancelled(should_cancel)
-    final_subset = subset_positions(len(X_train))
-    final_model = TabPFNClassifier(
-        n_estimators=n_estimators,
-        model_path=str(model_path),
-        device=selected_device,
-    )
-    final_model.fit(X_train[final_subset], y_train[final_subset])
+    final_model = create_classifier()
+    final_model.fit(prepared_train, prepared_y_train)
     units += 1
     _emit(
         progress_callback,
@@ -2107,7 +2295,11 @@ def _train_saved_tabpfn(
         total_folds=cv_folds if cv_enabled else 0,
         step="training",
         percent=min(99, int((completed_units + units) / max(1, total_units) * 100)),
-        message=f"{display_name} final subset size used={len(final_subset)}",
+        message=(
+            f"{display_name} available/effective external-training rows="
+            f"{final_row_metadata['available_training_rows']}/"
+            f"{final_row_metadata['effective_training_rows']}"
+        ),
     )
 
     evaluations: dict[str, dict[str, Any]] = {}
@@ -2173,6 +2365,11 @@ def _train_saved_tabpfn(
             {
                 "n_estimators": n_estimators,
                 "model_path": str(model_path),
+                "categorical_features_indices": categorical_indices,
+                "tabpfn_input_representation": "raw_dataframe",
+                "tabpfn_external_one_hot_encoding": False,
+                "tabpfn_external_scaling": False,
+                "tabpfn_external_resampling_applied": False,
                 **_cv_protocol_metadata(config),
             },
         )
@@ -2184,18 +2381,44 @@ def _train_saved_tabpfn(
                 "package_available": True,
                 "tabpfn_version": tabpfn_version,
                 "tabpfn_package_path": tabpfn_path,
-                "tabpfn_checkpoint_source": "bundled_app_asset",
+                "tabpfn_checkpoint_source": checkpoint_source,
                 "tabpfn_checkpoint_path": str(model_path),
                 "tabpfn_checkpoint_size": model_path.stat().st_size,
+                "tabpfn_checkpoint_sha256": checkpoint_sha256(model_path),
                 "packaged_mode": is_packaged_application(),
                 "selected_device": selected_device,
                 "n_estimators": n_estimators,
                 "feature_count": int(X_train.shape[1]),
                 "num_classes": num_classes,
+                "original_dataset_rows": int(
+                    data.get(
+                        "raw_dataset_rows",
+                        len(X_train) + len(X_val) + len(X_test),
+                    )
+                ),
+                "modeling_split_rows": int(len(X_train) + len(X_val) + len(X_test)),
+                "external_training_rows": int(len(y_train)),
                 "train_size": int(len(y_train)),
                 "validation_size": int(len(y_val)),
                 "test_size": int(len(y_test)),
-                "final_subset_size": int(len(final_subset)),
+                "final_subset_size": int(len(prepared_train)),
+                **final_row_metadata,
+                "tabpfn_model_version": "2.5",
+                "tabpfn_input_representation": "raw_dataframe",
+                "tabpfn_preprocessing_owner": "tabpfn_internal",
+                "tabpfn_external_one_hot_encoding": False,
+                "tabpfn_external_scaling": False,
+                "tabpfn_external_imputation": False,
+                "project_imbalance_method": project_imbalance_method,
+                "tabpfn_external_resampling_applied": False,
+                "tabpfn_resampling_note": (
+                    "Model-specific raw-input protocol; AVISTA resampling was not applied."
+                ),
+                "categorical_feature_columns": [
+                    feature_columns[index] for index in categorical_indices
+                ],
+                "categorical_features_indices": categorical_indices,
+                "tabpfn_internal_row_subsampling": False,
                 "target_column": config.target_column,
                 "training_timestamp": datetime.now().isoformat(timespec="seconds"),
                 **_cv_protocol_metadata(config),
@@ -2229,7 +2452,8 @@ def _train_saved_tabpfn(
             "cv_summary": cv_summary,
             "saved": saved,
             "output_dir": str(output_dir) if saved else "",
-            "subset_size": int(len(final_subset)),
+            "subset_size": int(len(prepared_train)),
+            **final_row_metadata,
         },
         units,
     )

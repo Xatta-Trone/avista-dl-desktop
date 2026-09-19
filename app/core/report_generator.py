@@ -167,7 +167,15 @@ def collect_report_summary(
             except (OSError, ValueError):
                 pass
     dataset_rows = _dataset_rows(project_dir, config, rows)
-    performance = collect_model_performance(project_dir / "outputs" / "training")
+    training_dir = project_dir / "outputs" / "training"
+    performance = collect_model_performance(training_dir)
+    tabpfn_metadata: dict[str, Any] = {}
+    tabpfn_metadata_path = training_dir / "TabPFN_2_5" / "training_metadata.json"
+    if tabpfn_metadata_path.is_file():
+        try:
+            tabpfn_metadata = json.loads(tabpfn_metadata_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError, TypeError):
+            tabpfn_metadata = {}
     footer = report_footer(generated_on)
     return {
         "project_name": config.project_name,
@@ -192,6 +200,7 @@ def collect_report_summary(
         "description": APP_DESCRIPTION,
         "version": __version__,
         "release_date": RELEASE_DATE,
+        "tabpfn_metadata": tabpfn_metadata,
     }
 
 
@@ -541,6 +550,31 @@ def build_markdown_report(
         "## Confusion Matrices",
         "",
     ]
+    tabpfn_metadata = summary.get("tabpfn_metadata") or {}
+    if tabpfn_metadata:
+        insertion = lines.index("## Model Performance Summary")
+        lines[insertion:insertion] = [
+            "## TabPFN 2.5 Input Protocol",
+            "",
+            _markdown_pairs(
+                [
+                    ("Python package version", tabpfn_metadata.get("tabpfn_version", "Unknown")),
+                    ("Checkpoint/model version", tabpfn_metadata.get("tabpfn_model_version", "2.5")),
+                    ("Input representation", tabpfn_metadata.get("tabpfn_input_representation", "Unknown")),
+                    ("External preprocessing applied", "No"),
+                    ("External resampling applied", "Yes" if tabpfn_metadata.get("tabpfn_external_resampling_applied") else "No"),
+                    ("Available external-training rows", tabpfn_metadata.get("available_training_rows", "Unknown")),
+                    ("Effective training rows", tabpfn_metadata.get("effective_training_rows", "Unknown")),
+                    ("Supported row limit", tabpfn_metadata.get("training_row_limit", "Unknown")),
+                    ("Subsampling applied", "Yes" if tabpfn_metadata.get("training_subsampled") else "No"),
+                    ("Subsampling strategy", tabpfn_metadata.get("training_subsampling_strategy", "Unknown")),
+                    ("Random seed", tabpfn_metadata.get("training_subsampling_seed", "Unknown")),
+                    ("Input features", tabpfn_metadata.get("feature_count", "Unknown")),
+                    ("Target classes", tabpfn_metadata.get("num_classes", "Unknown")),
+                ]
+            ),
+            "",
+        ]
     lines.extend(_markdown_image_group(confusion_paths))
     lines.extend(["", "## Classification Reports", ""])
     lines.extend(_markdown_report_group(classification_reports))
@@ -585,6 +619,19 @@ def write_pdf_report(
     classification_reports: dict[str, pd.DataFrame],
     feature_importance_paths: dict[str, Path],
 ) -> None:
+    tabpfn_metadata = summary.get("tabpfn_metadata") or {}
+    tabpfn_lines = []
+    if tabpfn_metadata:
+        tabpfn_lines = [
+            "TabPFN 2.5 input: raw DataFrame with TabPFN-owned preprocessing",
+            "TabPFN external resampling: No",
+            (
+                "TabPFN available/effective training rows: "
+                f"{tabpfn_metadata.get('available_training_rows', 'Unknown')}/"
+                f"{tabpfn_metadata.get('effective_training_rows', 'Unknown')}"
+            ),
+            f"TabPFN supported row limit: {tabpfn_metadata.get('training_row_limit', 'Unknown')}",
+        ]
     with PdfPages(path) as pdf:
         _pdf_text_page(pdf, "AVISTA Model Report", [
             APP_DESCRIPTION,
@@ -617,6 +664,7 @@ def write_pdf_report(
             f"Generated on: {summary['generated_on']}",
             f"AVISTA version: {summary['version']}",
             f"AVISTA release date: {summary['release_date']}",
+            *tabpfn_lines,
             (
                 "Unless otherwise stated, model comparison figures and "
                 "diagnostic tables are based on the test set."

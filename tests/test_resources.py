@@ -1,4 +1,5 @@
 from pathlib import Path
+import zipfile
 
 import app.utils.resources as resources
 from app.utils.resources import (
@@ -61,8 +62,13 @@ def test_tabpfn_checkpoint_resolver_supports_pyinstaller_internal_root(
         / "tabpfn-v2.5-classifier-v2.5_default.ckpt"
     )
     checkpoint.parent.mkdir(parents=True)
-    checkpoint.write_bytes(b"checkpoint")
+    with zipfile.ZipFile(checkpoint, "w", compression=zipfile.ZIP_STORED) as archive:
+        with archive.open("checkpoint/data.pkl", "w") as handle:
+            block = b"0" * 1_000_000
+            for _ in range(11):
+                handle.write(block)
     monkeypatch.setattr("sys._MEIPASS", str(tmp_path), raising=False)
+    monkeypatch.setenv("TABPFN_MODEL_CACHE_DIR", str(tmp_path / "empty-cache"))
 
     assert resolve_tabpfn_checkpoint() == checkpoint.resolve()
 
@@ -81,6 +87,7 @@ def test_tabpfn_checkpoint_resolver_reports_checked_paths(
         "__file__",
         str(tmp_path / "_internal" / "app" / "utils" / "resources.py"),
     )
+    monkeypatch.setenv("TABPFN_MODEL_CACHE_DIR", str(tmp_path / "empty-cache"))
 
     try:
         resolve_tabpfn_checkpoint()
@@ -89,5 +96,6 @@ def test_tabpfn_checkpoint_resolver_reports_checked_paths(
     else:
         raise AssertionError("Missing checkpoint must raise FileNotFoundError.")
 
+    assert "empty-cache\\tabpfn-v2.5-classifier-v2.5_default.ckpt" in message
     assert "app\\assets\\tabpfn-v2.5-classifier-v2.5_default.ckpt" in message
     assert "assets\\tabpfn-v2.5-classifier-v2.5_default.ckpt" in message

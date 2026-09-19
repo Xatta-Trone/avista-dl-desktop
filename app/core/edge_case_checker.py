@@ -792,13 +792,31 @@ def _check_model_environment(
             "Use CPU mode or install a CUDA-compatible PyTorch environment.",
         )
 
-    if any("tabpfn" in model for model in selected_models) and len(df) > 3000:
-        report.add(
-            WARNING,
-            "model",
-            f"TabPFN is selected with more than 3000 rows ({len(df)} rows).",
-            "Subsample the data or choose another model for larger datasets.",
-        )
+    if any("tabpfn" in model for model in selected_models):
+        feature_count = len(getattr(config, "feature_columns", []) or [])
+        target_column = getattr(config, "target_column", None)
+        class_count = int(df[target_column].nunique(dropna=False)) if target_column in df else 0
+        if len(df) > 50_000:
+            report.add(
+                WARNING,
+                "model",
+                f"TabPFN 2.5 is selected with more than 50,000 rows ({len(df)} rows).",
+                "AVISTA will use reproducible stratified subsampling for each TabPFN fit.",
+            )
+        if feature_count > 2_000:
+            report.add(
+                ERROR,
+                "model",
+                f"TabPFN 2.5 supports at most 2,000 features; {feature_count} are selected.",
+                "Select at most 2,000 modeling features or remove TabPFN.",
+            )
+        if class_count > 10:
+            report.add(
+                ERROR,
+                "model",
+                f"TabPFN 2.5 supports at most 10 classes; the target has {class_count}.",
+                "Use a target with at most 10 classes or remove TabPFN.",
+            )
 
 
 def _duplicate_names(columns: pd.Index) -> list[str]:

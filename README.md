@@ -50,7 +50,18 @@ Legacy `.xtab` and `project_config.json` files remain supported. Opening either 
 
 The PySide6 desktop GUI includes Project Setup, Environment, Data Import, Column Configuration, Data Split & Imbalance, Model Selection, Edge-Case Report, Training, and Report pages.
 
-The classification registry includes sklearn, XGBoost, PyTorch tabular, and TabPFN models. Training uses six AVISTA cards with primary-blue icons, readiness tiles, an animated running-state Start button, threaded live progress, realtime deep-model accuracy/loss curves, streaming model results, aggregate CSV/JSON outputs, confirmed saved split artifacts, fold-local preprocessing and balancing during cross-validation, decoded reports, publication-quality plots, and isolated subprocesses for torch-dependent models. Deep-model CV splits raw outer fold-training first, fits preprocessing on inner training, applies balancing only to inner training, uses unchanged inner validation for early stopping, and reserves outer fold-validation for scoring. Final deep-model fitting uses external validation for checkpoint selection and reserves external test for final evaluation.
+The classification registry includes sklearn, XGBoost, PyTorch tabular, and TabPFN models. Training uses six AVISTA cards with primary-blue icons, readiness tiles, an animated running-state Start button, threaded live progress, realtime deep-model accuracy/loss curves, streaming model results, aggregate CSV/JSON outputs, confirmed saved split artifacts, fold-local preprocessing and balancing during cross-validation, decoded reports, publication-quality plots, and isolated subprocesses for torch-dependent models. Deep-model CV splits raw outer fold-training first, fits preprocessing on inner training, applies balancing only to inner training, uses unchanged inner validation for early stopping, and reserves outer fold-validation for scoring. Final deep-model fitting uses external validation for checkpoint selection and reserves external test for final evaluation. TabPFN 2.5 uses a model-specific raw pandas input path with its native preprocessing, no AVISTA one-hot encoding/scaling/resampling, and a reproducible stratified cap only above its supported 50,000-row range.
+
+TabPFN 2.5 model setup is currently transitional. AVISTA prefers the official
+TabPFN user-cache checkpoint (`%APPDATA%\tabpfn` on Windows, or
+`TABPFN_MODEL_CACHE_DIR`) and temporarily falls back to the legacy bundled
+checkpoint. Startup offers user-initiated setup when the cached copy is absent,
+and **Help → TabPFN Model Status** provides download, verification, and cache
+status actions. The download uses Prior Labs' official gated browser flow; it
+never runs silently. AVISTA source is Apache-2.0, while TabPFN 2.5 weights are
+separately distributed by Prior Labs GmbH under the TabPFN-2.5 License v1.1 for
+non-commercial/non-production use. The bundled checkpoint remains a temporary
+third-party licensed asset pending completion of this migration.
 
 Selected categorical modeling features normalize missing, empty, and
 whitespace-only values to `Unknown` before training-fitted encoding. Data
@@ -87,6 +98,9 @@ Latest focused nested deep-CV verification: `14 passed`. Inner validation is
 created before preprocessing/resampling, both validation levels remain
 unresampled, and final deep training retains external validation for checkpoint
 selection and external test for final evaluation.
+
+Latest focused TabPFN 2.5 raw-input and supported-limit verification: `12 passed`
+across trainer, edge-case, model-registry, and report tests.
 
 Latest focused startup, branding, release-metadata, packaging, and theme/UI
 verification: `31 passed`.

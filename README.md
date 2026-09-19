@@ -50,7 +50,7 @@ Legacy `.xtab` and `project_config.json` files remain supported. Opening either 
 
 The PySide6 desktop GUI includes Project Setup, Environment, Data Import, Column Configuration, Data Split & Imbalance, Model Selection, Edge-Case Report, Training, and Report pages.
 
-The classification registry includes sklearn, XGBoost, PyTorch tabular, and TabPFN models. Training uses six AVISTA cards with primary-blue icons, readiness tiles, an animated running-state Start button, threaded live progress, realtime deep-model accuracy/loss curves, streaming model results, aggregate CSV/JSON outputs, confirmed saved split artifacts, fold-local preprocessing and balancing during cross-validation, decoded reports, publication-quality plots, and isolated subprocesses for torch-dependent models. Final model fitting continues to use the prepared balanced external-training artifacts; external validation and test partitions remain untouched by resampling.
+The classification registry includes sklearn, XGBoost, PyTorch tabular, and TabPFN models. Training uses six AVISTA cards with primary-blue icons, readiness tiles, an animated running-state Start button, threaded live progress, realtime deep-model accuracy/loss curves, streaming model results, aggregate CSV/JSON outputs, confirmed saved split artifacts, fold-local preprocessing and balancing during cross-validation, decoded reports, publication-quality plots, and isolated subprocesses for torch-dependent models. Deep-model CV splits raw outer fold-training first, fits preprocessing on inner training, applies balancing only to inner training, uses unchanged inner validation for early stopping, and reserves outer fold-validation for scoring. Final deep-model fitting uses external validation for checkpoint selection and reserves external test for final evaluation.
 
 Selected categorical modeling features normalize missing, empty, and
 whitespace-only values to `Unknown` before training-fitted encoding. Data
@@ -82,6 +82,11 @@ Latest focused cross-validation leakage regression verification:
 `47 passed` across preprocessing and trainer tests. The corrected protocol
 splits the original external-training rows before fitting preprocessing or
 applying resampling in each fold.
+
+Latest focused nested deep-CV verification: `14 passed`. Inner validation is
+created before preprocessing/resampling, both validation levels remain
+unresampled, and final deep training retains external validation for checkpoint
+selection and external test for final evaluation.
 
 Latest focused startup, branding, release-metadata, packaging, and theme/UI
 verification: `31 passed`.

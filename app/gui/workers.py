@@ -668,8 +668,10 @@ def _subprocess_progress(payload: dict[str, Any]) -> dict[str, Any]:
                     if payload.get("validation_loss") is not None
                     else None
                 ),
-                "validation_macro_f1": float(
-                    payload["validation_macro_f1"]
+                "validation_macro_f1": (
+                    float(payload["validation_macro_f1"])
+                    if payload.get("validation_macro_f1") is not None
+                    else None
                 ),
                 "validation_accuracy": (
                     float(payload["validation_accuracy"])

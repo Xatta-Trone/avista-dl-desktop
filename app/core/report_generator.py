@@ -330,7 +330,11 @@ def create_deep_training_comparison(
         )
         _plot_history_group(metric_axis, model, runs, metric)
     loss_axis.set(title="Training Loss", xlabel="Epoch", ylabel="Loss")
-    metric_axis.set(title="Validation Performance", xlabel="Epoch", ylabel="Score")
+    metric_axis.set(
+        title="Checkpoint-Selection Validation Performance",
+        xlabel="Epoch",
+        ylabel="Score",
+    )
     for axis in (loss_axis, metric_axis):
         axis.grid(alpha=0.25)
         axis.legend(
@@ -512,6 +516,9 @@ def build_markdown_report(
         f"- Split method: {config.split_method or 'Not available'}",
         f"- Imbalance method: {summary['imbalance_method']}",
         f"- Numerical scaling: {summary['numerical_scaling_method']}",
+        "- Validation role: deep-model early stopping and checkpoint selection",
+        "- Test role: held-out final evaluation after fitting and checkpoint selection",
+        "- CV role: outer validation folds are used only for fold scoring",
         "",
         "## Model Performance Summary",
         "",
@@ -592,6 +599,15 @@ def write_pdf_report(
                 f"{summary['test_rows']} test"
             ),
             f"Imbalance method: {summary['imbalance_method']}",
+            (
+                "Validation role: deep-model early stopping and checkpoint "
+                "selection"
+            ),
+            (
+                "Test role: held-out final evaluation after fitting and "
+                "checkpoint selection"
+            ),
+            "CV role: outer validation folds are used only for fold scoring",
             (
                 f"Cross-validation: {summary['cv_folds']} folds"
                 if summary["cv_enabled"]

@@ -3929,6 +3929,31 @@ def test_training_subprocess_progress_includes_train_accuracy():
     assert progress["train_accuracy"] == 0.72
 
 
+def test_training_subprocess_progress_accepts_disabled_early_stopping():
+    from app.gui.workers import _subprocess_progress
+
+    progress = _subprocess_progress(
+        {
+            "event": "epoch_progress",
+            "model": "MambaAttention",
+            "fold": 1,
+            "total_folds": 2,
+            "epoch": 1,
+            "total_epochs": 3,
+            "train_loss": 0.6,
+            "train_accuracy": 0.72,
+            "validation_loss": None,
+            "validation_macro_f1": None,
+            "validation_accuracy": None,
+            "percent": 10,
+        }
+    )
+
+    assert progress["validation_loss"] is None
+    assert progress["validation_macro_f1"] is None
+    assert progress["validation_accuracy"] is None
+
+
 def test_training_page_icons_use_avista_primary_and_button_text_colors():
     from PySide6.QtWidgets import QApplication, QLabel
 

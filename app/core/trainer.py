@@ -19,7 +19,7 @@ from sklearn.metrics import (
     confusion_matrix,
     f1_score,
 )
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import StratifiedKFold, train_test_split
 from sklearn.utils.class_weight import compute_class_weight
 
 from app.__version__ import (
@@ -505,21 +505,12 @@ def _prepare_cv_fold(
         artifacts,
     ).reset_index(drop=True)
 
-    fold_config = copy.copy(config)
-    options = dict(getattr(config, "preprocessing_options", {}) or {})
-    imbalance_options = dict(options.get("imbalance", {}) or {})
-    imbalance_options["sampling_strategy"] = _fold_sampling_strategy(
-        y_train,
-        config,
-        data.get("target_encoder"),
-    )
-    options["imbalance"] = imbalance_options
-    fold_config.preprocessing_options = options
-    imbalance = apply_imbalance_strategy(
+    imbalance = _apply_cv_training_imbalance(
         X_train,
         y_train,
         artifacts,
-        fold_config,
+        config,
+        data.get("target_encoder"),
     )
     if not imbalance["imbalance_info"]["success"]:
         reason = (
@@ -537,6 +528,112 @@ def _prepare_cv_fold(
         "train_row_indices": raw_train.index.tolist(),
         "validation_row_indices": raw_validation.index.tolist(),
     }
+
+
+def _prepare_deep_cv_fold(
+    data: dict[str, Any],
+    config: Any,
+    train_pos: np.ndarray,
+    eval_pos: np.ndarray,
+    validation_fraction: float,
+    random_state: int,
+) -> dict[str, Any]:
+    """Prepare nested deep-CV data without fitting on either validation set."""
+
+    raw_outer_train = data["cv_raw_train"].iloc[train_pos].copy()
+    raw_outer_validation = data["cv_raw_train"].iloc[eval_pos].copy()
+    y_outer_train = np.asarray(data["cv_y_train"])[train_pos]
+    y_outer_validation = np.asarray(data["cv_y_train"])[eval_pos]
+    inner_split = _deep_cv_inner_split(
+        y_outer_train,
+        validation_fraction,
+        random_state,
+    )
+    inner_train_pos = inner_split["train_positions"]
+    inner_validation_pos = inner_split["validation_positions"]
+    early_stopping_enabled = bool(inner_split["early_stopping_enabled"])
+
+    raw_inner_train = raw_outer_train.iloc[inner_train_pos].copy()
+    raw_inner_validation = raw_outer_train.iloc[inner_validation_pos].copy()
+    y_inner_train = pd.Series(
+        y_outer_train[inner_train_pos],
+        name=getattr(config, "target_column", None),
+    )
+    y_inner_validation = y_outer_train[inner_validation_pos]
+
+    artifacts = fit_split_preprocessing(raw_inner_train, config)
+    X_inner_train = transform_split_features(
+        raw_inner_train,
+        artifacts,
+    ).reset_index(drop=True)
+    X_inner_validation = (
+        transform_split_features(
+            raw_inner_validation,
+            artifacts,
+        ).reset_index(drop=True)
+        if early_stopping_enabled
+        else pd.DataFrame(columns=artifacts.output_feature_names)
+    )
+    X_outer_validation = transform_split_features(
+        raw_outer_validation,
+        artifacts,
+    ).reset_index(drop=True)
+
+    imbalance = _apply_cv_training_imbalance(
+        X_inner_train,
+        y_inner_train,
+        artifacts,
+        config,
+        data.get("target_encoder"),
+    )
+    if not imbalance["imbalance_info"]["success"]:
+        reason = (
+            imbalance["imbalance_info"].get("error")
+            or imbalance["imbalance_info"].get("message")
+        )
+        raise ValueError(f"Fold-local imbalance handling failed: {reason}")
+    return {
+        "X_train": np.asarray(imbalance["X_resampled"]),
+        "y_train": np.asarray(imbalance["y_resampled"]),
+        "X_inner_validation": np.asarray(X_inner_validation),
+        "y_inner_validation": np.asarray(y_inner_validation),
+        "X_outer_validation": np.asarray(X_outer_validation),
+        "y_outer_validation": np.asarray(y_outer_validation),
+        "artifacts": artifacts,
+        "imbalance_info": imbalance["imbalance_info"],
+        "inner_split": inner_split,
+        "early_stopping_enabled": early_stopping_enabled,
+        "inner_train_row_indices": raw_inner_train.index.tolist(),
+        "inner_validation_row_indices": raw_inner_validation.index.tolist(),
+        "outer_validation_row_indices": raw_outer_validation.index.tolist(),
+    }
+
+
+def _apply_cv_training_imbalance(
+    X_train: pd.DataFrame,
+    y_train: pd.Series,
+    artifacts: Any,
+    config: Any,
+    target_encoder: Any = None,
+) -> dict[str, Any]:
+    """Apply configured balancing to one CV training subset only."""
+
+    fold_config = copy.copy(config)
+    options = dict(getattr(config, "preprocessing_options", {}) or {})
+    imbalance_options = dict(options.get("imbalance", {}) or {})
+    imbalance_options["sampling_strategy"] = _fold_sampling_strategy(
+        y_train,
+        config,
+        target_encoder,
+    )
+    options["imbalance"] = imbalance_options
+    fold_config.preprocessing_options = options
+    return apply_imbalance_strategy(
+        X_train,
+        y_train,
+        artifacts,
+        fold_config,
+    )
 
 
 def _fold_sampling_strategy(
@@ -622,6 +719,61 @@ def _fold_sampling_strategy(
         for class_name, count in counts.items()
         if class_name != majority_class
         and max(int(count), int(majority_count * ratio)) > int(count)
+    }
+
+
+def _deep_cv_inner_validation_fraction(config: Any) -> float:
+    """Mirror the configured train/validation ratio within outer CV training."""
+
+    train_percent = float(getattr(config, "train_percent", 0.0) or 0.0)
+    validation_percent = float(
+        getattr(config, "validation_percent", 0.0) or 0.0
+    )
+    development_percent = train_percent + validation_percent
+    if development_percent <= 0 or validation_percent <= 0:
+        return 0.0
+    return validation_percent / development_percent
+
+
+def _deep_cv_inner_split(
+    y_train: np.ndarray,
+    validation_fraction: float,
+    random_state: int,
+) -> dict[str, Any]:
+    """Create a stratified early-stopping holdout within outer fold-training."""
+
+    targets = np.asarray(y_train).reshape(-1)
+    positions = np.arange(len(targets))
+    disabled_reason = ""
+    if not 0 < validation_fraction < 1:
+        disabled_reason = "Configured validation fraction is not between 0 and 1."
+    elif len(targets) < 2:
+        disabled_reason = "Outer fold-training has too few rows for an inner split."
+    elif pd.Series(targets).value_counts().min() < 2:
+        disabled_reason = (
+            "At least one outer fold-training class has fewer than two rows."
+        )
+    else:
+        try:
+            train_positions, validation_positions = train_test_split(
+                positions,
+                test_size=validation_fraction,
+                random_state=random_state,
+                stratify=targets,
+            )
+            return {
+                "train_positions": np.asarray(train_positions),
+                "validation_positions": np.asarray(validation_positions),
+                "early_stopping_enabled": True,
+                "disabled_reason": "",
+            }
+        except ValueError as exc:
+            disabled_reason = str(exc)
+    return {
+        "train_positions": positions,
+        "validation_positions": np.array([], dtype=int),
+        "early_stopping_enabled": False,
+        "disabled_reason": disabled_reason,
     }
 
 
@@ -1066,13 +1218,21 @@ def _train_saved_torch_classifier(
     def fit_model(
         train_features: np.ndarray,
         train_targets: np.ndarray,
-        validation_features: np.ndarray,
-        validation_targets: np.ndarray,
+        validation_features: np.ndarray | None,
+        validation_targets: np.ndarray | None,
         *,
         fold: int = 0,
         total_folds: int = 0,
-    ) -> tuple[Any, list[dict[str, Any]], float, int]:
+        early_stopping_enabled: bool = True,
+        validation_role: str = "checkpoint_selection",
+    ) -> tuple[Any, list[dict[str, Any]], float | None, int | None]:
         _raise_if_cancelled(should_cancel)
+        early_stopping_enabled = bool(
+            early_stopping_enabled
+            and validation_features is not None
+            and validation_targets is not None
+            and len(validation_targets) > 0
+        )
         if model_key == "mamba_attention":
             model = MambaAttentionClassifier(
                 input_dim=int(train_features.shape[1]),
@@ -1118,13 +1278,17 @@ def _train_saved_torch_classifier(
             label_smoothing=label_smoothing,
         )
         train_loader = make_loader(train_features, train_targets, shuffle=True)
-        validation_loader = make_loader(
-            validation_features,
-            validation_targets,
-            shuffle=False,
+        validation_loader = (
+            make_loader(
+                validation_features,
+                validation_targets,
+                shuffle=False,
+            )
+            if early_stopping_enabled
+            else None
         )
-        best_metric = -1.0
-        best_epoch = 0
+        best_metric: float | None = -1.0 if early_stopping_enabled else None
+        best_epoch: int | None = 0 if early_stopping_enabled else None
         patience_count = 0
         best_state = None
         history: list[dict[str, Any]] = []
@@ -1151,50 +1315,61 @@ def _train_saved_torch_classifier(
                 )
                 training_actual.extend(batch_targets.detach().cpu().numpy().tolist())
 
-            model.eval()
-            validation_loss = 0.0
-            validation_rows = 0
-            validation_predictions = []
-            validation_actual = []
-            with torch.no_grad():
-                for batch_features, batch_targets in validation_loader:
-                    batch_features = batch_features.to(device)
-                    batch_targets = batch_targets.to(device)
-                    outputs = model(batch_features)
-                    loss = criterion(outputs, batch_targets)
-                    validation_loss += float(loss.item()) * len(batch_targets)
-                    validation_rows += len(batch_targets)
-                    validation_predictions.extend(
-                        outputs.argmax(dim=1).cpu().numpy().tolist()
-                    )
-                    validation_actual.extend(batch_targets.cpu().numpy().tolist())
-
-            validation_metric = float(
-                f1_score(
-                    validation_actual,
-                    validation_predictions,
-                    average="macro",
-                    zero_division=0,
-                )
-            )
-            validation_accuracy = float(
-                accuracy_score(validation_actual, validation_predictions)
-            )
             training_accuracy = float(
                 accuracy_score(training_actual, training_predictions)
             )
+            validation_loss_value = None
+            validation_metric = None
+            validation_accuracy = None
+            if validation_loader is not None:
+                model.eval()
+                validation_loss = 0.0
+                validation_rows = 0
+                validation_predictions = []
+                validation_actual = []
+                with torch.no_grad():
+                    for batch_features, batch_targets in validation_loader:
+                        batch_features = batch_features.to(device)
+                        batch_targets = batch_targets.to(device)
+                        outputs = model(batch_features)
+                        loss = criterion(outputs, batch_targets)
+                        validation_loss += float(loss.item()) * len(batch_targets)
+                        validation_rows += len(batch_targets)
+                        validation_predictions.extend(
+                            outputs.argmax(dim=1).cpu().numpy().tolist()
+                        )
+                        validation_actual.extend(
+                            batch_targets.cpu().numpy().tolist()
+                        )
+                validation_loss_value = validation_loss / max(1, validation_rows)
+                validation_metric = float(
+                    f1_score(
+                        validation_actual,
+                        validation_predictions,
+                        average="macro",
+                        zero_division=0,
+                    )
+                )
+                validation_accuracy = float(
+                    accuracy_score(validation_actual, validation_predictions)
+                )
             history.append(
                 {
                     "epoch": epoch,
                     "train_loss": total_loss / max(1, total_rows),
                     "train_accuracy": training_accuracy,
-                    "validation_loss": validation_loss / max(1, validation_rows),
+                    "validation_loss": validation_loss_value,
                     "validation_macro_f1": validation_metric,
                     "validation_accuracy": validation_accuracy,
                     "learning_rate": float(optimizer.param_groups[0]["lr"]),
                 }
             )
-            if validation_metric > best_metric:
+            if (
+                early_stopping_enabled
+                and validation_metric is not None
+                and best_metric is not None
+                and validation_metric > best_metric
+            ):
                 best_metric = validation_metric
                 best_epoch = epoch
                 patience_count = 0
@@ -1202,7 +1377,7 @@ def _train_saved_torch_classifier(
                     name: value.detach().cpu().clone()
                     for name, value in model.state_dict().items()
                 }
-            else:
+            elif early_stopping_enabled:
                 patience_count += 1
 
             if epoch <= warmup_epochs:
@@ -1218,9 +1393,10 @@ def _train_saved_torch_classifier(
                 epoch=epoch,
                 train_loss=total_loss / max(1, total_rows),
                 train_accuracy=training_accuracy,
-                validation_loss=validation_loss / max(1, validation_rows),
+                validation_loss=validation_loss_value,
                 val_macro_f1=validation_metric,
                 validation_accuracy=validation_accuracy,
+                validation_role=validation_role,
                 percent=min(
                     99,
                     int(
@@ -1237,26 +1413,52 @@ def _train_saved_torch_classifier(
                     f"{display_name}"
                     f"{f' fold {fold}/{total_folds}' if fold else ''} "
                     f"epoch {epoch}/{epochs}: "
-                    f"validation macro-F1={validation_metric:.4f}"
+                    + (
+                        f"validation macro-F1={validation_metric:.4f}"
+                        if validation_metric is not None
+                        else "early stopping disabled"
+                    )
                 ),
             )
-            if patience_count >= patience:
+            if early_stopping_enabled and patience_count >= patience:
                 break
 
-        if restore_best_weights and best_state is not None:
+        if early_stopping_enabled and restore_best_weights and best_state is not None:
             model.load_state_dict(best_state)
-        _emit(
-            progress_callback,
-            model=display_name,
-            fold=fold,
-            total_folds=total_folds,
-            step="best validation metric",
-            percent=min(99, int((completed_units + 1) / max(1, total_units) * 100)),
-            message=(
-                f"{display_name} best validation macro-F1={best_metric:.4f} "
-                f"at epoch {best_epoch}"
-            ),
-        )
+        if early_stopping_enabled:
+            _emit(
+                progress_callback,
+                model=display_name,
+                fold=fold,
+                total_folds=total_folds,
+                step="best validation metric",
+                percent=min(
+                    99,
+                    int((completed_units + 1) / max(1, total_units) * 100),
+                ),
+                validation_role=validation_role,
+                message=(
+                    f"{display_name} best validation macro-F1={best_metric:.4f} "
+                    f"at epoch {best_epoch}"
+                ),
+            )
+        else:
+            _emit(
+                progress_callback,
+                model=display_name,
+                fold=fold,
+                total_folds=total_folds,
+                step="early stopping disabled",
+                percent=min(
+                    99,
+                    int((completed_units + 1) / max(1, total_units) * 100),
+                ),
+                validation_role="none",
+                message=(
+                    f"{display_name} completed all {epochs} configured epochs; "
+                    "early stopping was disabled for this fold."
+                ),
+            )
         return model, history, best_metric, best_epoch
 
     def predict(model: Any, features: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -1280,6 +1482,8 @@ def _train_saved_torch_classifier(
     cv_rows: list[dict[str, Any]] = []
     units = 0
     if cv_enabled:
+        inner_validation_fraction = _deep_cv_inner_validation_fraction(config)
+        inner_random_state = int(getattr(config, "random_state", 42))
         splitter = StratifiedKFold(
             n_splits=cv_folds,
             shuffle=True,
@@ -1290,23 +1494,60 @@ def _train_saved_torch_classifier(
             splitter.split(np.zeros(len(cv_y_train)), cv_y_train),
             start=1,
         ):
-            fold_data = _prepare_cv_fold(data, config, train_pos, eval_pos)
-            # Existing behavior uses the scored fold for early stopping. A separate
-            # validation subset inside fold-training is a distinct reviewer item.
-            fold_model, _, _, _ = fit_model(
+            fold_data = _prepare_deep_cv_fold(
+                data,
+                config,
+                train_pos,
+                eval_pos,
+                inner_validation_fraction,
+                inner_random_state,
+            )
+            inner_split = fold_data["inner_split"]
+            inner_train_pos = inner_split["train_positions"]
+            inner_validation_pos = inner_split["validation_positions"]
+            early_stopping_enabled = fold_data["early_stopping_enabled"]
+            if not early_stopping_enabled:
+                _emit(
+                    progress_callback,
+                    model=display_name,
+                    fold=fold,
+                    total_folds=cv_folds,
+                    step="early stopping disabled",
+                    percent=int((completed_units + units) / total_units * 100),
+                    message=(
+                        f"{display_name} fold {fold}/{cv_folds}: inner "
+                        "early-stopping split was infeasible; training for all "
+                        f"configured epochs. {inner_split['disabled_reason']}"
+                    ),
+                )
+            fold_model, fold_history, _, fold_best_epoch = fit_model(
                 fold_data["X_train"],
                 fold_data["y_train"],
-                fold_data["X_validation"],
-                fold_data["y_validation"],
+                (
+                    fold_data["X_inner_validation"]
+                    if early_stopping_enabled
+                    else None
+                ),
+                (
+                    fold_data["y_inner_validation"]
+                    if early_stopping_enabled
+                    else None
+                ),
                 fold=fold,
                 total_folds=cv_folds,
+                early_stopping_enabled=early_stopping_enabled,
+                validation_role=(
+                    "cv_inner_early_stopping"
+                    if early_stopping_enabled
+                    else "none"
+                ),
             )
             fold_predictions, fold_probabilities = predict(
                 fold_model,
-                fold_data["X_validation"],
+                fold_data["X_outer_validation"],
             )
             fold_metrics = evaluate_predictions(
-                fold_data["y_validation"],
+                fold_data["y_outer_validation"],
                 fold_predictions,
                 fold_probabilities,
                 class_labels=list(range(num_classes)),
@@ -1314,6 +1555,27 @@ def _train_saved_torch_classifier(
             cv_rows.append(
                 {
                     "fold": fold,
+                    "cv_outer_validation_role": "fold_scoring_only",
+                    "cv_inner_validation_role": (
+                        "early_stopping"
+                        if early_stopping_enabled
+                        else "disabled"
+                    ),
+                    "cv_inner_validation_fraction": inner_validation_fraction,
+                    "cv_inner_random_seed": inner_random_state,
+                    "cv_inner_preprocessing_scope": "inner_training_only",
+                    "cv_inner_imbalance_scope": "inner_training_only",
+                    "cv_inner_validation_resampled": False,
+                    "cv_outer_validation_resampled": False,
+                    "cv_early_stopping_enabled": early_stopping_enabled,
+                    "cv_early_stopping_disabled_reason": inner_split[
+                        "disabled_reason"
+                    ],
+                    "cv_inner_train_size": int(len(fold_data["y_train"])),
+                    "cv_inner_train_original_size": int(len(inner_train_pos)),
+                    "cv_inner_validation_size": int(len(inner_validation_pos)),
+                    "cv_epochs_trained": int(len(fold_history)),
+                    "cv_best_epoch": fold_best_epoch,
                     **{
                         key: fold_metrics.get(key)
                         for key in (
@@ -1336,6 +1598,7 @@ def _train_saved_torch_classifier(
         y_train,
         X_val,
         y_val,
+        validation_role="external_validation_checkpoint_selection",
     )
     units += 1
     evaluations = {}
@@ -1424,6 +1687,7 @@ def _train_saved_torch_classifier(
                 "learning_rate": learning_rate,
                 "focal_gamma": focal_gamma,
                 **_cv_protocol_metadata(config),
+                **_deep_validation_role_metadata(config),
             },
         )
         _write_json(
@@ -1443,6 +1707,7 @@ def _train_saved_torch_classifier(
                 "best_epoch": best_epoch,
                 "training_timestamp": datetime.now().isoformat(timespec="seconds"),
                 **_cv_protocol_metadata(config),
+                **_deep_validation_role_metadata(config),
             },
         )
         saved = True
@@ -2097,7 +2362,12 @@ def _cv_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
     frame = pd.DataFrame(rows)
     summary = {}
     for column in frame.columns:
-        if column == "fold" or frame[column].dropna().empty:
+        if (
+            column == "fold"
+            or frame[column].dropna().empty
+            or not pd.api.types.is_numeric_dtype(frame[column])
+            or pd.api.types.is_bool_dtype(frame[column])
+        ):
             continue
         summary[column] = {
             "mean": float(frame[column].mean()),
@@ -2110,6 +2380,31 @@ def _cv_protocol_metadata(config: Any) -> dict[str, Any]:
     if not bool(getattr(config, "enable_cross_validation", False)):
         return {}
     return dict(CV_PROTOCOL_METADATA)
+
+
+def _deep_validation_role_metadata(config: Any) -> dict[str, Any]:
+    metadata: dict[str, Any] = {
+        "validation_role": "checkpoint_selection",
+        "test_role": "final_evaluation",
+    }
+    if bool(getattr(config, "enable_cross_validation", False)):
+        metadata.update(
+            {
+                "cv_outer_validation_role": "fold_scoring_only",
+                "cv_inner_validation_role": "early_stopping_when_feasible",
+                "cv_inner_validation_fraction": (
+                    _deep_cv_inner_validation_fraction(config)
+                ),
+                "cv_inner_random_seed": int(
+                    getattr(config, "random_state", 42)
+                ),
+                "cv_inner_preprocessing_scope": "inner_training_only",
+                "cv_inner_imbalance_scope": "inner_training_only",
+                "cv_inner_validation_resampled": False,
+                "cv_outer_validation_resampled": False,
+            }
+        )
+    return metadata
 
 
 def _saved_class_weights(config: Any, y_train: np.ndarray) -> dict[Any, float] | None:

@@ -14,11 +14,18 @@ from sklearn.preprocessing import LabelEncoder
 
 from app.core import trainer as trainer_module
 from app.core.evaluator import evaluate_predictions
-from app.core.preprocessing import build_preprocessing_pipeline, save_artifacts
+from app.core.preprocessing import (
+    build_preprocessing_pipeline,
+    save_artifacts,
+    transform_split_features,
+)
 from app.core.project_config import ProjectConfig
 from app.core.trainer import (
     TrainingCancelled,
+    _deep_cv_inner_split,
+    _deep_cv_inner_validation_fraction,
     _prepare_cv_fold,
+    _prepare_deep_cv_fold,
     train_saved_models,
     train_selected_models,
 )
@@ -392,12 +399,20 @@ def test_mamba_attention_trains_from_saved_encoded_artifacts(tmp_path):
     importlib.util.find_spec("torch") is None,
     reason="torch is not installed",
 )
-def test_mamba_attention_saves_cv_outputs_without_fold_images(tmp_path):
+def test_mamba_attention_saves_cv_outputs_without_fold_images(
+    tmp_path,
+    monkeypatch,
+):
+    import torch
+
     config = make_config(
         tmp_path,
         selected_models=["mamba_attention"],
         enable_cross_validation=True,
         cv_folds=2,
+        train_percent=60.0,
+        validation_percent=20.0,
+        test_percent=20.0,
         model_params={
             "mamba_attention": {
                 "hidden_dim": 8,
@@ -409,15 +424,86 @@ def test_mamba_attention_saves_cv_outputs_without_fold_images(tmp_path):
             }
         },
     )
-    save_training_bundle(tmp_path, config)
+    split_dir = save_training_bundle(tmp_path, config)
+    dataset_calls = []
+    original_tensor_dataset = torch.utils.data.TensorDataset
 
-    result = train_saved_models(config)
+    def recording_tensor_dataset(features, targets):
+        dataset_calls.append(features.detach().cpu().numpy().copy())
+        return original_tensor_dataset(features, targets)
+
+    monkeypatch.setattr(
+        torch.utils.data,
+        "TensorDataset",
+        recording_tensor_dataset,
+    )
+    progress = []
+
+    result = train_saved_models(config, progress_callback=progress.append)
 
     output_dir = tmp_path / "outputs" / "training" / "MambaAttention"
     assert result["results"][0]["status"] == "trained"
     assert (output_dir / "cv_results.csv").exists()
     assert (output_dir / "cv_summary.json").exists()
     assert not list(output_dir.glob("fold*/confusion_matrix.*"))
+    cv_results = pd.read_csv(output_dir / "cv_results.csv")
+    assert set(cv_results["cv_outer_validation_role"]) == {"fold_scoring_only"}
+    assert set(cv_results["cv_inner_validation_role"]) == {"early_stopping"}
+    assert set(cv_results["cv_inner_preprocessing_scope"]) == {
+        "inner_training_only"
+    }
+    assert set(cv_results["cv_inner_imbalance_scope"]) == {
+        "inner_training_only"
+    }
+    assert not cv_results["cv_inner_validation_resampled"].any()
+    assert not cv_results["cv_outer_validation_resampled"].any()
+    assert cv_results["cv_early_stopping_enabled"].all()
+    assert (cv_results["cv_inner_validation_size"] > 0).all()
+    assert (cv_results["cv_epochs_trained"] == 1).all()
+    assert (cv_results["cv_best_epoch"] == 1).all()
+    metadata = json.loads(
+        (output_dir / "training_metadata.json").read_text(encoding="utf-8")
+    )
+    assert metadata["validation_role"] == "checkpoint_selection"
+    assert metadata["test_role"] == "final_evaluation"
+    assert metadata["cv_outer_validation_role"] == "fold_scoring_only"
+    assert metadata["cv_inner_validation_role"] == "early_stopping_when_feasible"
+    assert metadata["cv_inner_preprocessing_scope"] == "inner_training_only"
+    assert metadata["cv_inner_imbalance_scope"] == "inner_training_only"
+    assert metadata["cv_inner_validation_resampled"] is False
+    assert metadata["cv_outer_validation_resampled"] is False
+    fold_epoch_events = [
+        event
+        for event in progress
+        if event.get("step") == "epoch" and event.get("fold")
+    ]
+    assert fold_epoch_events
+    assert {
+        event["validation_role"] for event in fold_epoch_events
+    } == {"cv_inner_early_stopping"}
+    final_epoch_events = [
+        event
+        for event in progress
+        if event.get("step") == "epoch" and not event.get("fold")
+    ]
+    assert final_epoch_events
+    assert {
+        event["validation_role"] for event in final_epoch_events
+    } == {"external_validation_checkpoint_selection"}
+
+    assert len(dataset_calls) == 11
+    outer_scoring_calls = [dataset_calls[2], dataset_calls[5]]
+    inner_early_stopping_calls = [dataset_calls[1], dataset_calls[4]]
+    assert all(
+        not np.array_equal(outer, inner)
+        for outer, inner in zip(outer_scoring_calls, inner_early_stopping_calls)
+    )
+    np.testing.assert_array_equal(dataset_calls[7], np.load(split_dir / "X_val.npy"))
+    np.testing.assert_array_equal(dataset_calls[10], np.load(split_dir / "X_test.npy"))
+    assert all(
+        not np.array_equal(dataset_calls[10], dataset_calls[index])
+        for index in (0, 1, 3, 4, 6, 7)
+    )
 
 
 @pytest.mark.skipif(
@@ -1274,6 +1360,304 @@ def test_cv_feasibility_uses_original_labels_before_resampling(tmp_path):
 
     with pytest.raises(ValueError, match="only 3 samples but CV folds = 4"):
         train_saved_models(config, save_outputs=False)
+
+
+def test_deep_cv_inner_split_is_disjoint_outer_safe_and_reproducible(tmp_path):
+    config = make_config(tmp_path, train_percent=70.0, validation_percent=10.0)
+    fraction = _deep_cv_inner_validation_fraction(config)
+    targets = np.array([0, 1] * 10)
+    outer_training_rows = np.arange(100, 120)
+    outer_validation_rows = set(range(200, 210))
+
+    first = _deep_cv_inner_split(targets, fraction, random_state=37)
+    second = _deep_cv_inner_split(targets, fraction, random_state=37)
+
+    assert fraction == pytest.approx(0.125)
+    assert first["early_stopping_enabled"] is True
+    np.testing.assert_array_equal(
+        first["train_positions"],
+        second["train_positions"],
+    )
+    np.testing.assert_array_equal(
+        first["validation_positions"],
+        second["validation_positions"],
+    )
+    inner_training_rows = set(
+        outer_training_rows[first["train_positions"]]
+    )
+    inner_validation_rows = set(
+        outer_training_rows[first["validation_positions"]]
+    )
+    assert inner_training_rows.isdisjoint(inner_validation_rows)
+    assert inner_training_rows.isdisjoint(outer_validation_rows)
+    assert inner_validation_rows.isdisjoint(outer_validation_rows)
+    assert inner_training_rows | inner_validation_rows == set(outer_training_rows)
+    assert set(targets[first["train_positions"]]) == {0, 1}
+    assert set(targets[first["validation_positions"]]) == {0, 1}
+
+
+def test_deep_cv_inner_split_disables_early_stopping_when_infeasible():
+    targets = np.array([0, 0, 0, 1])
+
+    result = _deep_cv_inner_split(targets, 0.25, random_state=42)
+
+    assert result["early_stopping_enabled"] is False
+    np.testing.assert_array_equal(result["train_positions"], np.arange(4))
+    assert result["validation_positions"].size == 0
+    assert "fewer than two rows" in result["disabled_reason"]
+
+
+def test_deep_cv_inner_split_precedes_preprocessing_and_resampling(
+    tmp_path,
+    monkeypatch,
+):
+    config = make_config(
+        tmp_path,
+        imbalance_method="smote",
+        smote_ratio_preset="moderate",
+        preprocessing_options={"imbalance": {"smote_k_neighbors": 5}},
+    )
+    targets = np.array([0] * 20 + [1] * 8 + [0, 1] * 4)
+    raw = pd.DataFrame(
+        {
+            "x1": np.arange(len(targets), dtype=float),
+            "x2": np.arange(len(targets)) % 3,
+            "cat": ["a", "b"] * 18,
+            "target": targets,
+        }
+    )
+    data = {
+        "cv_raw_train": raw,
+        "cv_y_train": targets,
+        "target_encoder": None,
+    }
+    train_pos = np.arange(28)
+    outer_validation_pos = np.arange(28, 36)
+    expected_inner = _deep_cv_inner_split(targets[train_pos], 0.25, 19)
+    calls = []
+    original_apply = trainer_module.apply_imbalance_strategy
+
+    def record_apply(features, labels, artifacts, fold_config):
+        calls.append((features.copy(), np.asarray(labels).copy()))
+        return original_apply(features, labels, artifacts, fold_config)
+
+    monkeypatch.setattr(trainer_module, "apply_imbalance_strategy", record_apply)
+
+    fold = _prepare_deep_cv_fold(
+        data,
+        config,
+        train_pos,
+        outer_validation_pos,
+        validation_fraction=0.25,
+        random_state=19,
+    )
+
+    expected_train_rows = set(train_pos[expected_inner["train_positions"]])
+    expected_inner_validation_rows = set(
+        train_pos[expected_inner["validation_positions"]]
+    )
+    assert set(fold["inner_train_row_indices"]) == expected_train_rows
+    assert set(fold["inner_validation_row_indices"]) == expected_inner_validation_rows
+    assert set(fold["outer_validation_row_indices"]) == set(outer_validation_pos)
+    assert expected_train_rows.isdisjoint(expected_inner_validation_rows)
+    assert expected_train_rows.isdisjoint(set(outer_validation_pos))
+    assert expected_inner_validation_rows.isdisjoint(set(outer_validation_pos))
+    assert len(calls) == 1
+    assert len(calls[0][1]) == len(expected_train_rows)
+    np.testing.assert_array_equal(
+        calls[0][1],
+        targets[train_pos][expected_inner["train_positions"]],
+    )
+
+
+def test_deep_cv_smote_never_resamples_inner_or_outer_validation(tmp_path):
+    config = make_config(
+        tmp_path,
+        imbalance_method="smote",
+        smote_ratio_preset="moderate",
+        preprocessing_options={"imbalance": {"smote_k_neighbors": 5}},
+    )
+    targets = np.array([0] * 20 + [1] * 8 + [0, 1] * 4)
+    raw = pd.DataFrame(
+        {
+            "x1": np.arange(len(targets), dtype=float),
+            "x2": np.arange(len(targets)) % 3,
+            "cat": ["a", "b"] * 18,
+            "target": targets,
+        }
+    )
+    data = {
+        "cv_raw_train": raw,
+        "cv_y_train": targets,
+        "target_encoder": None,
+    }
+    fold = _prepare_deep_cv_fold(
+        data,
+        config,
+        np.arange(28),
+        np.arange(28, 36),
+        validation_fraction=0.25,
+        random_state=19,
+    )
+
+    assert len(fold["y_train"]) > len(fold["inner_train_row_indices"])
+    assert len(fold["y_inner_validation"]) == len(
+        fold["inner_validation_row_indices"]
+    )
+    assert len(fold["y_outer_validation"]) == len(
+        fold["outer_validation_row_indices"]
+    )
+    expected_inner_validation = transform_split_features(
+        raw.loc[fold["inner_validation_row_indices"]],
+        fold["artifacts"],
+    ).to_numpy()
+    expected_outer_validation = transform_split_features(
+        raw.loc[fold["outer_validation_row_indices"]],
+        fold["artifacts"],
+    ).to_numpy()
+    np.testing.assert_array_equal(
+        fold["X_inner_validation"],
+        expected_inner_validation,
+    )
+    np.testing.assert_array_equal(
+        fold["X_outer_validation"],
+        expected_outer_validation,
+    )
+
+
+def test_deep_cv_random_oversampling_cannot_duplicate_inner_validation(tmp_path):
+    config = make_config(tmp_path, imbalance_method="random_oversample")
+    targets = np.array([0] * 20 + [1] * 8 + [0, 1] * 4)
+    raw = pd.DataFrame(
+        {
+            "x1": np.arange(len(targets), dtype=float),
+            "x2": np.arange(len(targets)) % 3,
+            "cat": ["a", "b"] * 18,
+            "target": targets,
+        }
+    )
+    fold = _prepare_deep_cv_fold(
+        {
+            "cv_raw_train": raw,
+            "cv_y_train": targets,
+            "target_encoder": None,
+        },
+        config,
+        np.arange(28),
+        np.arange(28, 36),
+        validation_fraction=0.25,
+        random_state=19,
+    )
+
+    resampled_train_ids = fold["X_train"][:, 0]
+    inner_validation_ids = fold["X_inner_validation"][:, 0]
+    assert len(resampled_train_ids) > len(np.unique(resampled_train_ids))
+    assert set(resampled_train_ids).isdisjoint(set(inner_validation_ids))
+    assert set(inner_validation_ids) == set(fold["inner_validation_row_indices"])
+
+
+def test_deep_cv_preprocessing_fits_only_raw_inner_training(tmp_path):
+    config = make_config(tmp_path, imbalance_method="none")
+    targets = np.array([0, 1] * 15)
+    train_pos = np.arange(24)
+    outer_validation_pos = np.arange(24, 30)
+    inner = _deep_cv_inner_split(targets[train_pos], 0.25, 23)
+    raw = pd.DataFrame(
+        {
+            "x1": np.arange(len(targets), dtype=float),
+            "x2": np.arange(len(targets)) % 3,
+            "cat": ["inner-training"] * len(targets),
+            "target": targets,
+        }
+    )
+    raw.loc[train_pos[inner["validation_positions"]], "cat"] = "inner-validation"
+    raw.loc[outer_validation_pos, "cat"] = "outer-validation"
+
+    fold = _prepare_deep_cv_fold(
+        {
+            "cv_raw_train": raw,
+            "cv_y_train": targets,
+            "target_encoder": None,
+        },
+        config,
+        train_pos,
+        outer_validation_pos,
+        validation_fraction=0.25,
+        random_state=23,
+    )
+
+    learned = set(fold["artifacts"].encoder.categories_[0])
+    assert "inner-training" in learned
+    assert "inner-validation" not in learned
+    assert "outer-validation" not in learned
+    categorical_indices = [
+        index
+        for index, name in enumerate(fold["artifacts"].output_feature_names)
+        if name.startswith("cat_")
+    ]
+    assert categorical_indices
+    assert np.all(fold["X_inner_validation"][:, categorical_indices] == 0)
+    assert np.all(fold["X_outer_validation"][:, categorical_indices] == 0)
+
+
+@pytest.mark.skipif(
+    importlib.util.find_spec("torch") is None,
+    reason="torch is not installed",
+)
+def test_deep_cv_small_class_fallback_never_reuses_outer_validation(tmp_path):
+    config = make_config(
+        tmp_path,
+        selected_models=["mamba_attention"],
+        enable_cross_validation=True,
+        cv_folds=2,
+        model_params={
+            "mamba_attention": {
+                "hidden_dim": 8,
+                "dropout": 0.0,
+                "batch_size": 4,
+                "epochs": 1,
+                "warmup_epochs": 1,
+                "early_stopping_patience": 1,
+            }
+        },
+    )
+    split_dir = save_training_bundle(tmp_path, config)
+    source = pd.read_csv(config.input_file)
+    source.loc[:11, "target"] = [0] * 10 + [1] * 2
+    source.to_csv(config.input_file, index=False)
+    original_target = np.array([0] * 10 + [1] * 2)
+    np.save(split_dir / "y_train.npy", original_target)
+    np.save(split_dir / "y_train_balanced.npy", original_target)
+    progress = []
+
+    result = train_saved_models(config, progress_callback=progress.append)
+
+    assert result["results"][0]["status"] == "trained"
+    output_dir = tmp_path / "outputs" / "training" / "MambaAttention"
+    cv_results = pd.read_csv(output_dir / "cv_results.csv")
+    assert not cv_results["cv_early_stopping_enabled"].any()
+    assert set(cv_results["cv_inner_validation_role"]) == {"disabled"}
+    assert (cv_results["cv_inner_validation_size"] == 0).all()
+    assert (cv_results["cv_epochs_trained"] == 1).all()
+    assert cv_results["cv_best_epoch"].isna().all()
+    fold_epochs = [
+        event
+        for event in progress
+        if event.get("step") == "epoch" and event.get("fold")
+    ]
+    assert fold_epochs
+    assert all(event["validation_role"] == "none" for event in fold_epochs)
+    assert all(event["val_macro_f1"] is None for event in fold_epochs)
+    final_epochs = [
+        event
+        for event in progress
+        if event.get("step") == "epoch" and not event.get("fold")
+    ]
+    assert final_epochs
+    assert all(
+        event["validation_role"] == "external_validation_checkpoint_selection"
+        for event in final_epochs
+    )
 
 
 def test_train_saved_tree_saves_feature_importance(tmp_path):

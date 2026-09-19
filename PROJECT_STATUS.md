@@ -31,6 +31,18 @@ verification passed on September 19, 2026: `47 passed`. A broader non-GUI run
 completed with `248 passed, 2 failed`; both failures are pre-existing
 edge-case-checker expectation mismatches unrelated to CV.
 
+Deep-model cross-validation now reserves every outer validation fold for
+scoring only. Each raw outer fold-training partition receives a reproducible,
+stratified inner holdout before preprocessing or resampling. Preprocessing is
+fitted on raw inner-training rows, and SMOTE or other resampling applies only
+to transformed inner training; inner and outer validation remain unchanged.
+If the inner split is infeasible, the fold trains for all configured epochs
+without early stopping and records the reason in `cv_results.csv`; it never
+falls back to the outer scoring fold. Final deep-model training still uses the
+project's external validation partition for checkpoint selection, while the
+external test partition remains final-evaluation-only. Focused nested deep-CV
+verification passed on September 19, 2026: `14 passed`.
+
 The current AVISTA application and update-feed version is `1.0.7`, with the
 release date centralized as July 28, 2026. Focused centralized-version,
 update-feed, release-tool, and packaging-document verification passed on July
@@ -549,7 +561,8 @@ Focused checkbox-based numerical-scaling verification passed on July 3, 2026: `7
 - Per-model and per-fold progress reports the current model, fold, step, percentage, and timestamped log messages.
 - Cooperative cancellation stops between folds, models, and evaluation/saving steps.
 - Optional stratified cross-validation starts from the raw external-training rows, fits preprocessing separately on each fold-training partition, resamples only that fold-training partition, validates fold feasibility from the original labels, saves fold metrics and mean/std summaries, and excludes external validation/test data.
-- Final models train on the full balanced training set and are evaluated independently on train, validation, and test data.
+- Deep-model CV splits raw outer fold-training first, fits preprocessing on raw inner training, resamples only transformed inner training, and keeps both inner early-stopping validation and outer scoring validation unchanged. Infeasible inner splits disable early stopping for that fold.
+- Final deep models train on the full balanced training set, use external validation for early stopping/checkpoint selection, and reserve external test for final evaluation.
 - Per-model output folders save trained models, preprocessing artifacts, configuration snapshots, training metadata, metrics, reports, confusion matrices, predictions, probabilities, ROC/PR curves, and misclassified records.
 - Tree models save feature importance outputs; Logistic Regression saves coefficient and odds-ratio outputs.
 - Saved confusion matrices, ROC curves, precision-recall curves, and feature-importance plots use publication-oriented Matplotlib styling and are exported as 300-DPI PNG and PDF files.
@@ -1044,7 +1057,7 @@ This run covered centered half-width ROC/PR/training previews, the 900-pixel cap
 - GUI pages call only completed backend modules.
 - Long-running training runs in a `QThread` via `TrainingWorker` with structured progress and cooperative cancellation.
 - Training is blocked unless column configuration, saved split artifacts, and a current passing edge-case report are present.
-- Cross-validation uses only the balanced training target and never includes validation or test data.
+- Cross-validation starts from original external-training rows and never includes external validation or test data; deep models use an inner fold-training holdout for early stopping.
 - The Data Import page stores the full DataFrame in application state but renders only the current paginated slice.
 - Column Configuration saves alphabetically sorted feature columns, the target, selected label-encoding columns, and label-encoding metadata only after explicit confirmation.
 - Sampling and synthetic balancing are applied only to the training partition.

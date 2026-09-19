@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import json
 import shutil
 import sys
@@ -28,12 +29,19 @@ from app.__version__ import (
     __version__,
 )
 from app.branding import report_footer
+from app.core.data_loader import load_dataset
+from app.core.dataset_manager import project_dataset_path
 from app.core.evaluator import evaluate_predictions
 from app.core.imbalance import apply_imbalance_strategy
 from app.core.model_registry import get_model_spec
-from app.core.preprocessing import build_preprocessing_pipeline, save_artifacts
+from app.core.preprocessing import (
+    build_preprocessing_pipeline,
+    fit_split_preprocessing,
+    save_artifacts,
+    transform_split_features,
+)
 from app.core.splitter import split_data
-from app.core.target_encoding import decode_target
+from app.core.target_encoding import decode_target, encode_target
 from app.utils.plotting import (
     plot_confusion_matrix_publication,
     plot_feature_importance_publication,
@@ -52,6 +60,12 @@ ProgressCallback = Callable[[dict[str, Any]], None]
 CancelCallback = Callable[[], bool]
 TABPFN_MAX_SAMPLES = 3000
 TABPFN_PREDICTION_BATCH_SIZE = 500
+CV_PROTOCOL_METADATA = {
+    "cv_preprocessing_scope": "fold_training_only",
+    "cv_imbalance_scope": "fold_training_only",
+    "cv_source": "original_external_training_partition",
+    "cv_resampling_before_split": False,
+}
 
 
 def train_selected_models(
@@ -143,7 +157,8 @@ def train_saved_models(
     cv_folds = int(getattr(config, "cv_folds", 5))
     cv_enabled = bool(getattr(config, "enable_cross_validation", False))
     if cv_enabled:
-        _validate_cv_counts(data["y_train"], cv_folds)
+        _load_cv_training_source(config, data)
+        _validate_cv_counts(data["cv_y_train"], cv_folds)
 
     output_root = Path(config.project_dir) / "outputs" / "training"
     if save_outputs:
@@ -389,6 +404,227 @@ def _load_saved_training_data(
     return data
 
 
+def _load_cv_training_source(config: Any, data: dict[str, Any]) -> None:
+    """Load exactly the raw outer-training rows needed for leakage-safe CV."""
+
+    dataset_path = project_dataset_path(config)
+    if dataset_path is not None and dataset_path.is_file():
+        raw_dataset = load_dataset(dataset_path)
+    else:
+        subset_path = Path(config.project_dir) / "data" / "modeling_subset.csv"
+        if not subset_path.is_file():
+            raise ValueError(
+                "Cross-validation requires the project dataset or data/modeling_subset.csv "
+                "to reconstruct the original external training partition."
+            )
+        raw_dataset = load_dataset(subset_path)
+
+    feature_columns = list(getattr(config, "feature_columns", []) or [])
+    target_column = getattr(config, "target_column", None)
+    required_columns = [*feature_columns, target_column]
+    missing_columns = [
+        column for column in required_columns if column and column not in raw_dataset.columns
+    ]
+    if not target_column or missing_columns:
+        raise ValueError(
+            "Cross-validation source data does not match the saved modeling configuration. "
+            f"Missing columns: {missing_columns}."
+        )
+
+    split_metadata = data["split_metadata"]
+    train_index = list(split_metadata.get("train_index") or [])
+    validation_index = list(split_metadata.get("validation_index") or [])
+    test_index = list(split_metadata.get("test_index") or [])
+    if not train_index:
+        raise ValueError("Saved split metadata contains no external training rows for CV.")
+    if len(train_index) != len(set(train_index)):
+        raise ValueError("Saved external training indices contain duplicates.")
+    if set(train_index) & (set(validation_index) | set(test_index)):
+        raise ValueError(
+            "Saved split metadata overlaps external training with validation/test rows."
+        )
+    missing_indices = [index for index in train_index if index not in raw_dataset.index]
+    if missing_indices:
+        raise ValueError(
+            "Saved external training indices are not present in the project dataset. "
+            "Confirm Data Split & Imbalance again."
+        )
+
+    raw_train = raw_dataset.loc[train_index, required_columns].copy()
+    if data["target_encoder"] is not None:
+        encoded_target = encode_target(
+            data["target_encoder"],
+            raw_train[target_column],
+        )
+    else:
+        encoded_target = pd.Series(
+            raw_train[target_column].to_numpy(),
+            index=raw_train.index,
+            name=target_column,
+        )
+    split_dir = Path(config.project_dir) / "outputs" / "data_split"
+    saved_target_path = split_dir / (
+        "y_train_encoded.npy"
+        if data["target_encoder"] is not None
+        else "y_train.npy"
+    )
+    if saved_target_path.is_file():
+        saved_target = np.load(saved_target_path, allow_pickle=True)
+        if len(saved_target) != len(encoded_target) or not np.array_equal(
+            np.asarray(saved_target),
+            np.asarray(encoded_target),
+        ):
+            raise ValueError(
+                "The raw external training rows do not match the saved split target. "
+                "Confirm Data Split & Imbalance again."
+            )
+    data["cv_raw_train"] = raw_train
+    data["cv_y_train"] = np.asarray(encoded_target)
+
+
+def _prepare_cv_fold(
+    data: dict[str, Any],
+    config: Any,
+    train_pos: np.ndarray,
+    eval_pos: np.ndarray,
+) -> dict[str, Any]:
+    """Fit preprocessing and imbalance handling using one CV training fold."""
+
+    raw_train = data["cv_raw_train"].iloc[train_pos].copy()
+    raw_validation = data["cv_raw_train"].iloc[eval_pos].copy()
+    y_train = pd.Series(
+        np.asarray(data["cv_y_train"])[train_pos],
+        name=getattr(config, "target_column", None),
+    )
+    y_validation = np.asarray(data["cv_y_train"])[eval_pos]
+
+    artifacts = fit_split_preprocessing(raw_train, config)
+    X_train = transform_split_features(raw_train, artifacts).reset_index(drop=True)
+    X_validation = transform_split_features(
+        raw_validation,
+        artifacts,
+    ).reset_index(drop=True)
+
+    fold_config = copy.copy(config)
+    options = dict(getattr(config, "preprocessing_options", {}) or {})
+    imbalance_options = dict(options.get("imbalance", {}) or {})
+    imbalance_options["sampling_strategy"] = _fold_sampling_strategy(
+        y_train,
+        config,
+        data.get("target_encoder"),
+    )
+    options["imbalance"] = imbalance_options
+    fold_config.preprocessing_options = options
+    imbalance = apply_imbalance_strategy(
+        X_train,
+        y_train,
+        artifacts,
+        fold_config,
+    )
+    if not imbalance["imbalance_info"]["success"]:
+        reason = (
+            imbalance["imbalance_info"].get("error")
+            or imbalance["imbalance_info"].get("message")
+        )
+        raise ValueError(f"Fold-local imbalance handling failed: {reason}")
+    return {
+        "X_train": np.asarray(imbalance["X_resampled"]),
+        "y_train": np.asarray(imbalance["y_resampled"]),
+        "X_validation": np.asarray(X_validation),
+        "y_validation": np.asarray(y_validation),
+        "artifacts": artifacts,
+        "imbalance_info": imbalance["imbalance_info"],
+        "train_row_indices": raw_train.index.tolist(),
+        "validation_row_indices": raw_validation.index.tolist(),
+    }
+
+
+def _fold_sampling_strategy(
+    y_train: pd.Series,
+    config: Any,
+    target_encoder: Any = None,
+) -> Any:
+    """Recompute the configured balancing targets from fold-training labels."""
+
+    method = str(getattr(config, "imbalance_method", None) or "none").strip().lower()
+    if method not in {
+        "random_oversample",
+        "random_undersample",
+        "smote",
+        "smote_nc",
+        "smote-nc",
+    }:
+        return "auto"
+    counts = y_train.value_counts()
+    if counts.empty or len(counts) < 2:
+        return "auto"
+
+    majority_count = int(counts.max())
+    minority_count = int(counts.min())
+    if method == "random_oversample":
+        return {
+            _json_scalar(class_name): majority_count
+            for class_name, count in counts.items()
+            if int(count) < majority_count
+        }
+    if method == "random_undersample":
+        return {
+            _json_scalar(class_name): minority_count
+            for class_name, count in counts.items()
+            if int(count) > minority_count
+        }
+
+    preset = str(getattr(config, "smote_ratio_preset", "baseline") or "baseline")
+    if preset.strip().lower() == "custom":
+        options = dict(getattr(config, "preprocessing_options", {}) or {})
+        imbalance_options = dict(options.get("imbalance", {}) or {})
+        custom_text = str(imbalance_options.get("custom_ratio") or "").strip()
+        try:
+            custom_values = json.loads(custom_text)
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"Invalid custom CV balancing ratio JSON: {exc}") from exc
+        if not isinstance(custom_values, dict) or not custom_values:
+            raise ValueError("Custom CV balancing ratio must be a non-empty JSON object.")
+        class_lookup = {}
+        for class_name in counts.index:
+            display_name = class_name
+            if target_encoder is not None:
+                display_name = decode_target(target_encoder, [class_name])[0]
+            class_lookup[str(_json_scalar(display_name))] = class_name
+        strategy = {}
+        for class_label, target in custom_values.items():
+            if str(class_label) not in class_lookup:
+                raise ValueError(
+                    f"Custom ratio class '{class_label}' is not present in the CV training fold."
+                )
+            numeric_target = float(target)
+            target_count = (
+                int(majority_count * numeric_target)
+                if numeric_target <= 1
+                else int(numeric_target)
+            )
+            class_name = class_lookup[str(class_label)]
+            current_count = int(counts[class_name])
+            if target_count > current_count:
+                strategy[_json_scalar(class_name)] = target_count
+        return strategy
+
+    ratios = {
+        "light": 0.40,
+        "moderate": 0.50,
+        "baseline": 0.50,
+        "strong": 0.70,
+    }
+    ratio = ratios.get(preset.strip().lower(), 0.50)
+    majority_class = counts.idxmax()
+    return {
+        _json_scalar(class_name): max(int(count), int(majority_count * ratio))
+        for class_name, count in counts.items()
+        if class_name != majority_class
+        and max(int(count), int(majority_count * ratio)) > int(count)
+    }
+
+
 def _target_type_diagnostics(config: Any, data: dict[str, Any]) -> dict[str, Any]:
     y_train = np.asarray(data["y_train"]).reshape(-1)
     current_task_type = str(getattr(config, "task_type", None) or "auto").strip().lower()
@@ -509,26 +745,28 @@ def _train_saved_model(
             shuffle=True,
             random_state=int(getattr(config, "random_state", 42)),
         )
+        cv_y_train = np.asarray(data["cv_y_train"])
         for fold, (train_pos, eval_pos) in enumerate(
-            splitter.split(data["X_train"], data["y_train"]),
+            splitter.split(np.zeros(len(cv_y_train)), cv_y_train),
             start=1,
         ):
             _raise_if_cancelled(should_cancel)
+            fold_data = _prepare_cv_fold(data, config, train_pos, eval_pos)
             model = create_sklearn_model(
                 model_name,
                 "classification",
                 params=params,
-                class_weights=class_weights,
+                class_weights=_saved_class_weights(config, fold_data["y_train"]),
             )
-            model.fit(data["X_train"][train_pos], data["y_train"][train_pos])
-            predictions = model.predict(data["X_train"][eval_pos])
+            model.fit(fold_data["X_train"], fold_data["y_train"])
+            predictions = model.predict(fold_data["X_validation"])
             probabilities = _predict_probabilities(
                 model,
-                data["X_train"][eval_pos],
+                fold_data["X_validation"],
                 "classification",
             )
             metrics = evaluate_predictions(
-                data["y_train"][eval_pos],
+                fold_data["y_validation"],
                 predictions,
                 probabilities,
             )
@@ -1047,24 +1285,28 @@ def _train_saved_torch_classifier(
             shuffle=True,
             random_state=int(getattr(config, "random_state", 42)),
         )
+        cv_y_train = np.asarray(data["cv_y_train"])
         for fold, (train_pos, eval_pos) in enumerate(
-            splitter.split(X_train, y_train),
+            splitter.split(np.zeros(len(cv_y_train)), cv_y_train),
             start=1,
         ):
+            fold_data = _prepare_cv_fold(data, config, train_pos, eval_pos)
+            # Existing behavior uses the scored fold for early stopping. A separate
+            # validation subset inside fold-training is a distinct reviewer item.
             fold_model, _, _, _ = fit_model(
-                X_train[train_pos],
-                y_train[train_pos],
-                X_train[eval_pos],
-                y_train[eval_pos],
+                fold_data["X_train"],
+                fold_data["y_train"],
+                fold_data["X_validation"],
+                fold_data["y_validation"],
                 fold=fold,
                 total_folds=cv_folds,
             )
             fold_predictions, fold_probabilities = predict(
                 fold_model,
-                X_train[eval_pos],
+                fold_data["X_validation"],
             )
             fold_metrics = evaluate_predictions(
-                y_train[eval_pos],
+                fold_data["y_validation"],
                 fold_predictions,
                 fold_probabilities,
                 class_labels=list(range(num_classes)),
@@ -1181,6 +1423,7 @@ def _train_saved_torch_classifier(
                 **architecture_params,
                 "learning_rate": learning_rate,
                 "focal_gamma": focal_gamma,
+                **_cv_protocol_metadata(config),
             },
         )
         _write_json(
@@ -1199,6 +1442,7 @@ def _train_saved_torch_classifier(
                 "best_validation_macro_f1": best_metric,
                 "best_epoch": best_epoch,
                 "training_timestamp": datetime.now().isoformat(timespec="seconds"),
+                **_cv_protocol_metadata(config),
             },
         )
         saved = True
@@ -1284,6 +1528,7 @@ def _save_model_outputs(
             "numerical_scaling_method": (
                 (config.preprocessing_options or {}).get("numerical_scaling_method") or "none"
             ),
+            **_cv_protocol_metadata(config),
         },
     )
     _write_json(
@@ -1307,6 +1552,7 @@ def _save_model_outputs(
             "split_method": config.split_method,
             "model_name": display_name,
             "training_timestamp": datetime.now().isoformat(timespec="seconds"),
+            **_cv_protocol_metadata(config),
         },
     )
     _save_model_specific_outputs(
@@ -1519,25 +1765,30 @@ def _train_saved_tabpfn(
             shuffle=True,
             random_state=random_state,
         )
+        cv_y_train = np.asarray(data["cv_y_train"])
         for fold, (train_pos, eval_pos) in enumerate(
-            splitter.split(X_train, y_train),
+            splitter.split(np.zeros(len(cv_y_train)), cv_y_train),
             start=1,
         ):
             _raise_if_cancelled(should_cancel)
-            subset = subset_positions(len(train_pos))
+            fold_data = _prepare_cv_fold(data, config, train_pos, eval_pos)
+            subset = subset_positions(len(fold_data["X_train"]))
             fold_model = TabPFNClassifier(
                 n_estimators=n_estimators,
                 model_path=str(model_path),
                 device=selected_device,
             )
-            fold_model.fit(X_train[train_pos][subset], y_train[train_pos][subset])
+            fold_model.fit(
+                fold_data["X_train"][subset],
+                fold_data["y_train"][subset],
+            )
             fold_probabilities = predict_probabilities(
                 fold_model,
-                X_train[eval_pos],
+                fold_data["X_validation"],
             )
             fold_predictions = fold_probabilities.argmax(axis=1)
             fold_metrics = evaluate_predictions(
-                y_train[eval_pos],
+                fold_data["y_validation"],
                 fold_predictions,
                 fold_probabilities,
                 class_labels=list(range(num_classes)),
@@ -1657,6 +1908,7 @@ def _train_saved_tabpfn(
             {
                 "n_estimators": n_estimators,
                 "model_path": str(model_path),
+                **_cv_protocol_metadata(config),
             },
         )
         _write_json(
@@ -1681,6 +1933,7 @@ def _train_saved_tabpfn(
                 "final_subset_size": int(len(final_subset)),
                 "target_column": config.target_column,
                 "training_timestamp": datetime.now().isoformat(timespec="seconds"),
+                **_cv_protocol_metadata(config),
             },
         )
         try:
@@ -1851,6 +2104,12 @@ def _cv_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
             "std": float(frame[column].std(ddof=0)),
         }
     return summary
+
+
+def _cv_protocol_metadata(config: Any) -> dict[str, Any]:
+    if not bool(getattr(config, "enable_cross_validation", False)):
+        return {}
+    return dict(CV_PROTOCOL_METADATA)
 
 
 def _saved_class_weights(config: Any, y_train: np.ndarray) -> dict[Any, float] | None:

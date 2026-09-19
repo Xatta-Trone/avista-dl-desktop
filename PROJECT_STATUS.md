@@ -18,6 +18,19 @@ The project has a working modular backend and PySide6 desktop GUI. Core tabular 
 
 The GUI can create or load projects, inspect and repair GPU environments with user confirmation, import large datasets with a paginated preview, select modeling and target columns, save label-encoding choices for categorical modeling columns, configure global numerical scaling for user-checked numeric features with selectable histogram inspection, configure train/validation/test splits, apply train-class-only imbalance handling, select classification models and edit their saved parameters, restore matching saved split artifacts, run edge-case checks, and train sklearn-compatible models from confirmed saved artifacts through a `QThread` worker.
 
+Saved-artifact cross-validation now reconstructs the original external
+training partition from the project dataset and saved split indices. Every
+stratified fold fits feature preprocessing on fold-training rows, transforms
+the untouched fold-validation rows with those artifacts, and applies the
+configured resampling strategy only to fold-training. This protocol is shared
+by sklearn/XGBoost, PyTorch tabular, and TabPFN training; final model fitting
+continues to use the prepared balanced-training artifacts. CV feasibility is
+checked against original external-training labels, and saved model/training
+metadata records the fold-local protocol. Focused preprocessing and trainer
+verification passed on September 19, 2026: `47 passed`. A broader non-GUI run
+completed with `248 passed, 2 failed`; both failures are pre-existing
+edge-case-checker expectation mismatches unrelated to CV.
+
 The current AVISTA application and update-feed version is `1.0.7`, with the
 release date centralized as July 28, 2026. Focused centralized-version,
 update-feed, release-tool, and packaging-document verification passed on July
@@ -535,7 +548,7 @@ Focused checkbox-based numerical-scaling verification passed on July 3, 2026: `7
 - Training consumes confirmed balanced-training, validation, test, split metadata, model settings, and preprocessing artifacts without recomputing splits. Numerical scaling is fit on the training subset only and reused for validation, test, reports, and downstream saved-model artifacts.
 - Per-model and per-fold progress reports the current model, fold, step, percentage, and timestamped log messages.
 - Cooperative cancellation stops between folds, models, and evaluation/saving steps.
-- Optional stratified cross-validation runs only on balanced training data, validates minimum class counts, saves fold metrics and mean/std summaries, and excludes validation/test data.
+- Optional stratified cross-validation starts from the raw external-training rows, fits preprocessing separately on each fold-training partition, resamples only that fold-training partition, validates fold feasibility from the original labels, saves fold metrics and mean/std summaries, and excludes external validation/test data.
 - Final models train on the full balanced training set and are evaluated independently on train, validation, and test data.
 - Per-model output folders save trained models, preprocessing artifacts, configuration snapshots, training metadata, metrics, reports, confusion matrices, predictions, probabilities, ROC/PR curves, and misclassified records.
 - Tree models save feature importance outputs; Logistic Regression saves coefficient and odds-ratio outputs.

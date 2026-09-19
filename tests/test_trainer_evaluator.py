@@ -9,12 +9,19 @@ import pandas as pd
 import pytest
 import sys
 import types
+from sklearn.model_selection import StratifiedKFold
 from sklearn.preprocessing import LabelEncoder
 
+from app.core import trainer as trainer_module
 from app.core.evaluator import evaluate_predictions
 from app.core.preprocessing import build_preprocessing_pipeline, save_artifacts
 from app.core.project_config import ProjectConfig
-from app.core.trainer import TrainingCancelled, train_saved_models, train_selected_models
+from app.core.trainer import (
+    TrainingCancelled,
+    _prepare_cv_fold,
+    train_saved_models,
+    train_selected_models,
+)
 
 
 def make_config(tmp_path, **overrides):
@@ -45,6 +52,7 @@ def save_training_bundle(tmp_path, config):
             "target": [0, 1] * 10,
         }
     )
+    df.to_csv(config.input_file, index=False)
     X, y, artifacts = build_preprocessing_pipeline(df, config)
     train_index = list(range(12))
     validation_index = list(range(12, 16))
@@ -102,6 +110,11 @@ def save_encoded_string_training_bundle(tmp_path, config):
         )
         np.save(split_dir / encoded_name, encoded)
         np.save(split_dir / original_name, original)
+    source = pd.read_csv(config.input_file)
+    source[config.target_column] = np.concatenate(
+        [targets["train"], targets["val"], targets["test"]]
+    )
+    source.to_csv(config.input_file, index=False)
     joblib.dump(encoder, split_dir / "target_label_encoder.joblib")
     (split_dir / "target_label_mapping.json").write_text(
         json.dumps(
@@ -248,6 +261,10 @@ def test_train_saved_models_runs_cv_and_saves_requested_outputs(tmp_path):
     assert training_metadata["report_footer"]["version"] == __version__
     assert training_metadata["report_footer"]["release_date"] == RELEASE_DATE
     assert training_metadata["report_footer"]["generated_on"]
+    assert training_metadata["cv_preprocessing_scope"] == "fold_training_only"
+    assert training_metadata["cv_imbalance_scope"] == "fold_training_only"
+    assert training_metadata["cv_source"] == "original_external_training_partition"
+    assert training_metadata["cv_resampling_before_split"] is False
     assert (output_dir / "coefficients.csv").exists()
     assert (output_dir / "odds_ratios.csv").exists()
     for split_name in ("train", "validation", "test"):
@@ -986,10 +1003,12 @@ def test_tabpfn_uses_one_estimator_value_and_internal_batching(tmp_path, monkeyp
     saved_config = json.loads(
         (output_dir / "model_config.json").read_text(encoding="utf-8")
     )
-    assert saved_config == {
-        "n_estimators": n_estimators,
-        "model_path": str(checkpoint.resolve()),
-    }
+    assert saved_config["n_estimators"] == n_estimators
+    assert saved_config["model_path"] == str(checkpoint.resolve())
+    assert saved_config["cv_preprocessing_scope"] == "fold_training_only"
+    assert saved_config["cv_imbalance_scope"] == "fold_training_only"
+    assert saved_config["cv_source"] == "original_external_training_partition"
+    assert saved_config["cv_resampling_before_split"] is False
     training_metadata = json.loads(
         (output_dir / "training_metadata.json").read_text(encoding="utf-8")
     )
@@ -1102,6 +1121,159 @@ def test_train_saved_models_blocks_cv_when_class_count_is_too_small(tmp_path):
         assert "has only 6 samples but CV folds = 7" in str(exc)
     else:
         raise AssertionError("Expected invalid CV folds to block training.")
+
+
+def test_cv_smote_runs_independently_on_each_fold_training_partition(
+    tmp_path,
+    monkeypatch,
+):
+    imblearn = pytest.importorskip("imblearn.over_sampling")
+    config = make_config(
+        tmp_path,
+        imbalance_method="smote",
+        smote_ratio_preset="moderate",
+        preprocessing_options={"imbalance": {"smote_k_neighbors": 5}},
+    )
+    target = np.array([0] * 15 + [1] * 6)
+    raw = pd.DataFrame(
+        {
+            "x1": np.arange(len(target)),
+            "x2": np.arange(len(target)) % 4,
+            "cat": ["a", "b", "c"] * 7,
+            "target": target,
+        }
+    )
+    data = {"cv_raw_train": raw, "cv_y_train": target, "target_encoder": None}
+    calls = []
+    original_fit_resample = imblearn.SMOTE.fit_resample
+
+    def record_fit_resample(self, features, labels):
+        calls.append((len(features), np.asarray(labels).copy()))
+        return original_fit_resample(self, features, labels)
+
+    monkeypatch.setattr(imblearn.SMOTE, "fit_resample", record_fit_resample)
+    folds = StratifiedKFold(n_splits=3, shuffle=True, random_state=42)
+    fold_results = []
+    for train_pos, validation_pos in folds.split(np.zeros(len(target)), target):
+        fold_results.append(_prepare_cv_fold(data, config, train_pos, validation_pos))
+
+    assert len(calls) == 3
+    assert all(call_size == 14 for call_size, _ in calls)
+    assert all(len(result["y_validation"]) == 7 for result in fold_results)
+    assert all(len(result["y_train"]) > 14 for result in fold_results)
+    assert all(
+        set(result["train_row_indices"]).isdisjoint(
+            result["validation_row_indices"]
+        )
+        for result in fold_results
+    )
+
+
+def test_cv_preprocessing_does_not_learn_validation_only_category(tmp_path):
+    config = make_config(tmp_path)
+    raw = pd.DataFrame(
+        {
+            "x1": [0, 1, 2, 3, 4, 100],
+            "x2": [0, 1, 0, 1, 0, 1],
+            "cat": ["a", "b", "a", "b", "a", "validation-only"],
+            "target": [0, 1, 0, 1, 0, 1],
+        }
+    )
+    data = {
+        "cv_raw_train": raw,
+        "cv_y_train": raw["target"].to_numpy(),
+        "target_encoder": None,
+    }
+
+    fold = _prepare_cv_fold(data, config, np.arange(5), np.array([5]))
+
+    learned_categories = set(fold["artifacts"].encoder.categories_[0])
+    assert "validation-only" not in learned_categories
+    categorical_indices = [
+        index
+        for index, name in enumerate(fold["artifacts"].output_feature_names)
+        if name.startswith("cat_")
+    ]
+    assert categorical_indices
+    assert np.all(fold["X_validation"][0, categorical_indices] == 0)
+
+
+def test_cv_uses_raw_training_rows_without_balancing_and_preserves_holdouts(
+    tmp_path,
+    monkeypatch,
+):
+    config = make_config(
+        tmp_path,
+        selected_models=["decision_tree"],
+        enable_cross_validation=True,
+        cv_folds=3,
+        imbalance_method="none",
+    )
+    split_dir = save_training_bundle(tmp_path, config)
+    sentinel = 123456.0
+    balanced = np.full_like(np.load(split_dir / "X_train_balanced.npy"), sentinel)
+    np.save(split_dir / "X_train_balanced.npy", balanced)
+    validation_before = np.load(split_dir / "X_val.npy").copy()
+    test_before = np.load(split_dir / "X_test.npy").copy()
+    fit_inputs = []
+    preprocessing_calls = []
+    original_preprocessing = trainer_module.fit_split_preprocessing
+
+    class RecordingClassifier:
+        def fit(self, features, labels):
+            fit_inputs.append(np.asarray(features).copy())
+            self.classes_ = np.unique(labels)
+            return self
+
+        def predict(self, features):
+            return np.full(len(features), self.classes_[0])
+
+        def predict_proba(self, features):
+            probabilities = np.zeros((len(features), len(self.classes_)))
+            probabilities[:, 0] = 1.0
+            return probabilities
+
+    def record_preprocessing(frame, fold_config):
+        preprocessing_calls.append(frame.index.tolist())
+        return original_preprocessing(frame, fold_config)
+
+    monkeypatch.setattr(trainer_module, "fit_split_preprocessing", record_preprocessing)
+    monkeypatch.setattr(
+        trainer_module,
+        "create_sklearn_model",
+        lambda *args, **kwargs: RecordingClassifier(),
+    )
+
+    train_saved_models(config, save_outputs=False)
+
+    assert len(preprocessing_calls) == 3
+    assert all(set(indices).issubset(set(range(12))) for indices in preprocessing_calls)
+    assert all(sentinel not in features for features in fit_inputs[:3])
+    assert np.all(fit_inputs[-1] == sentinel)
+    np.testing.assert_array_equal(np.load(split_dir / "X_val.npy"), validation_before)
+    np.testing.assert_array_equal(np.load(split_dir / "X_test.npy"), test_before)
+
+
+def test_cv_feasibility_uses_original_labels_before_resampling(tmp_path):
+    config = make_config(
+        tmp_path,
+        selected_models=["decision_tree"],
+        enable_cross_validation=True,
+        cv_folds=4,
+        imbalance_method="smote",
+    )
+    split_dir = save_training_bundle(tmp_path, config)
+    source = pd.read_csv(config.input_file)
+    source.loc[:11, "target"] = [0] * 9 + [1] * 3
+    source.to_csv(config.input_file, index=False)
+    np.save(split_dir / "y_train.npy", np.array([0] * 9 + [1] * 3))
+    balanced_y = np.array([0] * 9 + [1] * 9)
+    original_X = np.load(split_dir / "X_train_balanced.npy")
+    np.save(split_dir / "X_train_balanced.npy", np.tile(original_X, (2, 1))[:18])
+    np.save(split_dir / "y_train_balanced.npy", balanced_y)
+
+    with pytest.raises(ValueError, match="only 3 samples but CV folds = 4"):
+        train_saved_models(config, save_outputs=False)
 
 
 def test_train_saved_tree_saves_feature_importance(tmp_path):

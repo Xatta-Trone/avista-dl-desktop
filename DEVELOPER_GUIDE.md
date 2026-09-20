@@ -54,6 +54,26 @@ The launch splash keeps its existing dimensions and timing while drawing
 `APP_NAME`, `APP_DESCRIPTION`, `__version__`, and `RELEASE_DATE` from
 `app/__version__.py`.
 
+## Reproducible Development Environment
+
+Use Python 3.12 and `requirements_lock.txt` for the canonical reproducible
+development and release environment:
+
+```powershell
+py -3.12 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+
+python -m pip install --upgrade pip
+python -m pip install -r requirements_lock.txt
+```
+
+`requirements_base.txt` and `requirements_ml.txt` are unpinned convenience
+groups. `requirements_full.txt` is an unpinned CPU-installable convenience
+environment. `requirements_deep_cpu.txt` and `requirements_deep_gpu.txt`
+provide mutually exclusive PyTorch installation choices; do not mix the CPU
+trio with CUDA TorchVision or TorchAudio. `requirements_xai.txt` is reserved
+for future optional XAI work and is not part of implemented AVISTA behavior.
+
 ## Updates
 
 Update metadata lives in repository-root `updates.json` and is expected to be
@@ -73,12 +93,15 @@ Required fields:
 - `sha256`: optional installer hash. Leave empty only for development.
 - `mandatory`: whether the automatic checker may ignore a skipped version.
 
-To publish an update, build and upload `AVISTA_Setup.exe` to a GitHub Release,
-update `updates.json` on `main`, and set `installer_url` to the release asset.
-Calculate the hash with:
+The Windows release workflow builds the final `AVISTA_Setup.exe`, calculates
+its SHA256 locally, updates only the `sha256` field in `updates.json`, verifies
+the tag/version, release URL, and installer bytes, uploads that same installer,
+then commits only `updates.json` to the default branch. For a local check use:
 
 ```powershell
-Get-FileHash .\installer\AVISTA_Setup.exe -Algorithm SHA256
+.\.venv\Scripts\python.exe scripts\prepare_release.py `
+  --verify-installer .\installer\AVISTA_Setup.exe `
+  --expected-tag vX.Y.Z
 ```
 
 User update preferences are app-level settings at
@@ -87,7 +110,9 @@ check preferences in `.avista` project files.
 
 ## Windows Packaging
 
-Build with `AVISTA.spec` so the executable and distribution are named `AVISTA`.
+The active release build uses `packaging/avista_pyinstaller.spec` through
+`packaging/build_pyinstaller.ps1`. The obsolete root `AVISTA.spec` has been
+removed so local and release builds use the same two-executable onedir spec.
 Windows file-description and installer metadata must receive the centralized
 `APP_DESCRIPTION`, `__version__`, and `RELEASE_DATE` values from
 `app/__version__.py`.

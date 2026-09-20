@@ -97,9 +97,16 @@ release date in `app/__version__.py`, synchronizes `updates.json`, the
 versioned installer URL, README, changelog, and current project-status block,
 and requires fresh notes when advancing versions. Dry-run, repository check,
 tag/version validation, and post-build SHA256 modes are supported. The Windows
-release workflow runs the synchronization and expected-tag check before
-packaging. Focused release-tool and version-metadata verification passed:
-`12 passed`.
+release workflow preserves its focused dependency installation, hashes the
+final `installer/AVISTA_Setup.exe`, validates the tag/version and release URL,
+verifies the stored checksum against the same bytes before upload, and updates
+only `updates.json` on the default branch after successful release publication.
+SHAP and Captum are absent from active imports and were removed from the
+canonical lock and default full environment; they remain only in the explicit
+future `requirements_xai.txt` group. Focused release-metadata, packaging,
+version, and resource verification passed on September 19, 2026: `35 passed`
+across three targeted pytest invocations. `pip check`, application imports,
+Python compilation, and release-metadata synchronization also passed.
 
 The Light/Dark theme regression caused by a global transparent `QLabel` rule
 is fixed. The central QSS no longer applies broad label or widget
@@ -448,11 +455,24 @@ Focused checkbox-based numerical-scaling verification passed on July 3, 2026: `7
   - Foundation Tabular Models
 - Central `create_model()` factory implemented for classification models.
 - XGBoost, TabPFN, and PyTorch are imported only when their models are requested and raise clear `ImportError` messages when unavailable.
-- Requirements are grouped explicitly for classical ML, CPU PyTorch, GPU PyTorch installation instructions, and the full CPU-installable environment. GPU PyTorch uses the CUDA 12.6 index with CUDA 11.8 as fallback.
+- `requirements_lock.txt` is the canonical reproducible Python 3.12 installation and release source. It pins the matched CUDA 12.6 PyTorch, TorchVision, and TorchAudio trio.
+- Requirements are also grouped as unpinned convenience or optional sets for the GUI/data foundation, classical ML, CPU PyTorch, GPU PyTorch instructions, a full CPU-installable environment, and future XAI work. GPU PyTorch uses the CUDA 12.6 index with CUDA 11.8 as fallback.
 - `requirements_ml.txt` includes scikit-learn, XGBoost, imbalanced-learn, SciPy, statsmodels, Matplotlib, and seaborn.
 - `requirements_deep_cpu.txt` includes torch, torchvision, and torchaudio.
 - `requirements_deep_gpu.txt` contains commented pip commands for CUDA 12.6 and CUDA 11.8 and has no installable plain `torch` entry.
-- `requirements_full.txt` includes the complete CPU-installable application, classical ML, XAI, and TabPFN dependencies. It documents which packages provide the registered classifiers and directs GPU users to `requirements_deep_gpu.txt`.
+- `requirements_full.txt` includes the unpinned CPU-installable application, classical ML, deep-learning, and TabPFN dependencies. It excludes the unused future XAI packages and directs GPU users to `requirements_deep_gpu.txt`.
+- `requirements_xai.txt` retains SHAP and Captum only as an explicit future optional group; neither library is imported by implemented AVISTA functionality.
+
+Canonical reproducible source installation:
+
+```powershell
+py -3.12 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+
+python -m pip install --upgrade pip
+python -m pip install -r requirements_lock.txt
+```
+
 - Generic `MambaAttentionClassifier`, `FTTransformerClassifier`, `AutoIntClassifier`, and `TabResNet` architectures were extracted from the reference pipeline without domain-specific logic.
 - MambaAttention metadata and Model Selection controls were corrected directly from `reference/Phase2_SAE_Classification_v10_ADAS__FINAL.py`:
   - architecture defaults match `hidden_dim=256` and `dropout=0.3`.
@@ -628,7 +648,7 @@ Focused checkbox-based numerical-scaling verification passed on July 3, 2026: `7
 - Missing model metrics, histories, curves, confusion matrices, and feature importance outputs are represented as `Not available` without aborting report generation.
 - SHAP, tree visualization/rule extraction, forest summaries, and other advanced XAI outputs remain deferred.
 - Windows packaging workflow added:
-  - `requirements_lock.txt` pins the release build stack, including CUDA 12.6 PyTorch, TabPFN, Qt, scientific packages, and PyInstaller.
+  - `requirements_lock.txt` pins the release build stack, including the matched CUDA 12.6 PyTorch trio, TabPFN, Qt, scientific packages, and PyInstaller. Unused SHAP and Captum dependencies were removed from this canonical path.
   - `packaging/build_pyinstaller.ps1` creates a dedicated `build_env`, explicitly installs the pinned PyInstaller build dependency, builds a console-free release or console-enabled debug onedir folder from `packaging/avista_pyinstaller.spec`, includes assets and dynamic ML packages, writes Windows version metadata, and stages `dist`, `installer`, and `release` outputs.
   - Missing or invalid `logo.ico` files are generated from the bundled PNG with Pillow before compilation using standard square Windows icon sizes.
   - `packaging/build_pyinstaller.ps1` is the release entry point for the standalone folder and installer build.
@@ -638,9 +658,10 @@ Focused checkbox-based numerical-scaling verification passed on July 3, 2026: `7
   - `packaging/build_pyinstaller.ps1` is the working release entry point used by GitHub Actions for standalone and installer builds; it passes centralized version values to `packaging/avista_installer.iss`.
   - Inno Setup stores `Software\AVISTA\InstallDir` during install and reads existing HKCU/HKLM values so update installers default to the current AVISTA installation folder instead of always using Program Files.
   - Uninstall behavior remains application-focused; user project folders outside the installation directory are preserved.
-  - `.github/workflows/windows-release.yml` builds the Windows installer on `windows-latest` for manual dispatches and `v*` tags, caches pip downloads, installs Inno Setup, runs only packaging/resource/version tests, uploads `AVISTA_Setup.exe`, resolves a release tag from tagged pushes or the manual `release_tag` input, and publishes it to GitHub Releases with overwrite enabled for reruns.
+  - `.github/workflows/windows-release.yml` builds the Windows installer on `windows-latest` for manual dispatches and `v*` tags, preserves its focused dependency-install path, installs Inno Setup, runs packaging/resource/version tests, calculates the final installer SHA256, validates `updates.json`, uploads the same `AVISTA_Setup.exe`, and publishes only the generated checksum back to `updates.json` on the default branch.
   - The Inno Setup output and release artifact use the stable filename `installer/AVISTA_Setup.exe`.
-  - GitHub Actions packaging uses Python 3.12, NumPy 1.26.4, Captum 0.8.0, and a matched CUDA 12.6 trio: PyTorch 2.9.1, TorchVision 0.24.1, and TorchAudio 2.9.1. Python 3.12 and NumPy 1.26.4 avoid Captum's NumPy-below-2.0 resolver conflict. The build script fails immediately on native command errors and logs package paths, versions, wheel/PE architecture, XGBoost DLL discovery, and TabPFN package data before invoking PyInstaller.
+  - GitHub Actions packaging uses Python 3.12, NumPy 1.26.4, and a matched CUDA 12.6 trio: PyTorch 2.9.1, TorchVision 0.24.1, and TorchAudio 2.9.1. The build script fails immediately on native command errors and logs package paths, versions, wheel/PE architecture, XGBoost DLL discovery, and TabPFN package data before invoking PyInstaller.
+  - The active release specification is `packaging/avista_pyinstaller.spec`. The obsolete single-executable root `AVISTA.spec` was unreferenced and has been removed.
   - The PyInstaller spec collects AVISTA assets, QtAwesome, Matplotlib,
     TabPFN modules/package data, inspected TabPFN dependencies, and the
     installed XGBoost wheel's native DLLs.
@@ -701,6 +722,7 @@ Entry point and requirements:
 
 - `main.py`
 - `requirements_base.txt`
+- `requirements_lock.txt`
 - `requirements_ml.txt`
 - `requirements_deep_cpu.txt`
 - `requirements_deep_gpu.txt`

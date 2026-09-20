@@ -1,3 +1,5 @@
+# Unpinned CPU-installable convenience environment. For reproducible installs,
+# use requirements_lock.txt. Future XAI dependencies are intentionally excluded.
 pandas
 numpy
 PySide6
@@ -19,8 +21,6 @@ scipy
 statsmodels
 matplotlib
 seaborn
-shap
-captum
 
 # Covers TabPFNClassifier.
 tabpfn

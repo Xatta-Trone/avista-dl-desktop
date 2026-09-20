@@ -19,8 +19,8 @@ use Windows `CREATE_NO_WINDOW` so users do not see a blank terminal.
 ## Prerequisites
 
 - Windows 10 or Windows 11 x64.
-- Official 64-bit CPython 3.12 available through the `py` launcher. The
-  release build uses Python 3.12 because Captum requires NumPy below 2.0.
+- Official 64-bit CPython 3.12 available through the `py` launcher. Python
+  3.12 and `requirements_lock.txt` define the reproducible release stack.
 - Inno Setup 6 from <https://jrsoftware.org/isdl.php>. Install the standard
   Windows package so `ISCC.exe` is available under Program Files.
 - At least 30 GB free disk space. Torch, CUDA runtime libraries, TabPFN, and
@@ -106,8 +106,8 @@ Packaged runs use:
 <installed application directory>\AVISTADeepWorker.exe ...
 ```
 
-Packaged mode is detected using frozen-runtime markers supported by
-PyInstaller and Nuitka. Worker paths are resolved from the installed
+Packaged mode is detected using frozen-runtime markers. The active release is
+PyInstaller onedir. Worker paths are resolved from the installed
 executable directory, never the current working directory. The GUI never
 launches `AVISTA.exe` with a Python script or `-m` argument.
 
@@ -234,8 +234,8 @@ once or sign out and back in after installation.
 - Keep Torch, TorchVision, and TorchAudio on a matched release trio. The
   current CUDA 12.6 lock uses `torch==2.9.1+cu126`,
   `torchvision==0.24.1+cu126`, and `torchaudio==2.9.1+cu126`.
-- Keep `numpy==1.26.4` while Captum 0.8.0 is packaged; Captum requires NumPy
-  below 2.0, and NumPy 1.26.4 has a Windows wheel for Python 3.12.
+- Keep the NumPy and scientific stack at the versions in
+  `requirements_lock.txt`; release builds must not mix ad hoc package versions.
 - If pip reports no matching TorchAudio distribution, do not continue to
   PyInstaller. The build script treats every native command failure as fatal
   and verifies required imports before compilation.
@@ -350,23 +350,13 @@ Continue the release by:
    .venv\Scripts\python.exe scripts\prepare_release.py --check
    ```
 
-2. Building `installer\AVISTA_Setup.exe`.
-3. Calculating the installer hash:
-
-   ```powershell
-   Get-FileHash .\installer\AVISTA_Setup.exe -Algorithm SHA256
-   ```
-
-4. Publishing the hash without editing JSON manually:
-
-   ```powershell
-   .venv\Scripts\python.exe scripts\prepare_release.py --sha256 "<64-hex-digest>"
-   ```
-
-5. Committing the synchronized files, creating the matching `vX.Y.Z` tag, and
+2. Committing the synchronized files, creating the matching `vX.Y.Z` tag, and
    pushing the commit before the tag.
 
 The updater verifies `sha256` when provided and refuses to launch the
-installer on a mismatch. GitHub Actions runs `prepare_release.py --check` and
-also verifies that a pushed or manually selected release tag matches the
-central application version before building.
+installer on a mismatch. GitHub Actions runs `prepare_release.py --check`,
+builds the final installer, calculates its SHA256, updates and verifies
+`updates.json`, uploads those exact installer bytes, and commits only the
+generated checksum field to `updates.json` on the default branch. A pushed or
+manually selected release tag must match `latest_version`, and `installer_url`
+must point to that tag.

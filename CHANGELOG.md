@@ -10,6 +10,10 @@
   reject the TabPFN 2.5 model weights if they are reintroduced.
 - Documented that AVISTA source remains Apache-2.0 and TabPFN 2.5 weights are
   obtained separately under the TabPFN-2.5 License v1.1.
+- Made `requirements_lock.txt` the documented reproducible installation source
+  and removed unused SHAP/Captum packages from default and release environments.
+- Added automatic final-installer SHA256 generation, update-feed validation,
+  and publication of the checksum to `updates.json` during Windows releases.
 
 ## 1.0.7 - 2026-07-28
 

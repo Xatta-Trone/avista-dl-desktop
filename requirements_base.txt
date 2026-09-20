@@ -1,3 +1,4 @@
+# Unpinned GUI and data-foundation convenience group.
 pandas
 numpy
 PySide6

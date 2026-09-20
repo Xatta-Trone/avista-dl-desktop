@@ -109,6 +109,7 @@ def test_pyinstaller_build_uses_clean_environment_and_required_includes():
     assert '"torch"' in spec
     assert '"tabpfn"' in spec
     assert 'collect_data_files(package_name)' in spec
+    assert not (PROJECT_ROOT / "AVISTA.spec").exists()
 
 
 def test_locked_cuda_torch_packages_are_compatible_and_available():
@@ -266,3 +267,24 @@ def test_github_windows_release_workflow_builds_and_publishes_installer():
     assert "gh release create" in workflow
     assert "gh release upload" in workflow
     assert "--clobber" in workflow
+    assert "id: installer_hash" in workflow
+    assert "Get-FileHash" in workflow
+    assert "-Algorithm SHA256" in workflow
+    assert '"sha256=$hash" >> $env:GITHUB_OUTPUT' in workflow
+    assert '"--installer", $installerPath' in workflow
+    assert '"--verify-installer", "installer/AVISTA_Setup.exe"' in workflow
+    assert "Publish update metadata to default branch" in workflow
+    assert "repos/$repository/contents/updates.json" in workflow
+    assert "chore(release): update installer checksum" in workflow
+    assert (
+        "cache-dependency-path: |\n"
+        "            requirements_base.txt\n"
+        "            requirements_lock.txt"
+    ) in workflow
+    assert (
+        "python -m pip install --upgrade pip\n"
+        "          python -m pip install pytest\n"
+        "          python -m pip install -r requirements_base.txt\n"
+        "          python -m pip install matplotlib scipy scikit-learn "
+        "imbalanced-learn"
+    ) in workflow

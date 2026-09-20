@@ -120,12 +120,16 @@ See [PROJECT_STATUS.md](PROJECT_STATUS.md) for the authoritative implementation 
 - A compatible NVIDIA GPU and driver are optional. AVISTA supports CPU
   execution when CUDA is unavailable.
 
-- `requirements_ml.txt`: classical ML, XGBoost, imbalance handling, and analysis.
-- `requirements_deep_cpu.txt`: CPU PyTorch packages.
-- `requirements_deep_gpu.txt`: CUDA-specific PyTorch installation instructions.
-- `requirements_full.txt`: complete CPU-installable application environment.
-
-GPU PyTorch is installed separately using `requirements_deep_gpu.txt`.
+- `requirements_lock.txt`: canonical reproducible Python 3.12 environment,
+  including the matched CUDA 12.6 PyTorch/TorchVision/TorchAudio trio.
+- `requirements_base.txt`: unpinned GUI and data-foundation convenience group.
+- `requirements_ml.txt`: unpinned conventional ML and analysis group.
+- `requirements_deep_cpu.txt`: optional unpinned CPU PyTorch trio.
+- `requirements_deep_gpu.txt`: optional matched CUDA installation commands;
+  do not combine them with the CPU PyTorch group.
+- `requirements_full.txt`: unpinned CPU-installable convenience environment.
+- `requirements_xai.txt`: future optional XAI dependencies; AVISTA does not yet
+  implement an XAI workflow.
 
 ## Install from Source
 
@@ -134,13 +138,17 @@ git clone https://github.com/Xatta-Trone/avista-dl-desktop.git
 cd avista-dl-desktop
 
 py -3.12 -m venv .venv
-.venv\Scripts\python.exe -m pip install --upgrade pip
-.venv\Scripts\python.exe -m pip install -r requirements_full.txt
+.\.venv\Scripts\Activate.ps1
+
+python -m pip install --upgrade pip
+python -m pip install -r requirements_lock.txt
 ```
 
-For an explicit CPU PyTorch installation, also install
-`requirements_deep_cpu.txt`. For CUDA-enabled PyTorch, follow
-`requirements_deep_gpu.txt` instead.
+The locked environment is the reproducible source and release configuration.
+The other requirements files are optional unpinned convenience groups. Use
+only one matched PyTorch trio; the lock uses CUDA 12.6, while explicit CPU or
+alternative CUDA setup instructions live in the corresponding deep-learning
+requirements files.
 
 ## Run
 
@@ -177,7 +185,9 @@ https://raw.githubusercontent.com/Xatta-Trone/avista-dl-desktop/main/updates.jso
 
 `latest_version` is compared with `app.__version__.__version__` using semantic
 version ordering. `installer_url` must use HTTPS. If `sha256` is provided,
-AVISTA verifies the downloaded installer before it can run.
+AVISTA verifies the downloaded installer before it can run. The Windows
+release workflow calculates this SHA256 from the final installer and updates
+the public `updates.json` automatically.
 
 Prepare a future release with one command:
 

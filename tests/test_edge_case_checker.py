@@ -221,7 +221,7 @@ def test_missing_numeric_feature_blocks_training(tmp_path):
     )
 
 
-def test_empty_and_whitespace_feature_values_block_training(tmp_path):
+def test_empty_and_whitespace_categorical_feature_values_do_not_block_training(tmp_path):
     values = ["category"] * 100
     values[3] = ""
     values[7] = "   "
@@ -229,9 +229,21 @@ def test_empty_and_whitespace_feature_values_block_training(tmp_path):
 
     report = run_edge_case_checks(df, make_config(tmp_path, split_method="stratified"))
 
+    assert not any(
+        "Column 'feature' contains" in issue.message for issue in report.errors
+    )
+
+
+def test_empty_and_whitespace_numeric_feature_values_block_training(tmp_path):
+    values = list(range(100))
+    df = pd.DataFrame({"feature": values, "target": [0, 1] * 50})
+    df.loc[3, "feature"] = None
+
+    report = run_edge_case_checks(df, make_config(tmp_path, split_method="stratified"))
+
     assert report.can_continue is False
     assert any(
-        "Column 'feature' contains 2 empty values (2.0%)" in issue.message
+        "Column 'feature' contains 1 empty values (1.0%)" in issue.message
         for issue in report.errors
     )
 

@@ -547,9 +547,10 @@ class DataSplitImbalancePage(QWidget):
                 + balanced["imbalance_info"].get("warnings", [])
             )
             balanced_original = (
-                decode_target(
-                    raw["target_encoder"],
+                _restore_original_target_values(
                     balanced["y_resampled"],
+                    raw["y_train_encoded"],
+                    raw["y_train_original"],
                 )
                 if raw["target_encoder"] is not None
                 else np.asarray(balanced["y_resampled"])
@@ -2128,6 +2129,25 @@ def _normalize_target_values(values: pd.Series) -> pd.Series:
     if pd.api.types.is_numeric_dtype(series) and len(non_missing_types) <= 1:
         return series
     return series.map(_display_class_label)
+
+
+def _restore_original_target_values(
+    resampled_encoded: pd.Series | np.ndarray,
+    original_encoded: pd.Series | np.ndarray,
+    original_values: pd.Series | np.ndarray,
+) -> np.ndarray:
+    """Restore resampled labels without coercing numeric classes to strings."""
+
+    class_values: dict[Any, Any] = {}
+    for encoded, original in zip(original_encoded, original_values):
+        class_values.setdefault(_json_scalar(encoded), _json_scalar(original))
+    try:
+        restored = [class_values[_json_scalar(value)] for value in resampled_encoded]
+    except KeyError as exc:
+        raise ValueError(
+            f"Resampled target contains unknown encoded class {exc.args[0]!r}."
+        ) from exc
+    return np.asarray(restored)
 
 
 def _display_class_label(value: Any) -> str:

@@ -603,6 +603,26 @@ def _check_split(df: pd.DataFrame, config: Any, report: EdgeCaseReport) -> None:
                 "Time split selected but the date column is missing.",
                 "Select an existing date column or choose a different split method.",
             )
+        else:
+            invalid_dates = int(pd.to_datetime(df[date_column], errors="coerce").isna().sum())
+            if invalid_dates:
+                report.add(
+                    ERROR,
+                    "split",
+                    f"Date column '{date_column}' has {invalid_dates} invalid date value(s).",
+                    "Fix invalid dates before using a time-based split.",
+                )
+
+    if "strat" in split_method and task_type == "classification" and target_column in df.columns:
+        class_counts = df[target_column][~missing_value_mask(df[target_column])].value_counts()
+        for class_name, count in class_counts[class_counts < 3].items():
+            report.add(
+                ERROR,
+                "split",
+                f"Class '{class_name}' has only {int(count)} samples. "
+                "It may not appear in all train/validation/test subsets.",
+                CLASS_COVERAGE_FIX,
+            )
 
 
 def _check_numerical_scaling(df: pd.DataFrame, config: Any, report: EdgeCaseReport) -> None:
@@ -671,26 +691,6 @@ def _check_numerical_scaling(df: pd.DataFrame, config: Any, report: EdgeCaseRepo
                 "preprocessing",
                 f"Constant numerical columns found for standardization: {constant_columns}.",
                 "Exclude constant numeric features or use no scaling for those columns.",
-            )
-        else:
-            invalid_dates = int(pd.to_datetime(df[date_column], errors="coerce").isna().sum())
-            if invalid_dates:
-                report.add(
-                    ERROR,
-                    "split",
-                    f"Date column '{date_column}' has {invalid_dates} invalid date value(s).",
-                    "Fix invalid dates before using a time-based split.",
-                )
-
-    if "strat" in split_method and task_type == "classification" and target_column in df.columns:
-        class_counts = df[target_column][~missing_value_mask(df[target_column])].value_counts()
-        for class_name, count in class_counts[class_counts < 3].items():
-            report.add(
-                ERROR,
-                "split",
-                f"Class '{class_name}' has only {int(count)} samples. "
-                "It may not appear in all train/validation/test subsets.",
-                CLASS_COVERAGE_FIX,
             )
 
 

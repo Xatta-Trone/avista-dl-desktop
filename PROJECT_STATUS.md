@@ -27,9 +27,7 @@ by sklearn/XGBoost and PyTorch tabular training; final fitting for those model
 families continues to use the prepared balanced-training artifacts. CV feasibility is
 checked against original external-training labels, and saved model/training
 metadata records the fold-local protocol. Focused preprocessing and trainer
-verification passed on September 19, 2026: `47 passed`. A broader non-GUI run
-completed with `248 passed, 2 failed`; both failures are pre-existing
-edge-case-checker expectation mismatches unrelated to CV.
+verification passed on September 19, 2026: `47 passed`.
 
 Deep-model cross-validation now reserves every outer validation fold for
 scoring only. Each raw outer fold-training partition receives a reproducible,
@@ -121,9 +119,19 @@ preprocessing on training rows only. Cache-only TabPFN status, model selection,
 training preflight, and package exclusion remain unchanged. Focused cleanup
 verification passed on September 19, 2026 across project-open, report, trainer,
 TabPFN manager/selection, resource, and packaging tests; modified Python files
-also compiled successfully. The existing Training-page readiness smoke test
-still stops at its pre-existing Edge-Case Report expectation mismatch before
-reaching row-count assertions.
+also compiled successfully.
+
+The release-stabilization suite passed on September 20, 2026: `381 passed`
+with `17` third-party warnings in 11 minutes 14 seconds. Numeric class labels
+now retain their original dtype in balanced reporting artifacts, keeping saved
+class-coverage checks consistent across training, validation, and test arrays.
+Categorical blanks continue to follow the configured `Unknown` preprocessing
+policy, while numeric missing values remain blocking. Time-split date checks
+and rare-class stratification checks run in the split-validation stage rather
+than being incorrectly nested under numerical scaling. PySide tests now delete
+top-level widgets after every test so timers and signal-owned state cannot leak
+across the full suite. `pip check`, application/test/script compilation, and
+`git diff --check` passed after the full suite.
 
 The Light/Dark theme regression caused by a global transparent `QLabel` rule
 is fixed. The central QSS no longer applies broad label or widget

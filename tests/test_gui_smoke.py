@@ -2285,6 +2285,7 @@ def test_model_selection_confirm_saves_config_fields(tmp_path):
 def test_data_split_page_saves_three_way_artifacts(tmp_path):
     import json
 
+    import numpy as np
     import pandas as pd
     from PySide6.QtWidgets import QApplication
 
@@ -2347,6 +2348,9 @@ def test_data_split_page_saves_three_way_artifacts(tmp_path):
     imbalance_metadata = json.loads((output_dir / "imbalance_config.json").read_text())
     assert split_metadata["target_column"] == "target"
     assert imbalance_metadata["target_column"] == "target"
+    balanced_target = np.load(output_dir / "y_train_balanced.npy", allow_pickle=True)
+    assert np.issubdtype(balanced_target.dtype, np.integer)
+    assert set(np.unique(balanced_target)) == {0, 1}
     window.close()
     assert app is not None
 
@@ -2833,6 +2837,7 @@ def test_data_split_page_tables_use_improved_styling(tmp_path):
 
     page = window.data_split_imbalance_page
     page.refresh()
+    page._recompute_before_distributions()
     table = page.before_distribution_tables["Full Dataset"]
 
     assert table.alternatingRowColors()
@@ -4016,7 +4021,7 @@ def test_training_page_icons_use_avista_primary_and_button_text_colors():
         assert header_icon.property("iconColor") == PRIMARY
 
     tile_icons = page.findChildren(QLabel, "trainingStatusTileIcon")
-    assert len(tile_icons) == 8
+    assert len(tile_icons) == 9
     assert all(label.property("iconColor") == PRIMARY for label in tile_icons)
 
     assert page.start_button.property("iconColor") == "#FFFFFF"

@@ -32,6 +32,7 @@ from PySide6.QtWidgets import (
 )
 
 from app.core.project_config import ProjectConfig
+from app.core.tabpfn_model_manager import get_tabpfn_model_status
 from app.gui.icon_system import (
     BACKGROUND,
     BORDER,
@@ -89,6 +90,7 @@ class TrainingPage(QWidget):
                 "target",
                 "feature_count",
                 "train_rows",
+                "effective_training_rows",
                 "validation_rows",
                 "test_rows",
                 "imbalance_method",
@@ -357,7 +359,12 @@ class TrainingPage(QWidget):
         tile_specs = [
             ("Target Selected", self.status_values["target"], "fa6s.bullseye"),
             ("Features", self.status_values["feature_count"], "fa6s.table-columns"),
-            ("Train Rows", self.status_values["train_rows"], "fa6s.database"),
+            ("Training Rows", self.status_values["train_rows"], "fa6s.database"),
+            (
+                "Effective Training Rows",
+                self.status_values["effective_training_rows"],
+                "fa6s.database",
+            ),
             ("Validation Rows", self.status_values["validation_rows"], "fa6s.database"),
             ("Test Rows", self.status_values["test_rows"], "fa6s.database"),
             ("Selected Models", self.status_values["selected_models"], "fa6s.brain"),
@@ -636,10 +643,16 @@ class TrainingPage(QWidget):
             except (OSError, KeyError, TypeError, json.JSONDecodeError):
                 edge_passed = False
 
-        rows = {"train": 0, "validation": 0, "test": 0}
+        rows = {"train": 0, "effective_train": 0, "validation": 0, "test": 0}
         if split_confirmed:
+            original_train_path = split_dir / "y_train.npy"
+            if not original_train_path.is_file():
+                original_train_path = split_dir / "y_train_balanced.npy"
             rows = {
-                "train": len(np.load(split_dir / "y_train_balanced.npy", allow_pickle=True)),
+                "train": len(np.load(original_train_path, allow_pickle=True)),
+                "effective_train": len(
+                    np.load(split_dir / "y_train_balanced.npy", allow_pickle=True)
+                ),
                 "validation": len(np.load(split_dir / "y_val.npy", allow_pickle=True)),
                 "test": len(np.load(split_dir / "y_test.npy", allow_pickle=True)),
             }
@@ -654,8 +667,18 @@ class TrainingPage(QWidget):
             messages.append("Resolve blocking Edge-Case Report issues.")
         if not config.selected_models:
             messages.append("Select at least one model.")
+        if any(
+            str(model_name).strip().casefold() in {"tabpfn", "tabpfn 2.5"}
+            for model_name in config.selected_models
+        ):
+            tabpfn_status = get_tabpfn_model_status()
+            if tabpfn_status.active_checkpoint_path is None:
+                messages.append(
+                    "TabPFN 2.5 is not currently available. Use Model Selection "
+                    "or Help > TabPFN Model Status to set it up."
+                )
         if split_confirmed and config.enable_cross_validation:
-            counts = pd_series_counts(split_dir / "y_train_balanced.npy")
+            counts = pd_series_counts(original_train_path)
             insufficient = counts[counts < int(config.cv_folds)]
             if not insufficient.empty:
                 class_name = insufficient.index[0]
@@ -673,6 +696,7 @@ class TrainingPage(QWidget):
             "target": config.target_column or "Not selected",
             "feature_count": len(config.feature_columns or []),
             "train_rows": rows["train"],
+            "effective_training_rows": rows["effective_train"],
             "validation_rows": rows["validation"],
             "test_rows": rows["test"],
             "imbalance_method": config.imbalance_method or "none",
@@ -692,6 +716,7 @@ class TrainingPage(QWidget):
             "target": "Not selected",
             "feature_count": 0,
             "train_rows": 0,
+            "effective_training_rows": 0,
             "validation_rows": 0,
             "test_rows": 0,
             "imbalance_method": "none",
@@ -708,6 +733,7 @@ class TrainingPage(QWidget):
             "target",
             "feature_count",
             "train_rows",
+            "effective_training_rows",
             "validation_rows",
             "test_rows",
             "imbalance_method",

@@ -1,9 +1,9 @@
 """Canonical AVISTA application identity and release version."""
 
-__version__ = "1.0.7"
+__version__ = "1.1.0"
 APP_NAME = "AVISTA"
 APP_DESCRIPTION = (
     "An extensible desktop platform for tabular machine learning "
     "and deep learning analytics."
 )
-RELEASE_DATE = "July 28, 2026"
+RELEASE_DATE = "September 20, 2026"

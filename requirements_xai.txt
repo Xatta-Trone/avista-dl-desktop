@@ -1,3 +1,4 @@
+# Optional future XAI dependencies. No implemented AVISTA workflow imports these.
 -r requirements_ml.txt
 shap
 captum

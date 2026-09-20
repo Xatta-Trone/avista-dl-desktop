@@ -13,11 +13,10 @@ from app.__version__ import (
     RELEASE_DATE,
     __version__,
 )
+from app.core.tabpfn_model_manager import get_tabpfn_model_status
 from app.utils.resources import (
     get_app_resource_path,
     is_packaged_application,
-    resolve_tabpfn_checkpoint,
-    tabpfn_checkpoint_candidates,
 )
 
 
@@ -30,10 +29,8 @@ def collect_runtime_verification(
     """Collect packaged-runtime, optional-package, and asset availability."""
 
     gpu = gpu_info or {}
-    try:
-        checkpoint = resolve_tabpfn_checkpoint()
-    except FileNotFoundError:
-        checkpoint = tabpfn_checkpoint_candidates()[0]
+    tabpfn_status = get_tabpfn_model_status()
+    checkpoint = tabpfn_status.cache_path
     logo = get_app_resource_path(APP_LOGO)
     return {
         "app_name": APP_NAME,
@@ -49,6 +46,7 @@ def collect_runtime_verification(
         "tabpfn_available": _module_available("tabpfn"),
         "tabpfn_checkpoint_path": str(checkpoint),
         "tabpfn_checkpoint_exists": checkpoint.is_file(),
+        "tabpfn_checkpoint_source": tabpfn_status.active_checkpoint_source,
         "logo_path": str(logo),
         "logo_exists": logo.is_file(),
     }

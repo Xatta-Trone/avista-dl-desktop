@@ -5,7 +5,7 @@
 AVISTA is a professional Python desktop application for generic tabular machine learning workflows. It supports portable project setup, environment inspection, tabular data import, column configuration, edge-case validation, splitting, imbalance handling, model selection, training, evaluation, and saved analytics.
 
 The launch screen and About dialog identify the current release as **Version
-1.0.7**, released **July 28, 2026**. Product name, description, version, and
+1.1.0**, released **September 20, 2026**. Product name, description, version, and
 release date come from `app/__version__.py`.
 
 ## Repository and Documentation
@@ -50,7 +50,17 @@ Legacy `.xtab` and `project_config.json` files remain supported. Opening either 
 
 The PySide6 desktop GUI includes Project Setup, Environment, Data Import, Column Configuration, Data Split & Imbalance, Model Selection, Edge-Case Report, Training, and Report pages.
 
-The classification registry includes sklearn, XGBoost, PyTorch tabular, and TabPFN models. Training uses six AVISTA cards with primary-blue icons, readiness tiles, an animated running-state Start button, threaded live progress, realtime deep-model accuracy/loss curves, streaming model results, aggregate CSV/JSON outputs, confirmed saved split artifacts, train-only balancing and cross-validation, decoded reports, publication-quality plots, and isolated subprocesses for torch-dependent models.
+The classification registry includes sklearn, XGBoost, PyTorch tabular, and TabPFN models. Training uses six AVISTA cards with primary-blue icons, readiness tiles, an animated running-state Start button, threaded live progress, realtime deep-model accuracy/loss curves, streaming model results, aggregate CSV/JSON outputs, confirmed saved split artifacts, fold-local preprocessing and balancing during cross-validation, decoded reports, publication-quality plots, and isolated subprocesses for torch-dependent models. Deep-model CV splits raw outer fold-training first, fits preprocessing on inner training, applies balancing only to inner training, uses unchanged inner validation for early stopping, and reserves outer fold-validation for scoring. Final deep-model fitting uses external validation for checkpoint selection and reserves external test for final evaluation. TabPFN 2.5 uses a model-specific raw pandas input path with its native preprocessing, no AVISTA one-hot encoding/scaling/resampling, and a reproducible stratified cap only above its supported 50,000-row range.
+
+AVISTA resolves the TabPFN 2.5 checkpoint only from the official TabPFN user
+cache (`%APPDATA%\tabpfn` on Windows, or `TABPFN_MODEL_CACHE_DIR`). When it is
+absent, startup offers user-initiated setup without blocking other AVISTA
+features, and **Help → TabPFN Model Status** provides download, verification,
+and cache-status actions. The download uses Prior Labs' official gated browser
+flow and never runs silently. AVISTA source is Apache-2.0. AVISTA does not
+redistribute TabPFN 2.5 model weights; users obtain them separately from Prior
+Labs GmbH under the TabPFN-2.5 License v1.1 for
+non-commercial/non-production use.
 
 Selected categorical modeling features normalize missing, empty, and
 whitespace-only values to `Unknown` before training-fitted encoding. Data
@@ -78,6 +88,19 @@ protocol.
 Latest completed full-suite baseline: `207 passed`. Latest focused packaged-project
 restart regression verification: `26 passed`.
 
+Latest focused cross-validation leakage regression verification:
+`47 passed` across preprocessing and trainer tests. The corrected protocol
+splits the original external-training rows before fitting preprocessing or
+applying resampling in each fold.
+
+Latest focused nested deep-CV verification: `14 passed`. Inner validation is
+created before preprocessing/resampling, both validation levels remain
+unresampled, and final deep training retains external validation for checkpoint
+selection and external test for final evaluation.
+
+Latest focused TabPFN 2.5 raw-input and supported-limit verification: `12 passed`
+across trainer, edge-case, model-registry, and report tests.
+
 Latest focused startup, branding, release-metadata, packaging, and theme/UI
 verification: `31 passed`.
 
@@ -97,12 +120,16 @@ See [PROJECT_STATUS.md](PROJECT_STATUS.md) for the authoritative implementation 
 - A compatible NVIDIA GPU and driver are optional. AVISTA supports CPU
   execution when CUDA is unavailable.
 
-- `requirements_ml.txt`: classical ML, XGBoost, imbalance handling, and analysis.
-- `requirements_deep_cpu.txt`: CPU PyTorch packages.
-- `requirements_deep_gpu.txt`: CUDA-specific PyTorch installation instructions.
-- `requirements_full.txt`: complete CPU-installable application environment.
-
-GPU PyTorch is installed separately using `requirements_deep_gpu.txt`.
+- `requirements_lock.txt`: canonical reproducible Python 3.12 environment,
+  including the matched CUDA 12.6 PyTorch/TorchVision/TorchAudio trio.
+- `requirements_base.txt`: unpinned GUI and data-foundation convenience group.
+- `requirements_ml.txt`: unpinned conventional ML and analysis group.
+- `requirements_deep_cpu.txt`: optional unpinned CPU PyTorch trio.
+- `requirements_deep_gpu.txt`: optional matched CUDA installation commands;
+  do not combine them with the CPU PyTorch group.
+- `requirements_full.txt`: unpinned CPU-installable convenience environment.
+- `requirements_xai.txt`: future optional XAI dependencies; AVISTA does not yet
+  implement an XAI workflow.
 
 ## Install from Source
 
@@ -111,13 +138,17 @@ git clone https://github.com/Xatta-Trone/avista-dl-desktop.git
 cd avista-dl-desktop
 
 py -3.12 -m venv .venv
-.venv\Scripts\python.exe -m pip install --upgrade pip
-.venv\Scripts\python.exe -m pip install -r requirements_full.txt
+.\.venv\Scripts\Activate.ps1
+
+python -m pip install --upgrade pip
+python -m pip install -r requirements_lock.txt
 ```
 
-For an explicit CPU PyTorch installation, also install
-`requirements_deep_cpu.txt`. For CUDA-enabled PyTorch, follow
-`requirements_deep_gpu.txt` instead.
+The locked environment is the reproducible source and release configuration.
+The other requirements files are optional unpinned convenience groups. Use
+only one matched PyTorch trio; the lock uses CUDA 12.6, while explicit CPU or
+alternative CUDA setup instructions live in the corresponding deep-learning
+requirements files.
 
 ## Run
 
@@ -144,6 +175,13 @@ Packaged Windows installers can associate `.avista` with `AVISTA.exe`. Legacy `.
 7. Select and train models.
 8. Generate the saved Markdown, PDF, metrics, and diagnostic reports.
 
+## Validation examples
+
+Reproducible validation examples used in the SoftwareX evaluation are
+available in [`examples/`](examples/README.md). They cover Mushroom, Obesity,
+and National Poll (NPHA), with saved AVISTA projects and corresponding Jupyter
+Notebooks for direct-library and AutoGluon comparison.
+
 ## Updates
 
 The updater reads:
@@ -154,7 +192,9 @@ https://raw.githubusercontent.com/Xatta-Trone/avista-dl-desktop/main/updates.jso
 
 `latest_version` is compared with `app.__version__.__version__` using semantic
 version ordering. `installer_url` must use HTTPS. If `sha256` is provided,
-AVISTA verifies the downloaded installer before it can run.
+AVISTA verifies the downloaded installer before it can run. The Windows
+release workflow calculates this SHA256 from the final installer and updates
+the public `updates.json` automatically.
 
 Prepare a future release with one command:
 

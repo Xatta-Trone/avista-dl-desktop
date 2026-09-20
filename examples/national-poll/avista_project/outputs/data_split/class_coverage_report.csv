@@ -1,0 +1,4 @@
+Class,Full count,Train count,Validation count,Test count,Status
+Doctors_0_1,131,88,15,28,OK
+Doctors_2_3,372,260,38,74,OK
+Doctors_4_Plus,211,151,19,41,OK

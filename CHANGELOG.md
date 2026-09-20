@@ -1,6 +1,28 @@
 # Changelog
 
+## 1.1.0 - 2026-09-20
+
+- Corrected cross-validation to apply preprocessing and imbalance handling within each
+  fold.
+- Revised TabPFN integration with native preprocessing, removal of the previous
+  3,000-row cap, and external model-weight setup.
+- Updated packaging, dependency installation, reporting, reproducibility metadata, and
+  validation examples.
+
 ## Unreleased
+
+- Moved the TabPFN 2.5 classifier checkpoint to the official TabPFN user cache
+  and removed AVISTA's redistributed checkpoint copies and bundled fallback.
+- Added user-initiated Prior Labs license/authentication, download,
+  verification, startup-status, Help-menu, and Model Selection setup flows.
+- Kept TabPFN Python support in packaged builds while adding release gates that
+  reject the TabPFN 2.5 model weights if they are reintroduced.
+- Documented that AVISTA source remains Apache-2.0 and TabPFN 2.5 weights are
+  obtained separately under the TabPFN-2.5 License v1.1.
+- Made `requirements_lock.txt` the documented reproducible installation source
+  and removed unused SHAP/Captum packages from default and release environments.
+- Added automatic final-installer SHA256 generation, update-feed validation,
+  and publication of the checksum to `updates.json` during Windows releases.
 
 ## 1.0.7 - 2026-07-28
 

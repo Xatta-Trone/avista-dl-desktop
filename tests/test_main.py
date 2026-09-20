@@ -32,6 +32,25 @@ def test_command_line_avista_path_loads_project(tmp_path):
     assert loaded.project_dir == str(tmp_path.resolve())
 
 
+def test_command_line_project_confirmation_can_cancel_loading(tmp_path):
+    config = ProjectConfig(
+        project_name="startup",
+        project_dir=str(tmp_path),
+        input_file="",
+        output_dir=str(tmp_path / "outputs"),
+    )
+    project_file = config.save()
+    seen = []
+
+    loaded = load_startup_project(
+        [str(project_file)],
+        confirm_open=lambda path: seen.append(path) or False,
+    )
+
+    assert loaded is None
+    assert seen == [project_file]
+
+
 def test_command_line_legacy_xtab_path_migrates_project(tmp_path):
     legacy_path = tmp_path / "startup.xtab"
     legacy_path.write_text(

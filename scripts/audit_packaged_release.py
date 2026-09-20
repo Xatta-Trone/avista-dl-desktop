@@ -32,10 +32,17 @@ def expected_artifacts(dist_dir: Path) -> dict[str, Path]:
         "deep_worker": dist_dir / "AVISTADeepWorker.exe",
         "xgboost_version": internal / "xgboost" / "VERSION",
         "xgboost_dll": internal / "xgboost" / "lib" / "xgboost.dll",
-        "tabpfn_checkpoint": (
-            internal / "app" / "assets" / CHECKPOINT_FILENAME
-        ),
     }
+
+
+def bundled_tabpfn_checkpoints(dist_dir: Path) -> list[Path]:
+    """Return forbidden redistributed TabPFN 2.5 model weights."""
+
+    return sorted(
+        path.resolve()
+        for path in dist_dir.rglob(CHECKPOINT_FILENAME)
+        if path.is_file()
+    )
 
 
 def audit_artifacts(dist_dir: Path) -> dict[str, Any]:
@@ -52,6 +59,12 @@ def audit_artifacts(dist_dir: Path) -> dict[str, Any]:
         raise FileNotFoundError(
             "Packaged artifact audit failed. Missing:\n"
             + "\n".join(missing)
+        )
+    forbidden_checkpoints = bundled_tabpfn_checkpoints(dist_dir)
+    if forbidden_checkpoints:
+        raise RuntimeError(
+            "Packaged AVISTA must not redistribute TabPFN 2.5 model weights:\n"
+            + "\n".join(str(path) for path in forbidden_checkpoints)
         )
     if struct.calcsize("P") * 8 != 64:
         raise RuntimeError("Artifact audit must run with 64-bit Python.")
@@ -76,6 +89,7 @@ def audit_artifacts(dist_dir: Path) -> dict[str, Any]:
             for name, path in artifacts.items()
         },
         "pe_machines": architectures,
+        "bundled_tabpfn_checkpoints": [],
     }
 
 
@@ -84,7 +98,7 @@ def run_packaged_smokes(
     *,
     timeout_seconds: int = 300,
 ) -> dict[str, Any]:
-    """Run tiny XGBoost and TabPFN fits through the packaged executables."""
+    """Run XGBoost fitting and TabPFN package-support packaged checks."""
 
     artifacts = expected_artifacts(dist_dir.resolve())
     results: dict[str, Any] = {}

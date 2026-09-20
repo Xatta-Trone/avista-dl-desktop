@@ -5,7 +5,10 @@ from pathlib import Path
 import pytest
 
 from app.core.packaging_smoke import run_packaging_smoke
-from scripts.audit_packaged_release import expected_artifacts
+from scripts.audit_packaged_release import (
+    bundled_tabpfn_checkpoints,
+    expected_artifacts,
+)
 from scripts.diagnose_packaging_runtime import (
     PE_MACHINE_AMD64,
     collect_packaging_diagnostics,
@@ -35,7 +38,7 @@ def test_source_xgboost_packaging_smoke_fits_tiny_dataset(tmp_path):
     importlib.util.find_spec("tabpfn") is None,
     reason="tabpfn is not installed",
 )
-def test_source_tabpfn_packaging_smoke_uses_bundled_checkpoint(tmp_path):
+def test_source_tabpfn_packaging_smoke_verifies_package_support(tmp_path):
     output = tmp_path / "tabpfn-smoke.json"
 
     assert run_packaging_smoke("tabpfn", output) == 0
@@ -43,10 +46,9 @@ def test_source_tabpfn_packaging_smoke_uses_bundled_checkpoint(tmp_path):
     result = json.loads(output.read_text(encoding="utf-8"))
     assert result["status"] == "passed"
     assert result["packaged"] is False
-    assert result["checkpoint_exists"] is True
-    assert result["checkpoint_size"] > 0
-    assert result["device"] == "cpu"
-    assert result["n_estimators"] == 2
+    assert result["classifier_imported"] is True
+    assert result["checkpoint_required_for_package_smoke"] is False
+    assert result["checkpoint_source"] in {"user_cache", "unavailable"}
 
 
 @pytest.mark.skipif(
@@ -97,7 +99,11 @@ def test_packaged_artifact_audit_uses_pyinstaller_internal_layout(tmp_path):
         / "lib"
         / "xgboost.dll"
     )
-    assert artifacts["tabpfn_checkpoint"] == (
+    assert "tabpfn_checkpoint" not in artifacts
+
+
+def test_packaged_artifact_audit_detects_forbidden_tabpfn_checkpoint(tmp_path):
+    checkpoint = (
         tmp_path
         / "AVISTA"
         / "_internal"
@@ -105,3 +111,7 @@ def test_packaged_artifact_audit_uses_pyinstaller_internal_layout(tmp_path):
         / "assets"
         / "tabpfn-v2.5-classifier-v2.5_default.ckpt"
     )
+    checkpoint.parent.mkdir(parents=True)
+    checkpoint.write_bytes(b"forbidden model weights")
+
+    assert bundled_tabpfn_checkpoints(tmp_path / "AVISTA") == [checkpoint.resolve()]

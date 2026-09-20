@@ -1,10 +1,12 @@
 {
-  "latest_version": "1.0.7",
-  "release_date": "July 28, 2026",
+  "latest_version": "1.1.0",
+  "release_date": "September 20, 2026",
   "release_notes": [
-    "Hid the packaged AVISTADeepWorker.exe terminal window during training while preserving captured JSON Lines stdout and stderr"
+    "Corrected cross-validation to apply preprocessing and imbalance handling within each fold.",
+    "Revised TabPFN integration with native preprocessing, removal of the previous 3,000-row cap, and external model-weight setup.",
+    "Updated packaging, dependency installation, reporting, reproducibility metadata, and validation examples."
   ],
-  "installer_url": "https://github.com/Xatta-Trone/avista-dl-desktop/releases/download/v1.0.7/AVISTA_Setup.exe",
+  "installer_url": "https://github.com/Xatta-Trone/avista-dl-desktop/releases/download/v1.1.0/AVISTA_Setup.exe",
   "sha256": "",
   "mandatory": false
 }

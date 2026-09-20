@@ -1,3 +1,4 @@
+# Optional unpinned CPU-only PyTorch trio. Do not combine with GPU wheel commands.
 torch
 torchvision
 torchaudio

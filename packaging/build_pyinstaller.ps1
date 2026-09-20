@@ -27,6 +27,7 @@ $PackagedArtifactAudit = Join-Path $ProjectRoot "scripts\audit_packaged_release.
 $VersionInfoFile = Join-Path $DistDir "avista_version_info.txt"
 $WorkerVersionInfoFile = Join-Path $DistDir "avista_deep_worker_version_info.txt"
 $WorkerName = "AVISTADeepWorker"
+$TabPFNCheckpointFilename = "tabpfn-v2.5-classifier-v2.5_default.ckpt"
 
 $VersionText = Get-Content -LiteralPath $VersionSource -Raw
 $VersionMatch = [regex]::Match($VersionText, '(?m)^__version__\s*=\s*"([^"]+)"')
@@ -244,6 +245,21 @@ finally {
     Remove-Item Env:\AVISTA_WORKER_VERSION_FILE -ErrorAction SilentlyContinue
 }
 
+function Assert-NoTabPFNCheckpoint {
+    param([string]$Path)
+
+    $matches = @(
+        Get-ChildItem -LiteralPath $Path -Recurse -File -Filter $TabPFNCheckpointFilename `
+            -ErrorAction SilentlyContinue
+    )
+    if ($matches.Count -gt 0) {
+        throw (
+            "TabPFN 2.5 model weights must not be redistributed by AVISTA: " +
+            (($matches | ForEach-Object { $_.FullName }) -join ", ")
+        )
+    }
+}
+
 $BuiltAppDir = Join-Path $DistDir $AppName
 $BuiltExe = Join-Path $BuiltAppDir "$AppName.exe"
 $BuiltWorkerExe = Join-Path $BuiltAppDir "$WorkerName.exe"
@@ -253,6 +269,7 @@ if (-not (Test-Path -LiteralPath $BuiltExe)) {
 if (-not (Test-Path -LiteralPath $BuiltWorkerExe)) {
     throw "PyInstaller completed but $BuiltWorkerExe was not found."
 }
+Assert-NoTabPFNCheckpoint $BuiltAppDir
 Invoke-CheckedCommand $BuildPython @(
     $PackagedArtifactAudit,
     "--dist-dir",
@@ -276,6 +293,7 @@ foreach ($document in @(
     }
     Copy-Item -LiteralPath $source -Destination $ReleaseAppDir -Force
 }
+Assert-NoTabPFNCheckpoint $ReleaseAppDir
 
 if (-not $SkipInstaller) {
     $IsccCandidates = @(

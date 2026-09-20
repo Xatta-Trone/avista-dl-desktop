@@ -1,0 +1,13 @@
+split,class,count,percent
+Full Dataset,Doctors_0_1,131,18.34733893557423
+Full Dataset,Doctors_2_3,372,52.10084033613446
+Full Dataset,Doctors_4_Plus,211,29.551820728291318
+Train Set,Doctors_0_1,88,17.635270541082164
+Train Set,Doctors_2_3,260,52.104208416833664
+Train Set,Doctors_4_Plus,151,30.26052104208417
+Validation Set,Doctors_0_1,15,20.833333333333336
+Validation Set,Doctors_2_3,38,52.77777777777778
+Validation Set,Doctors_4_Plus,19,26.38888888888889
+Test Set,Doctors_0_1,28,19.58041958041958
+Test Set,Doctors_2_3,74,51.74825174825175
+Test Set,Doctors_4_Plus,41,28.671328671328673

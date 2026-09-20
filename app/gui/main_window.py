@@ -22,6 +22,10 @@ from PySide6.QtWidgets import (
 
 from app.__version__ import APP_NAME
 from app.core.project_config import ProjectConfig
+from app.core.tabpfn_model_manager import (
+    TabPFNModelState,
+    get_tabpfn_model_status,
+)
 from app.core.update_checker import UpdateCheckResult, log_update_message
 from app.core.user_settings import load_user_settings
 from app.gui.about_dialog import AboutDialog, application_icon, logo_path
@@ -35,9 +39,10 @@ from app.gui.model_selection_page import ModelSelectionPage
 from app.gui.project_setup_page import ProjectSetupPage
 from app.gui.report_page import ReportPage
 from app.gui.theme import apply_theme, get_theme, load_theme_setting, save_theme_setting
+from app.gui.tabpfn_model_dialog import TabPFNModelDialog
 from app.gui.training_page import TrainingPage
 from app.gui.update_dialog import UpdateAvailableDialog, UpdateDownloadDialog
-from app.gui.workers import UpdateCheckWorker, UpdateDownloadWorker
+from app.gui.workers import TabPFNModelWorker, UpdateCheckWorker, UpdateDownloadWorker
 
 
 class _UpdateSignalBridge(QObject):
@@ -51,6 +56,8 @@ class _UpdateSignalBridge(QObject):
 class MainWindow(QMainWindow):
     """Application shell with left navigation and shared page state."""
 
+    tabpfn_model_status_changed = Signal(object)
+
     def __init__(self, initial_config: ProjectConfig | None = None) -> None:
         super().__init__()
         self.setWindowTitle(APP_NAME)
@@ -62,10 +69,14 @@ class MainWindow(QMainWindow):
         self.environment_info: dict | None = None
         self._startup_environment_check_scheduled = False
         self._startup_update_check_scheduled = False
+        self._startup_tabpfn_check_scheduled = False
         self._update_threads: list[QThread] = []
         self._update_workers: list[object] = []
         self._update_signal_bridges: list[_UpdateSignalBridge] = []
         self._download_dialog: UpdateDownloadDialog | None = None
+        self._tabpfn_dialog: TabPFNModelDialog | None = None
+        self._tabpfn_threads: list[QThread] = []
+        self._tabpfn_workers: list[TabPFNModelWorker] = []
         self.theme_name = load_theme_setting()
 
         self.stack = QStackedWidget()
@@ -77,6 +88,9 @@ class MainWindow(QMainWindow):
         self.column_config_page = ColumnConfigPage(self)
         self.data_split_imbalance_page = DataSplitImbalancePage(self)
         self.model_selection_page = ModelSelectionPage(self)
+        self.tabpfn_model_status_changed.connect(
+            self.model_selection_page.refresh_tabpfn_status
+        )
         self.edge_case_report_page = EdgeCaseReportPage(self)
         self.training_page = TrainingPage(self)
         self.report_page = ReportPage(self)
@@ -119,6 +133,8 @@ class MainWindow(QMainWindow):
         self.theme_action_group.triggered.connect(self.set_theme)
         update_action = help_menu.addAction("Check for Updates")
         update_action.triggered.connect(self.check_for_updates_manually)
+        self.tabpfn_model_action = help_menu.addAction("TabPFN Model Status")
+        self.tabpfn_model_action.triggered.connect(self.show_tabpfn_model_status)
         about_action = help_menu.addAction(f"About {APP_NAME}")
         about_action.triggered.connect(self.show_about_dialog)
         if initial_config is not None:
@@ -143,12 +159,130 @@ class MainWindow(QMainWindow):
         if not self._startup_update_check_scheduled:
             self._startup_update_check_scheduled = True
             QTimer.singleShot(1000, self.start_startup_update_check)
+        if not self._startup_tabpfn_check_scheduled:
+            self._startup_tabpfn_check_scheduled = True
+            QTimer.singleShot(500, self.check_startup_tabpfn_model_status)
 
     def show_about_dialog(self) -> None:
         """Show AVISTA product and developer information."""
 
         dialog = self.create_about_dialog()
         dialog.exec()
+
+    def create_tabpfn_model_dialog(
+        self,
+        *,
+        startup: bool = False,
+    ) -> TabPFNModelDialog:
+        """Create the reusable TabPFN status dialog for display or tests."""
+
+        dialog = TabPFNModelDialog(
+            get_tabpfn_model_status(),
+            startup=startup,
+            parent=self,
+        )
+        dialog.download_requested.connect(self._request_tabpfn_download)
+        dialog.verify_requested.connect(lambda: self._start_tabpfn_model_action("verify"))
+        return dialog
+
+    def check_startup_tabpfn_model_status(self) -> None:
+        """Offer setup when the preferred user-cache checkpoint is absent."""
+
+        status = get_tabpfn_model_status()
+        if status.state == TabPFNModelState.AVAILABLE_IN_USER_CACHE:
+            return
+        self._show_tabpfn_model_dialog(startup=True)
+
+    def show_tabpfn_model_status(self) -> None:
+        """Show current model status from the permanent Help action."""
+
+        self._show_tabpfn_model_dialog(startup=False)
+
+    def _show_tabpfn_model_dialog(self, *, startup: bool) -> None:
+        if self._tabpfn_dialog is not None:
+            self._tabpfn_dialog.close()
+        self._tabpfn_dialog = self.create_tabpfn_model_dialog(startup=startup)
+        self._tabpfn_dialog.finished.connect(
+            lambda _result: self.tabpfn_model_status_changed.emit(
+                get_tabpfn_model_status()
+            )
+        )
+        self._tabpfn_dialog.show()
+        self._tabpfn_dialog.raise_()
+
+    def _request_tabpfn_download(self, replace_existing: bool) -> None:
+        if replace_existing:
+            response = QMessageBox.question(
+                self,
+                "Re-download TabPFN 2.5",
+                "Replace the valid cached TabPFN 2.5 checkpoint with a fresh "
+                "official download?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No,
+            )
+            if response != QMessageBox.StandardButton.Yes:
+                return
+        self._start_tabpfn_model_action("download")
+
+    def _start_tabpfn_model_action(self, action: str) -> None:
+        if self._tabpfn_threads:
+            return
+        if self._tabpfn_dialog is None:
+            self._show_tabpfn_model_dialog(startup=False)
+        thread = QThread(self)
+        worker = TabPFNModelWorker(action=action)
+        worker.moveToThread(thread)
+        thread.started.connect(worker.run)
+        worker.progress.connect(self._handle_tabpfn_progress)
+        worker.finished.connect(self._handle_tabpfn_action_finished)
+        worker.failed.connect(self._handle_tabpfn_action_failed)
+        worker.finished.connect(worker.deleteLater)
+        worker.failed.connect(worker.deleteLater)
+        worker.finished.connect(thread.quit)
+        worker.failed.connect(thread.quit)
+        thread.finished.connect(lambda: self._discard_tabpfn_worker(thread, worker))
+        thread.finished.connect(thread.deleteLater)
+        self._tabpfn_threads.append(thread)
+        self._tabpfn_workers.append(worker)
+        thread.start()
+
+    def _handle_tabpfn_progress(self, message: str) -> None:
+        if self._tabpfn_dialog is not None:
+            self._tabpfn_dialog.show_progress(message)
+
+    def _handle_tabpfn_action_finished(self, result, status) -> None:
+        if self._tabpfn_dialog is not None:
+            self._tabpfn_dialog.progress.hide()
+            self._tabpfn_dialog.refresh_status(status)
+        self.tabpfn_model_status_changed.emit(status)
+        action = "smoke-tested and verified" if result.smoke_tested else "verified"
+        QMessageBox.information(
+            self,
+            "TabPFN 2.5 Model",
+            f"The TabPFN 2.5 checkpoint was {action} successfully.\n\n"
+            f"Path: {result.path}\nSHA256: {result.sha256}",
+        )
+
+    def _handle_tabpfn_action_failed(self, message: str, status) -> None:
+        if self._tabpfn_dialog is not None:
+            self._tabpfn_dialog.show_failure(message, status)
+        QMessageBox.warning(
+            self,
+            "TabPFN 2.5 Model",
+            "TabPFN 2.5 could not be downloaded or verified.\n\n"
+            "The rest of AVISTA remains available. Retry from Help → "
+            "TabPFN Model Status.",
+        )
+
+    def _discard_tabpfn_worker(
+        self,
+        thread: QThread,
+        worker: TabPFNModelWorker,
+    ) -> None:
+        if thread in self._tabpfn_threads:
+            self._tabpfn_threads.remove(thread)
+        if worker in self._tabpfn_workers:
+            self._tabpfn_workers.remove(worker)
 
     def set_theme(self, action: QAction) -> None:
         """Persist and immediately apply a selected application theme."""

@@ -1,0 +1,518 @@
+{
+  "status": "completed",
+  "output_root": "D:\\TXST\\OneDrive - Texas State University\\Hackathon_Monzurul\\Papers\\AVISTA\\examples\\mushroom\\outputs\\training",
+  "project_file": "D:\\TXST\\OneDrive - Texas State University\\Hackathon_Monzurul\\Papers\\AVISTA\\examples\\mushroom\\mushroom.avista",
+  "project_name": "mushroom",
+  "project_file_version": "1.0",
+  "application": "AVISTA",
+  "application_description": "An extensible desktop platform for tabular machine learning and deep learning analytics.",
+  "application_version": "1.0.7",
+  "application_release_date": "July 28, 2026",
+  "report_footer": {
+    "generated_by": "AVISTA",
+    "description": "An extensible desktop platform for tabular machine learning and deep learning analytics.",
+    "version": "1.0.7",
+    "release_date": "July 28, 2026",
+    "generated_on": "2026-09-19T18:57:32"
+  },
+  "results": [
+    {
+      "model_name": "Logistic Regression",
+      "status": "trained",
+      "train_metrics": {
+        "accuracy": 0.9850510024621878,
+        "macro_f1": 0.9850401707830521,
+        "weighted_f1": 0.985054329840746,
+        "balanced_accuracy": 0.9853235908064379,
+        "macro_precision": 0.9848916562704212,
+        "macro_recall": 0.9853235908064379,
+        "confusion_matrix": [
+          [
+            2877,
+            66
+          ],
+          [
+            19,
+            2724
+          ]
+        ],
+        "classification_report": {
+          "e": {
+            "precision": 0.993439226519337,
+            "recall": 0.9775739041794088,
+            "f1-score": 0.9854427127932865,
+            "support": 2943.0
+          },
+          "p": {
+            "precision": 0.9763440860215054,
+            "recall": 0.993073277433467,
+            "f1-score": 0.9846376287728177,
+            "support": 2743.0
+          },
+          "accuracy": 0.9850510024621878,
+          "macro avg": {
+            "precision": 0.9848916562704212,
+            "recall": 0.9853235908064379,
+            "f1-score": 0.9850401707830521,
+            "support": 5686.0
+          },
+          "weighted avg": {
+            "precision": 0.9851923094624337,
+            "recall": 0.9850510024621878,
+            "f1-score": 0.985054329840746,
+            "support": 5686.0
+          }
+        },
+        "roc_auc": 0.9994891391908653
+      },
+      "validation_metrics": {
+        "accuracy": 0.986469864698647,
+        "macro_f1": 0.9864488707392283,
+        "weighted_f1": 0.9864692086374152,
+        "balanced_accuracy": 0.9864031951127865,
+        "macro_precision": 0.9864975450081833,
+        "macro_recall": 0.9864031951127865,
+        "confusion_matrix": [
+          [
+            417,
+            5
+          ],
+          [
+            6,
+            385
+          ]
+        ],
+        "classification_report": {
+          "e": {
+            "precision": 0.9858156028368794,
+            "recall": 0.9881516587677726,
+            "f1-score": 0.98698224852071,
+            "support": 422.0
+          },
+          "p": {
+            "precision": 0.9871794871794872,
+            "recall": 0.9846547314578005,
+            "f1-score": 0.9859154929577465,
+            "support": 391.0
+          },
+          "accuracy": 0.986469864698647,
+          "macro avg": {
+            "precision": 0.9864975450081833,
+            "recall": 0.9864031951127865,
+            "f1-score": 0.9864488707392283,
+            "support": 813.0
+          },
+          "weighted avg": {
+            "precision": 0.9864715422931644,
+            "recall": 0.986469864698647,
+            "f1-score": 0.9864692086374152,
+            "support": 813.0
+          }
+        },
+        "roc_auc": 0.9993212203488442
+      },
+      "test_metrics": {
+        "accuracy": 0.976,
+        "macro_f1": 0.9759882151865114,
+        "weighted_f1": 0.9760081838982559,
+        "balanced_accuracy": 0.9765444627487387,
+        "macro_precision": 0.9758947534258611,
+        "macro_recall": 0.9765444627487387,
+        "confusion_matrix": [
+          [
+            811,
+            32
+          ],
+          [
+            7,
+            775
+          ]
+        ],
+        "classification_report": {
+          "e": {
+            "precision": 0.991442542787286,
+            "recall": 0.9620403321470937,
+            "f1-score": 0.9765201685731487,
+            "support": 843.0
+          },
+          "p": {
+            "precision": 0.9603469640644362,
+            "recall": 0.9910485933503836,
+            "f1-score": 0.9754562617998741,
+            "support": 782.0
+          },
+          "accuracy": 0.976,
+          "macro avg": {
+            "precision": 0.9758947534258611,
+            "recall": 0.9765444627487387,
+            "f1-score": 0.9759882151865114,
+            "support": 1625.0
+          },
+          "weighted avg": {
+            "precision": 0.9764783935188132,
+            "recall": 0.976,
+            "f1-score": 0.9760081838982559,
+            "support": 1625.0
+          }
+        },
+        "roc_auc": 0.9992733903092414
+      },
+      "cv_summary": {
+        "accuracy": {
+          "mean": 0.9827653631716678,
+          "std": 0.0036266172066996703
+        },
+        "macro_f1": {
+          "mean": 0.982754102862312,
+          "std": 0.0036254606946480683
+        },
+        "weighted_f1": {
+          "mean": 0.9827693267261697,
+          "std": 0.0036246585581832824
+        },
+        "balanced_accuracy": {
+          "mean": 0.9830672405216211,
+          "std": 0.003479231614113475
+        },
+        "roc_auc": {
+          "mean": 0.9992028819504604,
+          "std": 0.0001273529915874636
+        }
+      },
+      "saved": true,
+      "output_dir": "D:\\TXST\\OneDrive - Texas State University\\Hackathon_Monzurul\\Papers\\AVISTA\\examples\\mushroom\\outputs\\training\\LogisticRegression"
+    },
+    {
+      "model_name": "Random Forest",
+      "status": "trained",
+      "train_metrics": {
+        "accuracy": 1.0,
+        "macro_f1": 1.0,
+        "weighted_f1": 1.0,
+        "balanced_accuracy": 1.0,
+        "macro_precision": 1.0,
+        "macro_recall": 1.0,
+        "confusion_matrix": [
+          [
+            2943,
+            0
+          ],
+          [
+            0,
+            2743
+          ]
+        ],
+        "classification_report": {
+          "e": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 2943.0
+          },
+          "p": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 2743.0
+          },
+          "accuracy": 1.0,
+          "macro avg": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 5686.0
+          },
+          "weighted avg": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 5686.0
+          }
+        },
+        "roc_auc": 1.0
+      },
+      "validation_metrics": {
+        "accuracy": 1.0,
+        "macro_f1": 1.0,
+        "weighted_f1": 1.0,
+        "balanced_accuracy": 1.0,
+        "macro_precision": 1.0,
+        "macro_recall": 1.0,
+        "confusion_matrix": [
+          [
+            422,
+            0
+          ],
+          [
+            0,
+            391
+          ]
+        ],
+        "classification_report": {
+          "e": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 422.0
+          },
+          "p": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 391.0
+          },
+          "accuracy": 1.0,
+          "macro avg": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 813.0
+          },
+          "weighted avg": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 813.0
+          }
+        },
+        "roc_auc": 1.0
+      },
+      "test_metrics": {
+        "accuracy": 1.0,
+        "macro_f1": 1.0,
+        "weighted_f1": 1.0,
+        "balanced_accuracy": 1.0,
+        "macro_precision": 1.0,
+        "macro_recall": 1.0,
+        "confusion_matrix": [
+          [
+            843,
+            0
+          ],
+          [
+            0,
+            782
+          ]
+        ],
+        "classification_report": {
+          "e": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 843.0
+          },
+          "p": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 782.0
+          },
+          "accuracy": 1.0,
+          "macro avg": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 1625.0
+          },
+          "weighted avg": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 1625.0
+          }
+        },
+        "roc_auc": 1.0
+      },
+      "cv_summary": {
+        "accuracy": {
+          "mean": 1.0,
+          "std": 0.0
+        },
+        "macro_f1": {
+          "mean": 1.0,
+          "std": 0.0
+        },
+        "weighted_f1": {
+          "mean": 1.0,
+          "std": 0.0
+        },
+        "balanced_accuracy": {
+          "mean": 1.0,
+          "std": 0.0
+        },
+        "roc_auc": {
+          "mean": 1.0,
+          "std": 0.0
+        }
+      },
+      "saved": true,
+      "output_dir": "D:\\TXST\\OneDrive - Texas State University\\Hackathon_Monzurul\\Papers\\AVISTA\\examples\\mushroom\\outputs\\training\\RandomForest"
+    },
+    {
+      "model_name": "XGBoost",
+      "status": "trained",
+      "train_metrics": {
+        "accuracy": 1.0,
+        "macro_f1": 1.0,
+        "weighted_f1": 1.0,
+        "balanced_accuracy": 1.0,
+        "macro_precision": 1.0,
+        "macro_recall": 1.0,
+        "confusion_matrix": [
+          [
+            2943,
+            0
+          ],
+          [
+            0,
+            2743
+          ]
+        ],
+        "classification_report": {
+          "e": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 2943.0
+          },
+          "p": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 2743.0
+          },
+          "accuracy": 1.0,
+          "macro avg": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 5686.0
+          },
+          "weighted avg": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 5686.0
+          }
+        },
+        "roc_auc": 1.0
+      },
+      "validation_metrics": {
+        "accuracy": 1.0,
+        "macro_f1": 1.0,
+        "weighted_f1": 1.0,
+        "balanced_accuracy": 1.0,
+        "macro_precision": 1.0,
+        "macro_recall": 1.0,
+        "confusion_matrix": [
+          [
+            422,
+            0
+          ],
+          [
+            0,
+            391
+          ]
+        ],
+        "classification_report": {
+          "e": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 422.0
+          },
+          "p": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 391.0
+          },
+          "accuracy": 1.0,
+          "macro avg": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 813.0
+          },
+          "weighted avg": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 813.0
+          }
+        },
+        "roc_auc": 1.0
+      },
+      "test_metrics": {
+        "accuracy": 1.0,
+        "macro_f1": 1.0,
+        "weighted_f1": 1.0,
+        "balanced_accuracy": 1.0,
+        "macro_precision": 1.0,
+        "macro_recall": 1.0,
+        "confusion_matrix": [
+          [
+            843,
+            0
+          ],
+          [
+            0,
+            782
+          ]
+        ],
+        "classification_report": {
+          "e": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 843.0
+          },
+          "p": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 782.0
+          },
+          "accuracy": 1.0,
+          "macro avg": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 1625.0
+          },
+          "weighted avg": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 1625.0
+          }
+        },
+        "roc_auc": 0.9999999999999999
+      },
+      "cv_summary": {
+        "accuracy": {
+          "mean": 1.0,
+          "std": 0.0
+        },
+        "macro_f1": {
+          "mean": 1.0,
+          "std": 0.0
+        },
+        "weighted_f1": {
+          "mean": 1.0,
+          "std": 0.0
+        },
+        "balanced_accuracy": {
+          "mean": 1.0,
+          "std": 0.0
+        },
+        "roc_auc": {
+          "mean": 1.0,
+          "std": 0.0
+        }
+      },
+      "saved": true,
+      "output_dir": "D:\\TXST\\OneDrive - Texas State University\\Hackathon_Monzurul\\Papers\\AVISTA\\examples\\mushroom\\outputs\\training\\XGBoost"
+    }
+  ]
+}

@@ -7,23 +7,21 @@ from app.core.runtime_verification import collect_runtime_verification
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_required_packaged_assets_exist():
+def test_required_packaged_assets_exist_without_tabpfn_weights():
     logo = PROJECT_ROOT / "app" / "assets" / "logo.png"
     icon = PROJECT_ROOT / "app" / "assets" / "logo.ico"
-    checkpoint = (
-        PROJECT_ROOT
-        / "app"
-        / "assets"
-        / "tabpfn-v2.5-classifier-v2.5_default.ckpt"
-    )
 
     assert logo.is_file() and logo.stat().st_size > 0
     assert icon.is_file() and icon.stat().st_size > 0
     assert icon.read_bytes()[:4] == b"\x00\x00\x01\x00"
-    assert checkpoint.is_file() and checkpoint.stat().st_size > 0
+    assert not list(PROJECT_ROOT.rglob("tabpfn-v2.5-classifier-v2.5_default.ckpt"))
 
 
-def test_runtime_verification_reports_versions_packages_and_checkpoint():
+def test_runtime_verification_reports_user_cache_checkpoint(
+    tmp_path,
+    monkeypatch,
+):
+    monkeypatch.setenv("TABPFN_MODEL_CACHE_DIR", str(tmp_path / "empty-cache"))
     info = collect_runtime_verification(
         {
             "torch_version": "test-torch",
@@ -42,7 +40,8 @@ def test_runtime_verification_reports_versions_packages_and_checkpoint():
     assert info["gpu_name"] == "Test GPU"
     assert isinstance(info["xgboost_available"], bool)
     assert isinstance(info["tabpfn_available"], bool)
-    assert info["tabpfn_checkpoint_exists"] is True
+    assert info["tabpfn_checkpoint_exists"] is False
+    assert info["tabpfn_checkpoint_source"] == "unavailable"
     assert info["logo_exists"] is True
 
 
@@ -98,6 +97,8 @@ def test_pyinstaller_build_uses_clean_environment_and_required_includes():
     assert "xgboost_version_data" in spec
     assert 'collect_dynamic_libs("xgboost")' in spec
     assert 'collect_all(' in spec and '"tabpfn"' in spec
+    assert "tabpfn_checkpoint_filename" in spec
+    assert "must not be bundled with AVISTA" in spec
     assert '"tabpfn_common_utils"' in spec
     assert "tabpfn_utils_hiddenimports" in spec
     assert "tabpfn_utils_binaries" in spec
@@ -108,6 +109,7 @@ def test_pyinstaller_build_uses_clean_environment_and_required_includes():
     assert '"torch"' in spec
     assert '"tabpfn"' in spec
     assert 'collect_data_files(package_name)' in spec
+    assert not (PROJECT_ROOT / "AVISTA.spec").exists()
 
 
 def test_locked_cuda_torch_packages_are_compatible_and_available():
@@ -254,11 +256,7 @@ def test_github_windows_release_workflow_builds_and_publishes_installer():
     assert "installer/AVISTA_Setup.exe" in workflow
     assert "release/AVISTA/_internal/xgboost/lib/xgboost.dll" in workflow
     assert "release/AVISTA/_internal/xgboost/VERSION" in workflow
-    assert (
-        "release/AVISTA/_internal/app/assets/"
-        "tabpfn-v2.5-classifier-v2.5_default.ckpt"
-        in workflow
-    )
+    assert "Forbidden TabPFN checkpoint was packaged" in workflow
     assert "scripts/audit_packaged_release.py" in workflow
     assert "actions/upload-artifact@v7" in workflow
     assert "archive: false" in workflow
@@ -269,3 +267,24 @@ def test_github_windows_release_workflow_builds_and_publishes_installer():
     assert "gh release create" in workflow
     assert "gh release upload" in workflow
     assert "--clobber" in workflow
+    assert "id: installer_hash" in workflow
+    assert "Get-FileHash" in workflow
+    assert "-Algorithm SHA256" in workflow
+    assert '"sha256=$hash" >> $env:GITHUB_OUTPUT' in workflow
+    assert '"--installer", $installerPath' in workflow
+    assert '"--verify-installer", "installer/AVISTA_Setup.exe"' in workflow
+    assert "Publish update metadata to default branch" in workflow
+    assert "repos/$repository/contents/updates.json" in workflow
+    assert "chore(release): update installer checksum" in workflow
+    assert (
+        "cache-dependency-path: |\n"
+        "            requirements_base.txt\n"
+        "            requirements_lock.txt"
+    ) in workflow
+    assert (
+        "python -m pip install --upgrade pip\n"
+        "          python -m pip install pytest\n"
+        "          python -m pip install -r requirements_base.txt\n"
+        "          python -m pip install matplotlib scipy scikit-learn "
+        "imbalanced-learn"
+    ) in workflow

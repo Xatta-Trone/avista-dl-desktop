@@ -154,27 +154,27 @@ def collect_report_summary(
 ) -> dict[str, Any]:
     project_dir = Path(config.project_dir)
     split_dir = project_dir / "outputs" / "data_split"
-    rows = {"train": 0, "validation": 0, "test": 0}
-    for key, filename in (
-        ("train", "y_train_balanced.npy"),
-        ("validation", "y_val.npy"),
-        ("test", "y_test.npy"),
-    ):
-        path = split_dir / filename
-        if path.exists():
-            try:
-                rows[key] = int(len(np.load(path, allow_pickle=True)))
-            except (OSError, ValueError):
-                pass
+    rows = _split_row_counts(split_dir)
     dataset_rows = _dataset_rows(project_dir, config, rows)
-    performance = collect_model_performance(project_dir / "outputs" / "training")
+    training_dir = project_dir / "outputs" / "training"
+    performance = collect_model_performance(training_dir)
+    tabpfn_metadata: dict[str, Any] = {}
+    tabpfn_metadata_path = training_dir / "TabPFN_2_5" / "training_metadata.json"
+    if tabpfn_metadata_path.is_file():
+        try:
+            tabpfn_metadata = json.loads(tabpfn_metadata_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError, TypeError):
+            tabpfn_metadata = {}
     footer = report_footer(generated_on)
     return {
         "project_name": config.project_name,
         "target_column": config.target_column or "Not available",
         "dataset_rows": dataset_rows,
+        "original_dataset_rows": dataset_rows,
         "feature_count": len(config.feature_columns or []),
-        "train_rows": rows["train"],
+        "train_rows": rows["original_train"],
+        "original_training_rows": rows["original_train"],
+        "effective_training_rows": rows["effective_train"],
         "validation_rows": rows["validation"],
         "test_rows": rows["test"],
         "imbalance_method": config.imbalance_method or "none",
@@ -192,6 +192,7 @@ def collect_report_summary(
         "description": APP_DESCRIPTION,
         "version": __version__,
         "release_date": RELEASE_DATE,
+        "tabpfn_metadata": tabpfn_metadata,
     }
 
 
@@ -330,7 +331,11 @@ def create_deep_training_comparison(
         )
         _plot_history_group(metric_axis, model, runs, metric)
     loss_axis.set(title="Training Loss", xlabel="Epoch", ylabel="Loss")
-    metric_axis.set(title="Validation Performance", xlabel="Epoch", ylabel="Score")
+    metric_axis.set(
+        title="Checkpoint-Selection Validation Performance",
+        xlabel="Epoch",
+        ylabel="Score",
+    )
     for axis in (loss_axis, metric_axis):
         axis.grid(alpha=0.25)
         axis.legend(
@@ -493,9 +498,19 @@ def build_markdown_report(
         "",
         _markdown_pairs(
             [
-                ("Dataset rows", summary["dataset_rows"]),
+                (
+                    "Original dataset rows",
+                    summary.get("original_dataset_rows", summary.get("dataset_rows", 0)),
+                ),
                 ("Feature count", summary["feature_count"]),
-                ("Train rows", summary["train_rows"]),
+                (
+                    "Training rows",
+                    summary.get("original_training_rows", summary.get("train_rows", 0)),
+                ),
+                (
+                    "Effective training rows",
+                    summary.get("effective_training_rows", summary.get("train_rows", 0)),
+                ),
                 ("Validation rows", summary["validation_rows"]),
                 ("Test rows", summary["test_rows"]),
             ]
@@ -512,6 +527,9 @@ def build_markdown_report(
         f"- Split method: {config.split_method or 'Not available'}",
         f"- Imbalance method: {summary['imbalance_method']}",
         f"- Numerical scaling: {summary['numerical_scaling_method']}",
+        "- Validation role: deep-model early stopping and checkpoint selection",
+        "- Test role: held-out final evaluation after fitting and checkpoint selection",
+        "- CV role: outer validation folds are used only for fold scoring",
         "",
         "## Model Performance Summary",
         "",
@@ -534,6 +552,31 @@ def build_markdown_report(
         "## Confusion Matrices",
         "",
     ]
+    tabpfn_metadata = summary.get("tabpfn_metadata") or {}
+    if tabpfn_metadata:
+        insertion = lines.index("## Model Performance Summary")
+        lines[insertion:insertion] = [
+            "## TabPFN 2.5 Input Protocol",
+            "",
+            _markdown_pairs(
+                [
+                    ("Python package version", tabpfn_metadata.get("tabpfn_version", "Unknown")),
+                    ("Checkpoint/model version", tabpfn_metadata.get("tabpfn_model_version", "2.5")),
+                    ("Input representation", tabpfn_metadata.get("tabpfn_input_representation", "Unknown")),
+                    ("External preprocessing applied", "No"),
+                    ("External resampling applied", "Yes" if tabpfn_metadata.get("tabpfn_external_resampling_applied") else "No"),
+                    ("Available external-training rows", tabpfn_metadata.get("available_training_rows", "Unknown")),
+                    ("Effective training rows", tabpfn_metadata.get("effective_training_rows", "Unknown")),
+                    ("Supported row limit", tabpfn_metadata.get("training_row_limit", "Unknown")),
+                    ("Subsampling applied", "Yes" if tabpfn_metadata.get("training_subsampled") else "No"),
+                    ("Subsampling strategy", tabpfn_metadata.get("training_subsampling_strategy", "Unknown")),
+                    ("Random seed", tabpfn_metadata.get("training_subsampling_seed", "Unknown")),
+                    ("Input features", tabpfn_metadata.get("feature_count", "Unknown")),
+                    ("Target classes", tabpfn_metadata.get("num_classes", "Unknown")),
+                ]
+            ),
+            "",
+        ]
     lines.extend(_markdown_image_group(confusion_paths))
     lines.extend(["", "## Classification Reports", ""])
     lines.extend(_markdown_report_group(classification_reports))
@@ -578,20 +621,49 @@ def write_pdf_report(
     classification_reports: dict[str, pd.DataFrame],
     feature_importance_paths: dict[str, Path],
 ) -> None:
+    tabpfn_metadata = summary.get("tabpfn_metadata") or {}
+    tabpfn_lines = []
+    if tabpfn_metadata:
+        tabpfn_lines = [
+            "TabPFN 2.5 input: raw DataFrame with TabPFN-owned preprocessing",
+            "TabPFN external resampling: No",
+            (
+                "TabPFN available/effective training rows: "
+                f"{tabpfn_metadata.get('available_training_rows', 'Unknown')}/"
+                f"{tabpfn_metadata.get('effective_training_rows', 'Unknown')}"
+            ),
+            f"TabPFN supported row limit: {tabpfn_metadata.get('training_row_limit', 'Unknown')}",
+        ]
     with PdfPages(path) as pdf:
         _pdf_text_page(pdf, "AVISTA Model Report", [
             APP_DESCRIPTION,
             f"Project: {summary['project_name']}",
             f"Target: {summary['target_column']}",
-            f"Dataset rows: {summary['dataset_rows']}",
+            (
+                "Original dataset rows: "
+                f"{summary.get('original_dataset_rows', summary.get('dataset_rows', 0))}"
+            ),
             f"Features: {summary['feature_count']}",
             (
-                "Split rows: "
-                f"{summary['train_rows']} train / "
+                "Original split rows: "
+                f"{summary.get('original_training_rows', summary.get('train_rows', 0))} train / "
                 f"{summary['validation_rows']} validation / "
                 f"{summary['test_rows']} test"
             ),
+            (
+                "Effective training rows: "
+                f"{summary.get('effective_training_rows', summary.get('train_rows', 0))}"
+            ),
             f"Imbalance method: {summary['imbalance_method']}",
+            (
+                "Validation role: deep-model early stopping and checkpoint "
+                "selection"
+            ),
+            (
+                "Test role: held-out final evaluation after fitting and "
+                "checkpoint selection"
+            ),
+            "CV role: outer validation folds are used only for fold scoring",
             (
                 f"Cross-validation: {summary['cv_folds']} folds"
                 if summary["cv_enabled"]
@@ -601,6 +673,7 @@ def write_pdf_report(
             f"Generated on: {summary['generated_on']}",
             f"AVISTA version: {summary['version']}",
             f"AVISTA release date: {summary['release_date']}",
+            *tabpfn_lines,
             (
                 "Unless otherwise stated, model comparison figures and "
                 "diagnostic tables are based on the test set."
@@ -981,8 +1054,50 @@ def _dataset_rows(
         except OSError:
             pass
     return int(
-        split_rows["train"] + split_rows["validation"] + split_rows["test"]
+        split_rows["original_train"]
+        + split_rows["validation"]
+        + split_rows["test"]
     )
+
+
+def _split_row_counts(split_dir: Path) -> dict[str, int]:
+    """Return explicit original/effective counts from saved split artifacts."""
+
+    original_train = _array_length(
+        split_dir / "y_train.npy",
+        split_dir / "y_train_encoded.npy",
+    )
+    effective_train = _array_length(
+        split_dir / "y_train_balanced.npy",
+        split_dir / "y_train_balanced_encoded.npy",
+    )
+    validation = _array_length(split_dir / "y_val.npy", split_dir / "y_val_encoded.npy")
+    test = _array_length(split_dir / "y_test.npy", split_dir / "y_test_encoded.npy")
+
+    if original_train == 0:
+        metadata = _read_json(split_dir / "split_indices.json")
+        original_train = len(metadata.get("train_index") or [])
+    if original_train == 0:
+        original_train = effective_train
+    if effective_train == 0:
+        effective_train = original_train
+    return {
+        "original_train": int(original_train),
+        "effective_train": int(effective_train),
+        "validation": int(validation),
+        "test": int(test),
+    }
+
+
+def _array_length(*paths: Path) -> int:
+    for path in paths:
+        if not path.is_file():
+            continue
+        try:
+            return int(len(np.load(path, allow_pickle=True)))
+        except (OSError, ValueError):
+            continue
+    return 0
 
 
 def _read_json(path: Path) -> dict[str, Any]:

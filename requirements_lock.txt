@@ -1,3 +1,5 @@
+# Canonical reproducible Python 3.12 development and Windows release environment.
+# Keep the CUDA PyTorch, TorchVision, and TorchAudio versions/index matched.
 --extra-index-url https://download.pytorch.org/whl/cu126
 
 pyinstaller==6.17.0
@@ -22,8 +24,6 @@ pyarrow==24.0.0
 pillow==12.2.0
 seaborn==0.13.2
 statsmodels==0.14.5
-shap==0.48.0
-captum==0.8.0
 nvidia-ml-py==13.610.43
 safetensors==0.8.0
 huggingface-hub==1.19.0

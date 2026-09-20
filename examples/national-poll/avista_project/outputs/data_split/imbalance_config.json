@@ -1,0 +1,166 @@
+{
+  "target_column": "Number_of_Doctors_Visited",
+  "feature_columns": [
+    "Bathroom_Needs_Keeps_Patient_from_Sleeping",
+    "Dental_Health",
+    "Employment",
+    "Gender",
+    "Medication_Keeps_Patient_from_Sleeping",
+    "Mental_Health",
+    "Pain_Keeps_Patient_from_Sleeping",
+    "Physical_Health",
+    "Prescription_Sleep_Medication",
+    "Race",
+    "Stress_Keeps_Patient_from_Sleeping",
+    "Trouble_Sleeping",
+    "Uknown_Keeps_Patient_from_Sleeping"
+  ],
+  "task_type": null,
+  "signature": {
+    "schema_version": 1,
+    "split_signature": {
+      "schema_version": 1,
+      "modeling": {
+        "target_column": "Number_of_Doctors_Visited",
+        "feature_columns": [
+          "Bathroom_Needs_Keeps_Patient_from_Sleeping",
+          "Dental_Health",
+          "Employment",
+          "Gender",
+          "Medication_Keeps_Patient_from_Sleeping",
+          "Mental_Health",
+          "Pain_Keeps_Patient_from_Sleeping",
+          "Physical_Health",
+          "Prescription_Sleep_Medication",
+          "Race",
+          "Stress_Keeps_Patient_from_Sleeping",
+          "Trouble_Sleeping",
+          "Uknown_Keeps_Patient_from_Sleeping"
+        ],
+        "label_encoding_columns": [
+          "Bathroom_Needs_Keeps_Patient_from_Sleeping",
+          "Dental_Health",
+          "Employment",
+          "Gender",
+          "Medication_Keeps_Patient_from_Sleeping",
+          "Mental_Health",
+          "Pain_Keeps_Patient_from_Sleeping",
+          "Physical_Health",
+          "Prescription_Sleep_Medication",
+          "Race",
+          "Stress_Keeps_Patient_from_Sleeping",
+          "Trouble_Sleeping",
+          "Uknown_Keeps_Patient_from_Sleeping"
+        ],
+        "task_type": null,
+        "numerical_scaling_method": "none",
+        "scaled_numerical_columns": [],
+        "categorical_missing_value": "Unknown",
+        "categorical_missing_value_strategy": "replace_missing_and_blank_before_encoding"
+      },
+      "split_method": "random",
+      "train_percent": 70.0,
+      "validation_percent": 10.0,
+      "test_percent": 20.0,
+      "random_seed": 42,
+      "group_column": null,
+      "date_column": null
+    },
+    "imbalance_method": "smote",
+    "use_class_weights": true,
+    "smote_ratio_preset": "moderate",
+    "custom_ratio": "",
+    "sampling_strategy": {
+      "0": 130
+    }
+  },
+  "split_signature": {
+    "schema_version": 1,
+    "modeling": {
+      "target_column": "Number_of_Doctors_Visited",
+      "feature_columns": [
+        "Bathroom_Needs_Keeps_Patient_from_Sleeping",
+        "Dental_Health",
+        "Employment",
+        "Gender",
+        "Medication_Keeps_Patient_from_Sleeping",
+        "Mental_Health",
+        "Pain_Keeps_Patient_from_Sleeping",
+        "Physical_Health",
+        "Prescription_Sleep_Medication",
+        "Race",
+        "Stress_Keeps_Patient_from_Sleeping",
+        "Trouble_Sleeping",
+        "Uknown_Keeps_Patient_from_Sleeping"
+      ],
+      "label_encoding_columns": [
+        "Bathroom_Needs_Keeps_Patient_from_Sleeping",
+        "Dental_Health",
+        "Employment",
+        "Gender",
+        "Medication_Keeps_Patient_from_Sleeping",
+        "Mental_Health",
+        "Pain_Keeps_Patient_from_Sleeping",
+        "Physical_Health",
+        "Prescription_Sleep_Medication",
+        "Race",
+        "Stress_Keeps_Patient_from_Sleeping",
+        "Trouble_Sleeping",
+        "Uknown_Keeps_Patient_from_Sleeping"
+      ],
+      "task_type": null,
+      "numerical_scaling_method": "none",
+      "scaled_numerical_columns": [],
+      "categorical_missing_value": "Unknown",
+      "categorical_missing_value_strategy": "replace_missing_and_blank_before_encoding"
+    },
+    "split_method": "random",
+    "train_percent": 70.0,
+    "validation_percent": 10.0,
+    "test_percent": 20.0,
+    "random_seed": 42,
+    "group_column": null,
+    "date_column": null
+  },
+  "stage_completed": true,
+  "original_train_distribution": {
+    "Doctors_2_3": 260,
+    "Doctors_4_Plus": 151,
+    "Doctors_0_1": 88
+  },
+  "balanced_train_distribution": {
+    "Doctors_2_3": 260,
+    "Doctors_4_Plus": 151,
+    "Doctors_0_1": 130
+  },
+  "imbalance_method": "smote",
+  "balancing_preset": "moderate",
+  "random_seed": 42,
+  "sampling_strategy_used": {
+    "0": 130
+  },
+  "class_weights_enabled": true,
+  "warnings": [
+    "Categorical features are present. SMOTE-NC is recommended instead of regular SMOTE."
+  ],
+  "errors": [],
+  "imbalance_info": {
+    "strategy": "smote",
+    "success": true,
+    "message": "Resampling completed.",
+    "error": null,
+    "before_counts": {
+      "1": 260,
+      "2": 151,
+      "0": 88
+    },
+    "after_counts": {
+      "1": 260,
+      "2": 151,
+      "0": 130
+    },
+    "warnings": [
+      "Categorical features are present. SMOTE-NC is recommended instead of regular SMOTE."
+    ]
+  }
+}

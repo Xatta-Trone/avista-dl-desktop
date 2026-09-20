@@ -1,0 +1,8 @@
+Class,Full count,Train count,Validation count,Test count,Status
+Insufficient_Weight,267,189,19,59,OK
+Normal_Weight,282,191,30,61,OK
+Obesity_Type_I,351,241,40,70,OK
+Obesity_Type_II,297,209,24,64,OK
+Obesity_Type_III,324,232,32,60,OK
+Overweight_Level_I,276,193,28,55,OK
+Overweight_Level_II,290,205,36,49,OK

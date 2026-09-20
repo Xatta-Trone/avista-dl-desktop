@@ -1,0 +1,161 @@
+[2026-09-19T18:55:05] Training worker started.
+[2026-09-19T18:55:05] Training target diagnostics:
+current target column=poisonous
+current task_type=auto
+saved target column=poisonous
+saved task_type=unknown
+y_train dtype=int64
+unique target classes=2
+detected target type=classification
+[2026-09-19T18:55:05] Training target diagnostics:
+current target column=poisonous
+current task_type=auto
+saved target column=poisonous
+saved task_type=unknown
+y_train dtype=int64
+unique target classes=2
+detected target type=classification
+[2026-09-19T18:55:05] Logistic Regression started
+[2026-09-19T18:55:05] Logistic Regression: fitting
+[2026-09-19T18:55:05] Logistic Regression: evaluating train
+[2026-09-19T18:55:05] Logistic Regression: evaluating validation
+[2026-09-19T18:55:05] Logistic Regression: evaluating test
+[2026-09-19T18:55:10] Logistic Regression: saving
+[2026-09-19T18:55:10] Training workflow complete
+[2026-09-19T18:55:10] Model result updated: Logistic Regression
+[2026-09-19T18:55:10] Training target diagnostics:
+current target column=poisonous
+current task_type=auto
+saved target column=poisonous
+saved task_type=unknown
+y_train dtype=int64
+unique target classes=2
+detected target type=classification
+[2026-09-19T18:55:10] Training target diagnostics:
+current target column=poisonous
+current task_type=auto
+saved target column=poisonous
+saved task_type=unknown
+y_train dtype=int64
+unique target classes=2
+detected target type=classification
+[2026-09-19T18:55:10] Random Forest started
+[2026-09-19T18:55:10] Random Forest: fitting
+[2026-09-19T18:55:10] Random Forest: evaluating train
+[2026-09-19T18:55:10] Random Forest: evaluating validation
+[2026-09-19T18:55:11] Random Forest: evaluating test
+[2026-09-19T18:55:16] Random Forest: saving
+[2026-09-19T18:55:16] Training workflow complete
+[2026-09-19T18:55:16] Model result updated: Random Forest
+[2026-09-19T18:55:16] Training target diagnostics:
+current target column=poisonous
+current task_type=auto
+saved target column=poisonous
+saved task_type=unknown
+y_train dtype=int64
+unique target classes=2
+detected target type=classification
+[2026-09-19T18:55:16] Training target diagnostics:
+current target column=poisonous
+current task_type=auto
+saved target column=poisonous
+saved task_type=unknown
+y_train dtype=int64
+unique target classes=2
+detected target type=classification
+[2026-09-19T18:55:16] XGBoost started
+[2026-09-19T18:55:16] XGBoost: fitting
+[2026-09-19T18:55:16] XGBoost failed: value 0 for Parameter num_class should be greater equal to 1
+num_class: Number of output class in the multi-class classification.
+[2026-09-19T18:55:16] Training workflow complete
+[2026-09-19T18:55:16] Model result updated: XGBoost
+[2026-09-19T18:55:16] Training worker finished.
+[2026-09-19T18:57:09] Training worker started.
+[2026-09-19T18:57:09] Training target diagnostics:
+current target column=poisonous
+current task_type=auto
+saved target column=poisonous
+saved task_type=unknown
+y_train dtype=int64
+unique target classes=2
+detected target type=classification
+[2026-09-19T18:57:09] Training target diagnostics:
+current target column=poisonous
+current task_type=auto
+saved target column=poisonous
+saved task_type=unknown
+y_train dtype=int64
+unique target classes=2
+detected target type=classification
+[2026-09-19T18:57:10] Logistic Regression started
+[2026-09-19T18:57:10] Fold 1/5 completed
+[2026-09-19T18:57:10] Fold 2/5 completed
+[2026-09-19T18:57:10] Fold 3/5 completed
+[2026-09-19T18:57:10] Fold 4/5 completed
+[2026-09-19T18:57:11] Fold 5/5 completed
+[2026-09-19T18:57:11] Logistic Regression: fitting
+[2026-09-19T18:57:11] Logistic Regression: evaluating train
+[2026-09-19T18:57:11] Logistic Regression: evaluating validation
+[2026-09-19T18:57:11] Logistic Regression: evaluating test
+[2026-09-19T18:57:15] Logistic Regression: saving
+[2026-09-19T18:57:15] Training workflow complete
+[2026-09-19T18:57:15] Model result updated: Logistic Regression
+[2026-09-19T18:57:15] Training target diagnostics:
+current target column=poisonous
+current task_type=auto
+saved target column=poisonous
+saved task_type=unknown
+y_train dtype=int64
+unique target classes=2
+detected target type=classification
+[2026-09-19T18:57:15] Training target diagnostics:
+current target column=poisonous
+current task_type=auto
+saved target column=poisonous
+saved task_type=unknown
+y_train dtype=int64
+unique target classes=2
+detected target type=classification
+[2026-09-19T18:57:16] Random Forest started
+[2026-09-19T18:57:16] Fold 1/5 completed
+[2026-09-19T18:57:16] Fold 2/5 completed
+[2026-09-19T18:57:17] Fold 3/5 completed
+[2026-09-19T18:57:17] Fold 4/5 completed
+[2026-09-19T18:57:18] Fold 5/5 completed
+[2026-09-19T18:57:18] Random Forest: fitting
+[2026-09-19T18:57:18] Random Forest: evaluating train
+[2026-09-19T18:57:18] Random Forest: evaluating validation
+[2026-09-19T18:57:19] Random Forest: evaluating test
+[2026-09-19T18:57:24] Random Forest: saving
+[2026-09-19T18:57:24] Training workflow complete
+[2026-09-19T18:57:24] Model result updated: Random Forest
+[2026-09-19T18:57:24] Training target diagnostics:
+current target column=poisonous
+current task_type=auto
+saved target column=poisonous
+saved task_type=unknown
+y_train dtype=int64
+unique target classes=2
+detected target type=classification
+[2026-09-19T18:57:24] Training target diagnostics:
+current target column=poisonous
+current task_type=auto
+saved target column=poisonous
+saved task_type=unknown
+y_train dtype=int64
+unique target classes=2
+detected target type=classification
+[2026-09-19T18:57:24] XGBoost started
+[2026-09-19T18:57:25] Fold 1/5 completed
+[2026-09-19T18:57:25] Fold 2/5 completed
+[2026-09-19T18:57:26] Fold 3/5 completed
+[2026-09-19T18:57:26] Fold 4/5 completed
+[2026-09-19T18:57:27] Fold 5/5 completed
+[2026-09-19T18:57:27] XGBoost: fitting
+[2026-09-19T18:57:27] XGBoost: evaluating train
+[2026-09-19T18:57:27] XGBoost: evaluating validation
+[2026-09-19T18:57:27] XGBoost: evaluating test
+[2026-09-19T18:57:32] XGBoost: saving
+[2026-09-19T18:57:32] Training workflow complete
+[2026-09-19T18:57:32] Model result updated: XGBoost
+[2026-09-19T18:57:32] Training worker finished.

@@ -18,8 +18,67 @@ The project has a working modular backend and PySide6 desktop GUI. Core tabular 
 
 The GUI can create or load projects, inspect and repair GPU environments with user confirmation, import large datasets with a paginated preview, select modeling and target columns, save label-encoding choices for categorical modeling columns, configure global numerical scaling for user-checked numeric features with selectable histogram inspection, configure train/validation/test splits, apply train-class-only imbalance handling, select classification models and edit their saved parameters, restore matching saved split artifacts, run edge-case checks, and train sklearn-compatible models from confirmed saved artifacts through a `QThread` worker.
 
-The current AVISTA application and update-feed version is `1.0.7`, with the
-release date centralized as July 28, 2026. Focused centralized-version,
+Saved-artifact cross-validation now reconstructs the original external
+training partition from the project dataset and saved split indices. Every
+stratified fold fits feature preprocessing on fold-training rows, transforms
+the untouched fold-validation rows with those artifacts, and applies the
+configured resampling strategy only to fold-training. This protocol is shared
+by sklearn/XGBoost and PyTorch tabular training; final fitting for those model
+families continues to use the prepared balanced-training artifacts. CV feasibility is
+checked against original external-training labels, and saved model/training
+metadata records the fold-local protocol. Focused preprocessing and trainer
+verification passed on September 19, 2026: `47 passed`.
+
+Deep-model cross-validation now reserves every outer validation fold for
+scoring only. Each raw outer fold-training partition receives a reproducible,
+stratified inner holdout before preprocessing or resampling. Preprocessing is
+fitted on raw inner-training rows, and SMOTE or other resampling applies only
+to transformed inner training; inner and outer validation remain unchanged.
+If the inner split is infeasible, the fold trains for all configured epochs
+without early stopping and records the reason in `cv_results.csv`; it never
+falls back to the outer scoring fold. Final deep-model training still uses the
+project's external validation partition for checkpoint selection, while the
+external test partition remains final-evaluation-only. Focused nested deep-CV
+verification passed on September 19, 2026: `14 passed`.
+
+TabPFN 2.5 now reconstructs raw pandas train/validation/test frames from the
+saved external split indices and delegates feature preparation to TabPFN. It
+does not use AVISTA's one-hot/scaled/balanced matrices or external resampling.
+All training rows are retained through 50,000; larger fit partitions receive
+deterministic stratified subsampling to exactly 50,000. Focused TabPFN trainer,
+edge-case, registry, and report verification passed on September 19, 2026:
+`12 passed`.
+
+TabPFN 2.5 checkpoint management now uses only the official TabPFN user cache.
+The Prior Labs browser-auth and license flow successfully acquired the pinned
+v2.5 classifier checkpoint independently; its 42,935,499-byte file and SHA256
+`5d7170e2d3af01f9c501bb09ec3bd12e9944f8604de18002c647873c6ec04a12`
+matched the former bundled copy. A cache-only real fit/predict and AVISTA
+training integration succeeded before the repository copies were removed.
+Startup checks only status; when the cached copy is absent it offers setup
+without blocking AVISTA or starting a silent download. **TabPFN Model Status**
+provides license, cache, download/re-download, checksum, verification, and
+cache-folder actions. Downloads and verification use a QThread worker and the
+pinned `tabpfn==8.0.8` official downloader/browser-auth flow. AVISTA stores no
+credentials; the TabPFN package owns its authentication cache. AVISTA does not
+redistribute the separately licensed TabPFN 2.5 model weights. Focused model
+manager, Model Selection, resource, trainer, GUI, packaging, and audit
+verification passed on September 19, 2026: `47 passed` across five targeted
+pytest invocations. Python compilation, PowerShell parsing, and
+`git diff --check` also passed.
+
+Model Selection keeps TabPFN 2.5 visible while resolving checkpoint readiness
+through the centralized model manager. A valid user-cache checkpoint enables
+normal selection; its absence disables and clears the selection and exposes
+**Set Up TabPFN 2.5**, which opens the existing status dialog. Main-window
+status signals refresh the row after setup without restarting AVISTA. Training
+preflight and the existing trainer checkpoint resolution prevent stale
+selections from starting a TabPFN fit. Focused Model Selection, training
+preflight, trainer, and existing GUI regression verification passed on
+September 19, 2026: `9 passed`.
+
+The current AVISTA application and update-feed version is `1.1.0`, with the
+release date centralized as September 20, 2026. Focused centralized-version,
 update-feed, release-tool, and packaging-document verification passed on July
 28, 2026: `23 passed`.
 
@@ -36,9 +95,50 @@ release date in `app/__version__.py`, synchronizes `updates.json`, the
 versioned installer URL, README, changelog, and current project-status block,
 and requires fresh notes when advancing versions. Dry-run, repository check,
 tag/version validation, and post-build SHA256 modes are supported. The Windows
-release workflow runs the synchronization and expected-tag check before
-packaging. Focused release-tool and version-metadata verification passed:
-`12 passed`.
+release workflow preserves its focused dependency installation, hashes the
+final `installer/AVISTA_Setup.exe`, validates the tag/version and release URL,
+verifies the stored checksum against the same bytes before upload, and updates
+only `updates.json` on the default branch after successful release publication.
+SHAP and Captum are absent from active imports and were removed from the
+canonical lock and default full environment; they remain only in the explicit
+future `requirements_xai.txt` group. Focused release-metadata, packaging,
+version, and resource verification passed on September 19, 2026: `35 passed`
+across three targeted pytest invocations. `pip check`, application imports,
+Python compilation, and release-metadata synchronization also passed.
+
+The final application-code cleanup now prompts before an existing `.avista`
+or legacy project is opened from the GUI or command line. Project files are
+plain JSON, but they can reference external datasets and project-local saved
+artifacts; joblib and NumPy object artifacts are therefore restricted by a
+trust confirmation at the user-controlled open boundary. Reports and saved
+training metadata now distinguish original dataset/training rows from the
+effective post-resampling training count. The legacy in-memory
+`train_selected_models()` compatibility API remains available for its focused
+classification/regression tests, but now splits raw rows before fitting feature
+preprocessing on training rows only. Cache-only TabPFN status, model selection,
+training preflight, and package exclusion remain unchanged. Focused cleanup
+verification passed on September 19, 2026 across project-open, report, trainer,
+TabPFN manager/selection, resource, and packaging tests; modified Python files
+also compiled successfully.
+
+The release-stabilization suite passed on September 20, 2026: `381 passed`
+with `17` third-party warnings in 11 minutes 14 seconds. Numeric class labels
+now retain their original dtype in balanced reporting artifacts, keeping saved
+class-coverage checks consistent across training, validation, and test arrays.
+Categorical blanks continue to follow the configured `Unknown` preprocessing
+policy, while numeric missing values remain blocking. Time-split date checks
+and rare-class stratification checks run in the split-validation stage rather
+than being incorrectly nested under numerical scaling. PySide tests now delete
+top-level widgets after every test so timers and signal-owned state cannot leak
+across the full suite. `pip check`, application/test/script compilation, and
+`git diff --check` passed after the full suite.
+
+Public SoftwareX validation materials are organized under `examples/` for the
+Mushroom, Obesity, and National Poll (NPHA) datasets. Each example includes a
+portable saved AVISTA project and its primary Jupyter Notebook; the notebooks
+also contain the AutoGluon platform comparison. `examples/README.md` records
+the protocol, UCI dataset identifiers, folder contents, reproducibility notes,
+and the National Poll split-method distinction.
 
 The Light/Dark theme regression caused by a global transparent `QLabel` rule
 is fixed. The central QSS no longer applies broad label or widget
@@ -88,8 +188,8 @@ audit, and workflow artifact list now all require it. TabPFN modules, package
 data, and inspected dynamic dependencies are collected for both analyses.
 PyInstaller `MERGE` was removed so `AVISTADeepWorker.exe` retains its own
 pure-Python dependency archive in the shared onedir folder. The checkpoint is
-resolved centrally from supported source and `_internal/app/assets` paths.
-Missing packaged TabPFN dependencies now produce a packaging failure; only
+resolved centrally from the official user cache. Missing packaged TabPFN
+dependencies now produce a packaging failure; only
 intentional/source optional absence remains skipped.
 
 Git history shows v1.0.1–v1.0.3 share PyInstaller spec blob `d24a688` and
@@ -101,10 +201,11 @@ analysis. Inno Setup already copied the full release tree recursively and was
 not the component omitting these files.
 
 Release builds now run a pre-build package/architecture diagnostic and a
-post-build audit requiring AMD64 `AVISTA.exe`, `AVISTADeepWorker.exe`, the
-XGBoost `VERSION` data and DLL, and the TabPFN checkpoint. The frozen GUI must
-fit a tiny XGBoost dataset, and the frozen worker must fit a tiny two-estimator
-CPU TabPFN dataset, before Inno Setup or GitHub publication can proceed.
+post-build audit requiring AMD64 `AVISTA.exe`, `AVISTADeepWorker.exe`, and the
+XGBoost `VERSION` data and DLL while explicitly rejecting redistributed TabPFN
+2.5 weights. The frozen GUI must fit a tiny XGBoost dataset, and the frozen
+worker must expose TabPFN package/checkpoint-manager support, before Inno Setup
+or GitHub publication can proceed.
 
 Focused verification for the XGBoost `VERSION` package-data regression passed
 on July 27, 2026: `20 passed`. This covered the PyInstaller declaration,
@@ -249,7 +350,7 @@ Focused checkbox-based numerical-scaling verification passed on July 3, 2026: `7
 - Startup and manual environment checks share the same worker lifecycle, cached main-window result, Environment-page running/error state, and disabled Run GPU Check control.
 - Startup environment results are saved to the active project's `logs/environment_info.json`, the repository-level `logs/environment_info.json` in development, or `%LOCALAPPDATA%\AVISTA\logs\environment_info.json` in packaged mode when no project is loaded.
 - Startup environment logging records check start, completion, and failure; GPU runtime repair remains an explicit user action and is never triggered by startup checks.
-- Startup runtime inventory records the AVISTA version, bundled executable path, PyTorch/CUDA/GPU details, XGBoost and TabPFN availability, and bundled checkpoint existence.
+- Startup runtime inventory records the AVISTA version, bundled executable path, PyTorch/CUDA/GPU details, XGBoost and TabPFN availability, and user-cache checkpoint status/source.
 - AVISTA checks GitHub-hosted `updates.json` once after startup when automatic checks are enabled, using a `QThread` worker so the GUI and project loading remain responsive.
 - Automatic update checks stay silent when AVISTA is up to date or the network check fails; manual **Help > Check for Updates** checks show an up-to-date message or a compact network warning.
 - Update availability compares `app.__version__.__version__` with metadata `latest_version` using semantic version comparison.
@@ -386,11 +487,24 @@ Focused checkbox-based numerical-scaling verification passed on July 3, 2026: `7
   - Foundation Tabular Models
 - Central `create_model()` factory implemented for classification models.
 - XGBoost, TabPFN, and PyTorch are imported only when their models are requested and raise clear `ImportError` messages when unavailable.
-- Requirements are grouped explicitly for classical ML, CPU PyTorch, GPU PyTorch installation instructions, and the full CPU-installable environment. GPU PyTorch uses the CUDA 12.6 index with CUDA 11.8 as fallback.
+- `requirements_lock.txt` is the canonical reproducible Python 3.12 installation and release source. It pins the matched CUDA 12.6 PyTorch, TorchVision, and TorchAudio trio.
+- Requirements are also grouped as unpinned convenience or optional sets for the GUI/data foundation, classical ML, CPU PyTorch, GPU PyTorch instructions, a full CPU-installable environment, and future XAI work. GPU PyTorch uses the CUDA 12.6 index with CUDA 11.8 as fallback.
 - `requirements_ml.txt` includes scikit-learn, XGBoost, imbalanced-learn, SciPy, statsmodels, Matplotlib, and seaborn.
 - `requirements_deep_cpu.txt` includes torch, torchvision, and torchaudio.
 - `requirements_deep_gpu.txt` contains commented pip commands for CUDA 12.6 and CUDA 11.8 and has no installable plain `torch` entry.
-- `requirements_full.txt` includes the complete CPU-installable application, classical ML, XAI, and TabPFN dependencies. It documents which packages provide the registered classifiers and directs GPU users to `requirements_deep_gpu.txt`.
+- `requirements_full.txt` includes the unpinned CPU-installable application, classical ML, deep-learning, and TabPFN dependencies. It excludes the unused future XAI packages and directs GPU users to `requirements_deep_gpu.txt`.
+- `requirements_xai.txt` retains SHAP and Captum only as an explicit future optional group; neither library is imported by implemented AVISTA functionality.
+
+Canonical reproducible source installation:
+
+```powershell
+py -3.12 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+
+python -m pip install --upgrade pip
+python -m pip install -r requirements_lock.txt
+```
+
 - Generic `MambaAttentionClassifier`, `FTTransformerClassifier`, `AutoIntClassifier`, and `TabResNet` architectures were extracted from the reference pipeline without domain-specific logic.
 - MambaAttention metadata and Model Selection controls were corrected directly from `reference/Phase2_SAE_Classification_v10_ADAS__FINAL.py`:
   - architecture defaults match `hidden_dim=256` and `dropout=0.3`.
@@ -431,15 +545,17 @@ Focused checkbox-based numerical-scaling verification passed on July 3, 2026: `7
   - saves state dict, configuration, metadata, history, curves, split evaluations, and optional CV summaries under `outputs/training/TabResNet`.
   - creates `failure_reason.json` with the exact Python training error when training fails.
 - TabPFN 2.5 is trainable from confirmed saved split artifacts:
+  - uses the locked `tabpfn==8.0.8` Python package with the official TabPFN 2.5 classifier checkpoint from the official user cache; the package version and model version are recorded separately.
   - exposes only `n_estimators`; checkpoint selection is not user-editable.
-  - resolves the bundled `app/assets/tabpfn-v2.5-classifier-v2.5_default.ckpt` in development and packaged modes and passes it to every CV/final `TabPFNClassifier`.
-  - missing bundled checkpoints create `failure_reason.json` with a clear error and do not attempt the default automatic download path.
+  - resolves a structurally valid `%APPDATA%/tabpfn/tabpfn-v2.5-classifier-v2.5_default.ckpt` (or `TABPFN_MODEL_CACHE_DIR`) and passes that path to every CV/final `TabPFNClassifier`; there is no application-bundled fallback.
+  - when the user-cache checkpoint is unusable, training creates `failure_reason.json` with a clear error and does not trigger a download; download remains an explicit user action under **Help > TabPFN Model Status**.
   - Model Selection exposes only `n_estimators`, with the installed TabPFN package default of `8` and an allowed range of 1 through 100.
   - the same selected `n_estimators` value is used for both CV and final training.
-  - the 3,000-row training cap and 500-row prediction batching remain fixed internal implementation details; randomness comes from the global experiment seed.
-  - saved `model_config.json` contains only the selected `n_estimators`.
-  - uses balanced encoded training arrays and saved validation/test arrays.
-  - caps each CV and final training subset with deterministic sampling from the experiment seed.
+  - reconstructs raw pandas feature frames from the saved external train/validation/test indices, supplies configured categorical indices to TabPFN, and leaves feature preprocessing to TabPFN.
+  - does not apply AVISTA one-hot encoding, scaling, imputation, SMOTE, or other external resampling to TabPFN inputs; training metadata records the project imbalance setting and this model-specific exception.
+  - uses every available training row through 50,000; larger final/CV training partitions are reduced to exactly 50,000 with deterministic stratified sampling from the experiment seed while retaining every class.
+  - validates the TabPFN 2.5 range of at most 2,000 input features and 10 classes before fitting.
+  - saved model/training metadata records raw input representation, categorical columns, available/effective training counts, row limit, subsampling strategy/seed, and feature/class counts.
   - predicts validation/test probabilities in bounded batches and decodes reports to original class labels.
   - saves validation/test metrics, reports, confusion matrices, predictions, probabilities, and optional CV summaries under `outputs/training/TabPFN_2_5`.
   - saves `trained_model.joblib` when serialization succeeds, otherwise records `model_not_serialized_reason.json`.
@@ -535,8 +651,9 @@ Focused checkbox-based numerical-scaling verification passed on July 3, 2026: `7
 - Training consumes confirmed balanced-training, validation, test, split metadata, model settings, and preprocessing artifacts without recomputing splits. Numerical scaling is fit on the training subset only and reused for validation, test, reports, and downstream saved-model artifacts.
 - Per-model and per-fold progress reports the current model, fold, step, percentage, and timestamped log messages.
 - Cooperative cancellation stops between folds, models, and evaluation/saving steps.
-- Optional stratified cross-validation runs only on balanced training data, validates minimum class counts, saves fold metrics and mean/std summaries, and excludes validation/test data.
-- Final models train on the full balanced training set and are evaluated independently on train, validation, and test data.
+- Optional stratified cross-validation starts from the raw external-training rows, fits preprocessing separately on each fold-training partition, resamples only that fold-training partition, validates fold feasibility from the original labels, saves fold metrics and mean/std summaries, and excludes external validation/test data.
+- Deep-model CV splits raw outer fold-training first, fits preprocessing on raw inner training, resamples only transformed inner training, and keeps both inner early-stopping validation and outer scoring validation unchanged. Infeasible inner splits disable early stopping for that fold.
+- Final deep models train on the full balanced training set, use external validation for early stopping/checkpoint selection, and reserve external test for final evaluation.
 - Per-model output folders save trained models, preprocessing artifacts, configuration snapshots, training metadata, metrics, reports, confusion matrices, predictions, probabilities, ROC/PR curves, and misclassified records.
 - Tree models save feature importance outputs; Logistic Regression saves coefficient and odds-ratio outputs.
 - Saved confusion matrices, ROC curves, precision-recall curves, and feature-importance plots use publication-oriented Matplotlib styling and are exported as 300-DPI PNG and PDF files.
@@ -563,7 +680,7 @@ Focused checkbox-based numerical-scaling verification passed on July 3, 2026: `7
 - Missing model metrics, histories, curves, confusion matrices, and feature importance outputs are represented as `Not available` without aborting report generation.
 - SHAP, tree visualization/rule extraction, forest summaries, and other advanced XAI outputs remain deferred.
 - Windows packaging workflow added:
-  - `requirements_lock.txt` pins the release build stack, including CUDA 12.6 PyTorch, TabPFN, Qt, scientific packages, and PyInstaller.
+  - `requirements_lock.txt` pins the release build stack, including the matched CUDA 12.6 PyTorch trio, TabPFN, Qt, scientific packages, and PyInstaller. Unused SHAP and Captum dependencies were removed from this canonical path.
   - `packaging/build_pyinstaller.ps1` creates a dedicated `build_env`, explicitly installs the pinned PyInstaller build dependency, builds a console-free release or console-enabled debug onedir folder from `packaging/avista_pyinstaller.spec`, includes assets and dynamic ML packages, writes Windows version metadata, and stages `dist`, `installer`, and `release` outputs.
   - Missing or invalid `logo.ico` files are generated from the bundled PNG with Pillow before compilation using standard square Windows icon sizes.
   - `packaging/build_pyinstaller.ps1` is the release entry point for the standalone folder and installer build.
@@ -573,9 +690,10 @@ Focused checkbox-based numerical-scaling verification passed on July 3, 2026: `7
   - `packaging/build_pyinstaller.ps1` is the working release entry point used by GitHub Actions for standalone and installer builds; it passes centralized version values to `packaging/avista_installer.iss`.
   - Inno Setup stores `Software\AVISTA\InstallDir` during install and reads existing HKCU/HKLM values so update installers default to the current AVISTA installation folder instead of always using Program Files.
   - Uninstall behavior remains application-focused; user project folders outside the installation directory are preserved.
-  - `.github/workflows/windows-release.yml` builds the Windows installer on `windows-latest` for manual dispatches and `v*` tags, caches pip downloads, installs Inno Setup, runs only packaging/resource/version tests, uploads `AVISTA_Setup.exe`, resolves a release tag from tagged pushes or the manual `release_tag` input, and publishes it to GitHub Releases with overwrite enabled for reruns.
+  - `.github/workflows/windows-release.yml` builds the Windows installer on `windows-latest` for manual dispatches and `v*` tags, preserves its focused dependency-install path, installs Inno Setup, runs packaging/resource/version tests, calculates the final installer SHA256, validates `updates.json`, uploads the same `AVISTA_Setup.exe`, and publishes only the generated checksum back to `updates.json` on the default branch.
   - The Inno Setup output and release artifact use the stable filename `installer/AVISTA_Setup.exe`.
-  - GitHub Actions packaging uses Python 3.12, NumPy 1.26.4, Captum 0.8.0, and a matched CUDA 12.6 trio: PyTorch 2.9.1, TorchVision 0.24.1, and TorchAudio 2.9.1. Python 3.12 and NumPy 1.26.4 avoid Captum's NumPy-below-2.0 resolver conflict. The build script fails immediately on native command errors and logs package paths, versions, wheel/PE architecture, XGBoost DLL discovery, and TabPFN package data before invoking PyInstaller.
+  - GitHub Actions packaging uses Python 3.12, NumPy 1.26.4, and a matched CUDA 12.6 trio: PyTorch 2.9.1, TorchVision 0.24.1, and TorchAudio 2.9.1. The build script fails immediately on native command errors and logs package paths, versions, wheel/PE architecture, XGBoost DLL discovery, and TabPFN package data before invoking PyInstaller.
+  - The active release specification is `packaging/avista_pyinstaller.spec`. The obsolete single-executable root `AVISTA.spec` was unreferenced and has been removed.
   - The PyInstaller spec collects AVISTA assets, QtAwesome, Matplotlib,
     TabPFN modules/package data, inspected TabPFN dependencies, and the
     installed XGBoost wheel's native DLLs.
@@ -636,6 +754,7 @@ Entry point and requirements:
 
 - `main.py`
 - `requirements_base.txt`
+- `requirements_lock.txt`
 - `requirements_ml.txt`
 - `requirements_deep_cpu.txt`
 - `requirements_deep_gpu.txt`
@@ -700,10 +819,10 @@ AutoInt: 1 passed
 TabResNet: 1 passed
 ```
 
-Missing bundled-checkpoint handling also passed:
+Missing user-cache-checkpoint handling also passed:
 
 ```powershell
-.venv\Scripts\python.exe -m pytest tests/test_trainer_evaluator.py::test_tabpfn_missing_bundled_checkpoint_saves_failure_reason -q
+.venv\Scripts\python.exe -m pytest tests/test_trainer_evaluator.py::test_tabpfn_missing_user_cache_checkpoint_saves_failure_reason -q
 ```
 
 Result: `1 passed`. PyInstaller-spec Python syntax and PowerShell build-script
@@ -1031,7 +1150,7 @@ This run covered centered half-width ROC/PR/training previews, the 900-pixel cap
 - GUI pages call only completed backend modules.
 - Long-running training runs in a `QThread` via `TrainingWorker` with structured progress and cooperative cancellation.
 - Training is blocked unless column configuration, saved split artifacts, and a current passing edge-case report are present.
-- Cross-validation uses only the balanced training target and never includes validation or test data.
+- Cross-validation starts from original external-training rows and never includes external validation or test data; deep models use an inner fold-training holdout for early stopping.
 - The Data Import page stores the full DataFrame in application state but renders only the current paginated slice.
 - Column Configuration saves alphabetically sorted feature columns, the target, selected label-encoding columns, and label-encoding metadata only after explicit confirmation.
 - Sampling and synthetic balancing are applied only to the training partition.
@@ -1058,15 +1177,23 @@ This run covered centered half-width ROC/PR/training previews, the 900-pixel cap
 - Cancellation is cooperative and cannot interrupt an estimator while its current `fit()` call is executing.
 - MambaAttention, FT-Transformer, AutoInt, TabResNet, and TabPFN 2.5 training are implemented.
 - No XAI page or XAI computation is implemented yet.
-- The packaging workflow is implemented, but a full standalone build and installer smoke test remain pending on a Windows build host with Inno Setup 6.
-- Inno Setup 6 is installed on the current development machine, but a complete
-  standalone/installer build has not been run for this worker change. The
-  local host only has Python 3.13; the locked Python 3.12/NumPy 1.26.4 release
-  build is verified by the Windows release workflow.
+- The packaging workflow and checkpoint-exclusion gates are implemented, but
+  a fresh standalone build and installer smoke test for the cache-only TabPFN
+  migration remain pending on a Windows release host with Python 3.12 and Inno
+  Setup 6. The current host has Python 3.11/3.14 and no Inno Setup installation;
+  a local clean build was intentionally stopped during dependency setup and
+  produced no release artifact.
 
 ## 9. Next Immediate Task
 
-Add the first XAI workflow while keeping it separate from model training:
+Complete the release-host verification for the cache-only TabPFN migration:
+
+- build the PyInstaller onedir distribution with supported Python 3.12;
+- confirm the complete distribution contains no TabPFN checkpoint;
+- build and inspect the Inno Setup payload;
+- simulate an empty cache followed by setup without restarting AVISTA.
+
+Then add the first XAI workflow while keeping it separate from model training:
 
 - SHAP support for compatible trained models
 - feature importance summaries

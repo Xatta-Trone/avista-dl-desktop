@@ -26,6 +26,13 @@ worker_version_file = Path(
 )
 console_enabled = os.environ.get("AVISTA_PYINSTALLER_CONSOLE") == "1"
 worker_name = "AVISTADeepWorker"
+tabpfn_checkpoint_filename = "tabpfn-v2.5-classifier-v2.5_default.ckpt"
+
+if (assets_dir / tabpfn_checkpoint_filename).exists():
+    raise RuntimeError(
+        "TabPFN model weights must not be bundled with AVISTA. Remove "
+        f"{assets_dir / tabpfn_checkpoint_filename} before packaging."
+    )
 
 shared_datas = [
     (str(assets_dir), "app/assets"),
@@ -37,6 +44,16 @@ tabpfn_datas, tabpfn_binaries, tabpfn_hiddenimports = collect_all(
     "tabpfn",
     on_error="raise",
 )
+bundled_tabpfn_weights = [
+    source
+    for source, _destination in tabpfn_datas
+    if Path(source).name.casefold() == tabpfn_checkpoint_filename.casefold()
+]
+if bundled_tabpfn_weights:
+    raise RuntimeError(
+        "The installed TabPFN package unexpectedly supplied model weights: "
+        + ", ".join(bundled_tabpfn_weights)
+    )
 (
     tabpfn_utils_datas,
     tabpfn_utils_binaries,

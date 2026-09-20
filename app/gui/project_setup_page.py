@@ -37,6 +37,7 @@ from app.gui.icon_system import (
     TEXT,
     icon,
 )
+from app.gui.project_trust import confirm_project_file_open
 
 
 PROJECT_SUBDIRS = ["data", "outputs", "logs", "artifacts"]
@@ -215,6 +216,9 @@ class ProjectSetupPage(QWidget):
         project_file = self.existing_project_file_input.text().strip()
         if not project_file:
             self._show_error("Select an AVISTA project file.")
+            return
+
+        if not confirm_project_file_open(self, project_file):
             return
 
         try:

@@ -1,0 +1,32 @@
+{
+  "project_file": "D:\\TXST\\OneDrive - Texas State University\\Hackathon_Monzurul\\Papers\\AVISTA\\examples\\obesity\\obesity.avista",
+  "project_name": "obesity",
+  "project_file_version": "1.0",
+  "application": "AVISTA",
+  "application_description": "An extensible desktop platform for tabular machine learning and deep learning analytics.",
+  "application_version": "1.0.7",
+  "application_release_date": "July 28, 2026",
+  "report_footer": {
+    "generated_by": "AVISTA",
+    "description": "An extensible desktop platform for tabular machine learning and deep learning analytics.",
+    "version": "1.0.7",
+    "release_date": "July 28, 2026",
+    "generated_on": "2026-09-19T19:01:51"
+  },
+  "dataset_size": 2087,
+  "feature_count": 39,
+  "target_column": "NObeyesdad",
+  "train_size": 1460,
+  "validation_size": 209,
+  "test_size": 418,
+  "imbalance_method": "smote",
+  "numerical_scaling_method": "standard",
+  "random_seed": 42,
+  "split_method": "random",
+  "model_name": "XGBoost",
+  "training_timestamp": "2026-09-19T19:01:51",
+  "cv_preprocessing_scope": "fold_training_only",
+  "cv_imbalance_scope": "fold_training_only",
+  "cv_source": "original_external_training_partition",
+  "cv_resampling_before_split": false
+}

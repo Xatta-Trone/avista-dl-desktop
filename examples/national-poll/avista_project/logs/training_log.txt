@@ -1,0 +1,89 @@
+[2026-09-19T19:08:55] Training worker started.
+[2026-09-19T19:08:55] Training target diagnostics:
+current target column=Number_of_Doctors_Visited
+current task_type=auto
+saved target column=Number_of_Doctors_Visited
+saved task_type=unknown
+y_train dtype=int64
+unique target classes=3
+detected target type=classification
+[2026-09-19T19:08:55] Training target diagnostics:
+current target column=Number_of_Doctors_Visited
+current task_type=auto
+saved target column=Number_of_Doctors_Visited
+saved task_type=unknown
+y_train dtype=int64
+unique target classes=3
+detected target type=classification
+[2026-09-19T19:08:55] Logistic Regression started
+[2026-09-19T19:08:56] Fold 1/5 completed
+[2026-09-19T19:08:56] Fold 2/5 completed
+[2026-09-19T19:08:56] Fold 3/5 completed
+[2026-09-19T19:08:56] Fold 4/5 completed
+[2026-09-19T19:08:56] Fold 5/5 completed
+[2026-09-19T19:08:56] Logistic Regression: fitting
+[2026-09-19T19:08:56] Logistic Regression: evaluating train
+[2026-09-19T19:08:56] Logistic Regression: evaluating validation
+[2026-09-19T19:08:56] Logistic Regression: evaluating test
+[2026-09-19T19:09:01] Logistic Regression: saving
+[2026-09-19T19:09:01] Training workflow complete
+[2026-09-19T19:09:01] Model result updated: Logistic Regression
+[2026-09-19T19:09:01] Training target diagnostics:
+current target column=Number_of_Doctors_Visited
+current task_type=auto
+saved target column=Number_of_Doctors_Visited
+saved task_type=unknown
+y_train dtype=int64
+unique target classes=3
+detected target type=classification
+[2026-09-19T19:09:01] Training target diagnostics:
+current target column=Number_of_Doctors_Visited
+current task_type=auto
+saved target column=Number_of_Doctors_Visited
+saved task_type=unknown
+y_train dtype=int64
+unique target classes=3
+detected target type=classification
+[2026-09-19T19:09:01] Random Forest started
+[2026-09-19T19:09:01] Fold 1/5 completed
+[2026-09-19T19:09:02] Fold 2/5 completed
+[2026-09-19T19:09:02] Fold 3/5 completed
+[2026-09-19T19:09:02] Fold 4/5 completed
+[2026-09-19T19:09:03] Fold 5/5 completed
+[2026-09-19T19:09:03] Random Forest: fitting
+[2026-09-19T19:09:03] Random Forest: evaluating train
+[2026-09-19T19:09:03] Random Forest: evaluating validation
+[2026-09-19T19:09:03] Random Forest: evaluating test
+[2026-09-19T19:09:08] Random Forest: saving
+[2026-09-19T19:09:08] Training workflow complete
+[2026-09-19T19:09:08] Model result updated: Random Forest
+[2026-09-19T19:09:08] Training target diagnostics:
+current target column=Number_of_Doctors_Visited
+current task_type=auto
+saved target column=Number_of_Doctors_Visited
+saved task_type=unknown
+y_train dtype=int64
+unique target classes=3
+detected target type=classification
+[2026-09-19T19:09:08] Training target diagnostics:
+current target column=Number_of_Doctors_Visited
+current task_type=auto
+saved target column=Number_of_Doctors_Visited
+saved task_type=unknown
+y_train dtype=int64
+unique target classes=3
+detected target type=classification
+[2026-09-19T19:09:08] XGBoost started
+[2026-09-19T19:09:09] Fold 1/5 completed
+[2026-09-19T19:09:10] Fold 2/5 completed
+[2026-09-19T19:09:11] Fold 3/5 completed
+[2026-09-19T19:09:12] Fold 4/5 completed
+[2026-09-19T19:09:12] Fold 5/5 completed
+[2026-09-19T19:09:12] XGBoost: fitting
+[2026-09-19T19:09:13] XGBoost: evaluating train
+[2026-09-19T19:09:13] XGBoost: evaluating validation
+[2026-09-19T19:09:13] XGBoost: evaluating test
+[2026-09-19T19:09:18] XGBoost: saving
+[2026-09-19T19:09:18] Training workflow complete
+[2026-09-19T19:09:18] Model result updated: XGBoost
+[2026-09-19T19:09:18] Training worker finished.

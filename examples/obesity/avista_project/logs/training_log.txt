@@ -1,0 +1,89 @@
+[2026-09-19T19:01:19] Training worker started.
+[2026-09-19T19:01:19] Training target diagnostics:
+current target column=NObeyesdad
+current task_type=auto
+saved target column=NObeyesdad
+saved task_type=unknown
+y_train dtype=int64
+unique target classes=7
+detected target type=classification
+[2026-09-19T19:01:19] Training target diagnostics:
+current target column=NObeyesdad
+current task_type=auto
+saved target column=NObeyesdad
+saved task_type=unknown
+y_train dtype=int64
+unique target classes=7
+detected target type=classification
+[2026-09-19T19:01:19] Logistic Regression started
+[2026-09-19T19:01:19] Fold 1/5 completed
+[2026-09-19T19:01:19] Fold 2/5 completed
+[2026-09-19T19:01:20] Fold 3/5 completed
+[2026-09-19T19:01:20] Fold 4/5 completed
+[2026-09-19T19:01:20] Fold 5/5 completed
+[2026-09-19T19:01:20] Logistic Regression: fitting
+[2026-09-19T19:01:20] Logistic Regression: evaluating train
+[2026-09-19T19:01:20] Logistic Regression: evaluating validation
+[2026-09-19T19:01:20] Logistic Regression: evaluating test
+[2026-09-19T19:01:27] Logistic Regression: saving
+[2026-09-19T19:01:27] Training workflow complete
+[2026-09-19T19:01:27] Model result updated: Logistic Regression
+[2026-09-19T19:01:27] Training target diagnostics:
+current target column=NObeyesdad
+current task_type=auto
+saved target column=NObeyesdad
+saved task_type=unknown
+y_train dtype=int64
+unique target classes=7
+detected target type=classification
+[2026-09-19T19:01:27] Training target diagnostics:
+current target column=NObeyesdad
+current task_type=auto
+saved target column=NObeyesdad
+saved task_type=unknown
+y_train dtype=int64
+unique target classes=7
+detected target type=classification
+[2026-09-19T19:01:27] Random Forest started
+[2026-09-19T19:01:27] Fold 1/5 completed
+[2026-09-19T19:01:28] Fold 2/5 completed
+[2026-09-19T19:01:28] Fold 3/5 completed
+[2026-09-19T19:01:28] Fold 4/5 completed
+[2026-09-19T19:01:29] Fold 5/5 completed
+[2026-09-19T19:01:29] Random Forest: fitting
+[2026-09-19T19:01:29] Random Forest: evaluating train
+[2026-09-19T19:01:29] Random Forest: evaluating validation
+[2026-09-19T19:01:29] Random Forest: evaluating test
+[2026-09-19T19:01:36] Random Forest: saving
+[2026-09-19T19:01:36] Training workflow complete
+[2026-09-19T19:01:36] Model result updated: Random Forest
+[2026-09-19T19:01:36] Training target diagnostics:
+current target column=NObeyesdad
+current task_type=auto
+saved target column=NObeyesdad
+saved task_type=unknown
+y_train dtype=int64
+unique target classes=7
+detected target type=classification
+[2026-09-19T19:01:36] Training target diagnostics:
+current target column=NObeyesdad
+current task_type=auto
+saved target column=NObeyesdad
+saved task_type=unknown
+y_train dtype=int64
+unique target classes=7
+detected target type=classification
+[2026-09-19T19:01:36] XGBoost started
+[2026-09-19T19:01:37] Fold 1/5 completed
+[2026-09-19T19:01:39] Fold 2/5 completed
+[2026-09-19T19:01:40] Fold 3/5 completed
+[2026-09-19T19:01:42] Fold 4/5 completed
+[2026-09-19T19:01:44] Fold 5/5 completed
+[2026-09-19T19:01:44] XGBoost: fitting
+[2026-09-19T19:01:45] XGBoost: evaluating train
+[2026-09-19T19:01:45] XGBoost: evaluating validation
+[2026-09-19T19:01:45] XGBoost: evaluating test
+[2026-09-19T19:01:51] XGBoost: saving
+[2026-09-19T19:01:51] Training workflow complete
+[2026-09-19T19:01:51] Model result updated: XGBoost
+[2026-09-19T19:01:51] Training worker finished.

@@ -80,31 +80,13 @@ def get_app_resource_path(
     return candidates[0]
 
 
-def tabpfn_checkpoint_candidates() -> list[Path]:
-    """Return supported source and packaged TabPFN checkpoint locations."""
-
-    candidates = app_resource_candidates(
-        Path("app") / "assets" / TABPFN_CHECKPOINT_FILENAME
-    )
-    for candidate in app_resource_candidates(
-        Path("assets") / TABPFN_CHECKPOINT_FILENAME
-    ):
-        if candidate not in candidates:
-            candidates.append(candidate)
-    return candidates
-
-
 def resolve_tabpfn_checkpoint() -> Path:
-    """Resolve the bundled TabPFN checkpoint or report every checked path."""
+    """Resolve the official TabPFN user-cache checkpoint."""
 
-    candidates = tabpfn_checkpoint_candidates()
-    for candidate in candidates:
-        if candidate.is_file():
-            return candidate.resolve()
-    raise FileNotFoundError(
-        "Bundled TabPFN checkpoint was not found. Checked: "
-        + ", ".join(str(path) for path in candidates)
-    )
+    from app.core.tabpfn_model_manager import resolve_tabpfn_model_checkpoint
+
+    path, _source = resolve_tabpfn_model_checkpoint()
+    return path
 
 
 def expected_packaged_xgboost_dll() -> Path:

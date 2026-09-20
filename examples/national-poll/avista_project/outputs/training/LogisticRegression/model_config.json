@@ -1,0 +1,27 @@
+{
+  "model_name": "logistic_regression",
+  "display_name": "Logistic Regression",
+  "parameters": {
+    "penalty": "l2",
+    "C": 1.0,
+    "l1_ratio": null,
+    "dual": false,
+    "tol": 0.0001,
+    "fit_intercept": true,
+    "intercept_scaling": 1.0,
+    "class_weight": null,
+    "solver": "lbfgs",
+    "max_iter": 100,
+    "verbose": 0,
+    "warm_start": false,
+    "n_jobs": null
+  },
+  "cross_validation_enabled": true,
+  "cv_folds": 5,
+  "random_state": 42,
+  "numerical_scaling_method": "none",
+  "cv_preprocessing_scope": "fold_training_only",
+  "cv_imbalance_scope": "fold_training_only",
+  "cv_source": "original_external_training_partition",
+  "cv_resampling_before_split": false
+}

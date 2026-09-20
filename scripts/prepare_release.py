@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import sys
@@ -18,6 +19,7 @@ VERSION_PATTERN = re.compile(r"^\d+\.\d+\.\d+$")
 GITHUB_RELEASE_BASE = (
     "https://github.com/Xatta-Trone/avista-dl-desktop/releases/download"
 )
+SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 
 
 @dataclass(frozen=True)
@@ -340,6 +342,101 @@ def _render_changelog(
     )
 
 
+def calculate_installer_sha256(installer_path: str | Path) -> str:
+    """Calculate the lowercase SHA256 for a completed installer artifact."""
+
+    path = Path(installer_path)
+    if not path.is_file():
+        raise ValueError(f"Installer does not exist: {path}")
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    value = digest.hexdigest()
+    if not SHA256_PATTERN.fullmatch(value):
+        raise ValueError("Calculated installer SHA256 is invalid.")
+    return value
+
+
+def _validate_update_feed_release(updates: dict, expected_tag: str | None) -> str:
+    version = str(updates.get("latest_version") or "").strip()
+    if not VERSION_PATTERN.fullmatch(version):
+        raise ValueError("updates.json latest_version must use X.Y.Z format.")
+    tag = (expected_tag or f"v{version}").strip()
+    if tag != f"v{version}":
+        raise ValueError(
+            f"release tag {tag!r} does not match updates.json "
+            f"latest_version {version!r}"
+        )
+    expected_url = f"{GITHUB_RELEASE_BASE}/{tag}/AVISTA_Setup.exe"
+    if updates.get("installer_url") != expected_url:
+        raise ValueError(
+            "updates.json installer_url does not match the release tag: "
+            f"expected {expected_url!r}"
+        )
+    return tag
+
+
+def verify_installer_checksum(
+    root: Path,
+    installer_path: str | Path,
+    *,
+    expected_tag: str | None = None,
+) -> str:
+    """Verify release metadata against the exact installer to be published."""
+
+    path = Path(installer_path)
+    if not path.is_absolute():
+        path = root / path
+    actual = calculate_installer_sha256(path)
+    updates = json.loads((root / "updates.json").read_text(encoding="utf-8"))
+    if not isinstance(updates, dict):
+        raise ValueError("updates.json must contain a JSON object.")
+    _validate_update_feed_release(updates, expected_tag)
+    stored = str(updates.get("sha256") or "").strip().lower()
+    if not SHA256_PATTERN.fullmatch(stored):
+        raise ValueError(
+            "updates.json sha256 must contain a 64-character lowercase "
+            "hex digest before publishing."
+        )
+    if stored != actual:
+        raise ValueError(
+            "updates.json sha256 does not match installer/AVISTA_Setup.exe."
+        )
+    return actual
+
+
+def update_installer_checksum(
+    root: Path,
+    installer_path: str | Path,
+    *,
+    expected_tag: str | None = None,
+    expected_sha256: str | None = None,
+) -> str:
+    """Update only updates.json's SHA256 for the final installer bytes."""
+
+    path = Path(installer_path)
+    if not path.is_absolute():
+        path = root / path
+    actual = calculate_installer_sha256(path)
+    if expected_sha256 is not None:
+        supplied = expected_sha256.strip().lower()
+        if not SHA256_PATTERN.fullmatch(supplied):
+            raise ValueError("Expected installer SHA256 must be 64 hex characters.")
+        if supplied != actual:
+            raise ValueError("Expected installer SHA256 does not match the installer.")
+
+    updates_path = root / "updates.json"
+    updates = json.loads(updates_path.read_text(encoding="utf-8"))
+    if not isinstance(updates, dict):
+        raise ValueError("updates.json must contain a JSON object.")
+    _validate_update_feed_release(updates, expected_tag)
+    updates["sha256"] = actual
+    updates_path.write_text(json.dumps(updates, indent=2) + "\n", encoding="utf-8")
+    verify_installer_checksum(root, path, expected_tag=expected_tag)
+    return actual
+
+
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
@@ -372,6 +469,14 @@ def _parser() -> argparse.ArgumentParser:
         help="Optional installer SHA256 to publish after the build.",
     )
     parser.add_argument(
+        "--installer",
+        help="Final installer whose SHA256 should update updates.json.",
+    )
+    parser.add_argument(
+        "--verify-installer",
+        help="Verify updates.json against this final installer without writing.",
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="List files that would change without writing them.",
@@ -381,6 +486,33 @@ def _parser() -> argparse.ArgumentParser:
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = _parser().parse_args(argv)
+    if args.installer and args.verify_installer:
+        raise ValueError("Use only one of --installer and --verify-installer.")
+    if args.installer or args.verify_installer:
+        if args.check or args.version or args.release_date or args.note or args.dry_run:
+            raise ValueError(
+                "Installer checksum operations cannot be combined with release "
+                "preparation options."
+            )
+        if args.verify_installer and args.sha256 is not None:
+            raise ValueError("--sha256 is only valid with --installer.")
+        if args.installer:
+            digest = update_installer_checksum(
+                PROJECT_ROOT,
+                args.installer,
+                expected_tag=args.expected_tag,
+                expected_sha256=args.sha256,
+            )
+            print(f"Updated updates.json installer SHA256: {digest}")
+        else:
+            digest = verify_installer_checksum(
+                PROJECT_ROOT,
+                args.verify_installer,
+                expected_tag=args.expected_tag,
+            )
+            print(f"Verified AVISTA_Setup.exe SHA256: {digest}")
+        return 0
+
     if args.check:
         if (
             args.version

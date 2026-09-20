@@ -1,0 +1,1283 @@
+{
+  "status": "completed",
+  "output_root": "D:\\TXST\\OneDrive - Texas State University\\Hackathon_Monzurul\\Papers\\AVISTA\\examples\\obesity\\outputs\\training",
+  "project_file": "D:\\TXST\\OneDrive - Texas State University\\Hackathon_Monzurul\\Papers\\AVISTA\\examples\\obesity\\obesity.avista",
+  "project_name": "obesity",
+  "project_file_version": "1.0",
+  "application": "AVISTA",
+  "application_description": "An extensible desktop platform for tabular machine learning and deep learning analytics.",
+  "application_version": "1.0.7",
+  "application_release_date": "July 28, 2026",
+  "report_footer": {
+    "generated_by": "AVISTA",
+    "description": "An extensible desktop platform for tabular machine learning and deep learning analytics.",
+    "version": "1.0.7",
+    "release_date": "July 28, 2026",
+    "generated_on": "2026-09-19T19:01:51"
+  },
+  "results": [
+    {
+      "model_name": "Logistic Regression",
+      "status": "trained",
+      "train_metrics": {
+        "accuracy": 0.897945205479452,
+        "macro_f1": 0.8932195539657715,
+        "weighted_f1": 0.896933757871678,
+        "balanced_accuracy": 0.8950062332490926,
+        "macro_precision": 0.8941112586352858,
+        "macro_recall": 0.8950062332490926,
+        "confusion_matrix": [
+          [
+            189,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            18,
+            143,
+            0,
+            0,
+            0,
+            24,
+            6
+          ],
+          [
+            0,
+            0,
+            214,
+            16,
+            1,
+            2,
+            8
+          ],
+          [
+            0,
+            0,
+            2,
+            206,
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            232,
+            0,
+            0
+          ],
+          [
+            0,
+            17,
+            0,
+            0,
+            0,
+            157,
+            19
+          ],
+          [
+            0,
+            4,
+            9,
+            0,
+            0,
+            22,
+            170
+          ]
+        ],
+        "classification_report": {
+          "Insufficient_Weight": {
+            "precision": 0.9130434782608695,
+            "recall": 1.0,
+            "f1-score": 0.9545454545454546,
+            "support": 189.0
+          },
+          "Normal_Weight": {
+            "precision": 0.8719512195121951,
+            "recall": 0.7486910994764397,
+            "f1-score": 0.8056338028169014,
+            "support": 191.0
+          },
+          "Obesity_Type_I": {
+            "precision": 0.9511111111111111,
+            "recall": 0.8879668049792531,
+            "f1-score": 0.9184549356223176,
+            "support": 241.0
+          },
+          "Obesity_Type_II": {
+            "precision": 0.9279279279279279,
+            "recall": 0.9856459330143541,
+            "f1-score": 0.9559164733178654,
+            "support": 209.0
+          },
+          "Obesity_Type_III": {
+            "precision": 0.9914529914529915,
+            "recall": 1.0,
+            "f1-score": 0.9957081545064378,
+            "support": 232.0
+          },
+          "Overweight_Level_I": {
+            "precision": 0.7658536585365854,
+            "recall": 0.8134715025906736,
+            "f1-score": 0.7889447236180904,
+            "support": 193.0
+          },
+          "Overweight_Level_II": {
+            "precision": 0.8374384236453202,
+            "recall": 0.8292682926829268,
+            "f1-score": 0.8333333333333334,
+            "support": 205.0
+          },
+          "accuracy": 0.897945205479452,
+          "macro avg": {
+            "precision": 0.8941112586352858,
+            "recall": 0.8950062332490926,
+            "f1-score": 0.8932195539657715,
+            "support": 1460.0
+          },
+          "weighted avg": {
+            "precision": 0.8984687273936945,
+            "recall": 0.897945205479452,
+            "f1-score": 0.896933757871678,
+            "support": 1460.0
+          }
+        },
+        "roc_auc": 0.9897509725619641
+      },
+      "validation_metrics": {
+        "accuracy": 0.8660287081339713,
+        "macro_f1": 0.8641224472245038,
+        "weighted_f1": 0.865250517230312,
+        "balanced_accuracy": 0.8776218820861678,
+        "macro_precision": 0.8641603436246292,
+        "macro_recall": 0.8776218820861678,
+        "confusion_matrix": [
+          [
+            19,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            7,
+            21,
+            0,
+            0,
+            0,
+            2,
+            0
+          ],
+          [
+            0,
+            0,
+            32,
+            2,
+            1,
+            0,
+            5
+          ],
+          [
+            0,
+            0,
+            0,
+            24,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            31,
+            0,
+            0
+          ],
+          [
+            0,
+            3,
+            0,
+            0,
+            0,
+            22,
+            3
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            4,
+            32
+          ]
+        ],
+        "classification_report": {
+          "Insufficient_Weight": {
+            "precision": 0.7307692307692307,
+            "recall": 1.0,
+            "f1-score": 0.8444444444444444,
+            "support": 19.0
+          },
+          "Normal_Weight": {
+            "precision": 0.875,
+            "recall": 0.7,
+            "f1-score": 0.7777777777777778,
+            "support": 30.0
+          },
+          "Obesity_Type_I": {
+            "precision": 1.0,
+            "recall": 0.8,
+            "f1-score": 0.8888888888888888,
+            "support": 40.0
+          },
+          "Obesity_Type_II": {
+            "precision": 0.8888888888888888,
+            "recall": 1.0,
+            "f1-score": 0.9411764705882353,
+            "support": 24.0
+          },
+          "Obesity_Type_III": {
+            "precision": 0.96875,
+            "recall": 0.96875,
+            "f1-score": 0.96875,
+            "support": 32.0
+          },
+          "Overweight_Level_I": {
+            "precision": 0.7857142857142857,
+            "recall": 0.7857142857142857,
+            "f1-score": 0.7857142857142857,
+            "support": 28.0
+          },
+          "Overweight_Level_II": {
+            "precision": 0.8,
+            "recall": 0.8888888888888888,
+            "f1-score": 0.8421052631578947,
+            "support": 36.0
+          },
+          "accuracy": 0.8660287081339713,
+          "macro avg": {
+            "precision": 0.8641603436246292,
+            "recall": 0.8776218820861678,
+            "f1-score": 0.8641224472245038,
+            "support": 209.0
+          },
+          "weighted avg": {
+            "precision": 0.8768801374064533,
+            "recall": 0.8660287081339713,
+            "f1-score": 0.865250517230312,
+            "support": 209.0
+          }
+        },
+        "roc_auc": 0.9837621901342775
+      },
+      "test_metrics": {
+        "accuracy": 0.861244019138756,
+        "macro_f1": 0.8533302720783017,
+        "weighted_f1": 0.8594235495617598,
+        "balanced_accuracy": 0.8562268857702396,
+        "macro_precision": 0.8547712243789062,
+        "macro_recall": 0.8562268857702396,
+        "confusion_matrix": [
+          [
+            56,
+            3,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            11,
+            43,
+            0,
+            0,
+            0,
+            6,
+            1
+          ],
+          [
+            0,
+            0,
+            60,
+            4,
+            1,
+            1,
+            4
+          ],
+          [
+            0,
+            0,
+            0,
+            64,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            60,
+            0,
+            0
+          ],
+          [
+            0,
+            4,
+            0,
+            0,
+            0,
+            40,
+            11
+          ],
+          [
+            0,
+            0,
+            6,
+            1,
+            0,
+            5,
+            37
+          ]
+        ],
+        "classification_report": {
+          "Insufficient_Weight": {
+            "precision": 0.835820895522388,
+            "recall": 0.9491525423728814,
+            "f1-score": 0.8888888888888888,
+            "support": 59.0
+          },
+          "Normal_Weight": {
+            "precision": 0.86,
+            "recall": 0.7049180327868853,
+            "f1-score": 0.7747747747747747,
+            "support": 61.0
+          },
+          "Obesity_Type_I": {
+            "precision": 0.9090909090909091,
+            "recall": 0.8571428571428571,
+            "f1-score": 0.8823529411764706,
+            "support": 70.0
+          },
+          "Obesity_Type_II": {
+            "precision": 0.927536231884058,
+            "recall": 1.0,
+            "f1-score": 0.9624060150375939,
+            "support": 64.0
+          },
+          "Obesity_Type_III": {
+            "precision": 0.9836065573770492,
+            "recall": 1.0,
+            "f1-score": 0.9917355371900827,
+            "support": 60.0
+          },
+          "Overweight_Level_I": {
+            "precision": 0.7692307692307693,
+            "recall": 0.7272727272727273,
+            "f1-score": 0.7476635514018691,
+            "support": 55.0
+          },
+          "Overweight_Level_II": {
+            "precision": 0.6981132075471698,
+            "recall": 0.7551020408163265,
+            "f1-score": 0.7254901960784313,
+            "support": 49.0
+          },
+          "accuracy": 0.861244019138756,
+          "macro avg": {
+            "precision": 0.8547712243789062,
+            "recall": 0.8562268857702396,
+            "f1-score": 0.8533302720783017,
+            "support": 418.0
+          },
+          "weighted avg": {
+            "precision": 0.8619706895523704,
+            "recall": 0.861244019138756,
+            "f1-score": 0.8594235495617598,
+            "support": 418.0
+          }
+        },
+        "roc_auc": 0.9851906680045899
+      },
+      "cv_summary": {
+        "accuracy": {
+          "mean": 0.8691780821917808,
+          "std": 0.030814306518361617
+        },
+        "macro_f1": {
+          "mean": 0.8615280934699385,
+          "std": 0.03512866373740094
+        },
+        "weighted_f1": {
+          "mean": 0.8661737047370817,
+          "std": 0.03298656199960923
+        },
+        "balanced_accuracy": {
+          "mean": 0.8652341011224463,
+          "std": 0.032969246539729595
+        },
+        "roc_auc": {
+          "mean": 0.9807155806485669,
+          "std": 0.006278173128245064
+        }
+      },
+      "saved": true,
+      "output_dir": "D:\\TXST\\OneDrive - Texas State University\\Hackathon_Monzurul\\Papers\\AVISTA\\examples\\obesity\\outputs\\training\\LogisticRegression"
+    },
+    {
+      "model_name": "Random Forest",
+      "status": "trained",
+      "train_metrics": {
+        "accuracy": 1.0,
+        "macro_f1": 1.0,
+        "weighted_f1": 1.0,
+        "balanced_accuracy": 1.0,
+        "macro_precision": 1.0,
+        "macro_recall": 1.0,
+        "confusion_matrix": [
+          [
+            189,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            191,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            241,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            209,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            232,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            193,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            205
+          ]
+        ],
+        "classification_report": {
+          "Insufficient_Weight": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 189.0
+          },
+          "Normal_Weight": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 191.0
+          },
+          "Obesity_Type_I": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 241.0
+          },
+          "Obesity_Type_II": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 209.0
+          },
+          "Obesity_Type_III": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 232.0
+          },
+          "Overweight_Level_I": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 193.0
+          },
+          "Overweight_Level_II": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 205.0
+          },
+          "accuracy": 1.0,
+          "macro avg": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 1460.0
+          },
+          "weighted avg": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 1460.0
+          }
+        },
+        "roc_auc": 1.0
+      },
+      "validation_metrics": {
+        "accuracy": 0.9330143540669856,
+        "macro_f1": 0.9350115849788947,
+        "weighted_f1": 0.9332319807876289,
+        "balanced_accuracy": 0.9358627222818952,
+        "macro_precision": 0.9363175254152699,
+        "macro_recall": 0.9358627222818952,
+        "confusion_matrix": [
+          [
+            18,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            1,
+            29,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            38,
+            0,
+            0,
+            1,
+            1
+          ],
+          [
+            0,
+            0,
+            0,
+            24,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            1,
+            0,
+            31,
+            0,
+            0
+          ],
+          [
+            0,
+            3,
+            0,
+            0,
+            0,
+            24,
+            1
+          ],
+          [
+            0,
+            2,
+            1,
+            0,
+            0,
+            2,
+            31
+          ]
+        ],
+        "classification_report": {
+          "Insufficient_Weight": {
+            "precision": 0.9473684210526315,
+            "recall": 0.9473684210526315,
+            "f1-score": 0.9473684210526315,
+            "support": 19.0
+          },
+          "Normal_Weight": {
+            "precision": 0.8285714285714286,
+            "recall": 0.9666666666666667,
+            "f1-score": 0.8923076923076924,
+            "support": 30.0
+          },
+          "Obesity_Type_I": {
+            "precision": 0.95,
+            "recall": 0.95,
+            "f1-score": 0.95,
+            "support": 40.0
+          },
+          "Obesity_Type_II": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 24.0
+          },
+          "Obesity_Type_III": {
+            "precision": 1.0,
+            "recall": 0.96875,
+            "f1-score": 0.9841269841269841,
+            "support": 32.0
+          },
+          "Overweight_Level_I": {
+            "precision": 0.8888888888888888,
+            "recall": 0.8571428571428571,
+            "f1-score": 0.8727272727272727,
+            "support": 28.0
+          },
+          "Overweight_Level_II": {
+            "precision": 0.9393939393939394,
+            "recall": 0.8611111111111112,
+            "f1-score": 0.8985507246376812,
+            "support": 36.0
+          },
+          "accuracy": 0.9330143540669856,
+          "macro avg": {
+            "precision": 0.9363175254152699,
+            "recall": 0.9358627222818952,
+            "f1-score": 0.9350115849788947,
+            "support": 209.0
+          },
+          "weighted avg": {
+            "precision": 0.9357139404986294,
+            "recall": 0.9330143540669856,
+            "f1-score": 0.9332319807876289,
+            "support": 209.0
+          }
+        },
+        "roc_auc": 0.9957299680226294
+      },
+      "test_metrics": {
+        "accuracy": 0.9330143540669856,
+        "macro_f1": 0.9321276331807631,
+        "weighted_f1": 0.9341809230440313,
+        "balanced_accuracy": 0.9316285327365501,
+        "macro_precision": 0.9358140008140008,
+        "macro_recall": 0.9316285327365501,
+        "confusion_matrix": [
+          [
+            52,
+            7,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            2,
+            55,
+            0,
+            0,
+            0,
+            4,
+            0
+          ],
+          [
+            0,
+            3,
+            66,
+            0,
+            0,
+            0,
+            1
+          ],
+          [
+            0,
+            0,
+            0,
+            64,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            60,
+            0,
+            0
+          ],
+          [
+            0,
+            5,
+            0,
+            0,
+            0,
+            46,
+            4
+          ],
+          [
+            0,
+            2,
+            0,
+            0,
+            0,
+            0,
+            47
+          ]
+        ],
+        "classification_report": {
+          "Insufficient_Weight": {
+            "precision": 0.9629629629629629,
+            "recall": 0.8813559322033898,
+            "f1-score": 0.9203539823008849,
+            "support": 59.0
+          },
+          "Normal_Weight": {
+            "precision": 0.7638888888888888,
+            "recall": 0.9016393442622951,
+            "f1-score": 0.8270676691729323,
+            "support": 61.0
+          },
+          "Obesity_Type_I": {
+            "precision": 1.0,
+            "recall": 0.9428571428571428,
+            "f1-score": 0.9705882352941176,
+            "support": 70.0
+          },
+          "Obesity_Type_II": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 64.0
+          },
+          "Obesity_Type_III": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 60.0
+          },
+          "Overweight_Level_I": {
+            "precision": 0.92,
+            "recall": 0.8363636363636363,
+            "f1-score": 0.8761904761904762,
+            "support": 55.0
+          },
+          "Overweight_Level_II": {
+            "precision": 0.9038461538461539,
+            "recall": 0.9591836734693877,
+            "f1-score": 0.9306930693069307,
+            "support": 49.0
+          },
+          "accuracy": 0.9330143540669856,
+          "macro avg": {
+            "precision": 0.9358140008140008,
+            "recall": 0.9316285327365501,
+            "f1-score": 0.9321276331807631,
+            "support": 418.0
+          },
+          "weighted avg": {
+            "precision": 0.938517939175834,
+            "recall": 0.9330143540669856,
+            "f1-score": 0.9341809230440313,
+            "support": 418.0
+          }
+        },
+        "roc_auc": 0.9943205165145436
+      },
+      "cv_summary": {
+        "accuracy": {
+          "mean": 0.928082191780822,
+          "std": 0.012995661617130332
+        },
+        "macro_f1": {
+          "mean": 0.9255216440937101,
+          "std": 0.014439621988132565
+        },
+        "weighted_f1": {
+          "mean": 0.9289769598511496,
+          "std": 0.012891234780371389
+        },
+        "balanced_accuracy": {
+          "mean": 0.9253039226009543,
+          "std": 0.015228779690607062
+        },
+        "roc_auc": {
+          "mean": 0.9919424460332913,
+          "std": 0.0031401981431888057
+        }
+      },
+      "saved": true,
+      "output_dir": "D:\\TXST\\OneDrive - Texas State University\\Hackathon_Monzurul\\Papers\\AVISTA\\examples\\obesity\\outputs\\training\\RandomForest"
+    },
+    {
+      "model_name": "XGBoost",
+      "status": "trained",
+      "train_metrics": {
+        "accuracy": 1.0,
+        "macro_f1": 1.0,
+        "weighted_f1": 1.0,
+        "balanced_accuracy": 1.0,
+        "macro_precision": 1.0,
+        "macro_recall": 1.0,
+        "confusion_matrix": [
+          [
+            189,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            191,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            241,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            209,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            232,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            193,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            205
+          ]
+        ],
+        "classification_report": {
+          "Insufficient_Weight": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 189.0
+          },
+          "Normal_Weight": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 191.0
+          },
+          "Obesity_Type_I": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 241.0
+          },
+          "Obesity_Type_II": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 209.0
+          },
+          "Obesity_Type_III": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 232.0
+          },
+          "Overweight_Level_I": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 193.0
+          },
+          "Overweight_Level_II": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 205.0
+          },
+          "accuracy": 1.0,
+          "macro avg": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 1460.0
+          },
+          "weighted avg": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 1460.0
+          }
+        },
+        "roc_auc": 1.0
+      },
+      "validation_metrics": {
+        "accuracy": 0.9665071770334929,
+        "macro_f1": 0.9651958521768514,
+        "weighted_f1": 0.9664339141523481,
+        "balanced_accuracy": 0.9690051020408162,
+        "macro_precision": 0.9629573934837093,
+        "macro_recall": 0.9690051020408162,
+        "confusion_matrix": [
+          [
+            19,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            2,
+            27,
+            0,
+            0,
+            0,
+            1,
+            0
+          ],
+          [
+            0,
+            0,
+            38,
+            0,
+            0,
+            0,
+            2
+          ],
+          [
+            0,
+            0,
+            0,
+            24,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            31,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            0,
+            0,
+            0,
+            27,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            36
+          ]
+        ],
+        "classification_report": {
+          "Insufficient_Weight": {
+            "precision": 0.9047619047619048,
+            "recall": 1.0,
+            "f1-score": 0.95,
+            "support": 19.0
+          },
+          "Normal_Weight": {
+            "precision": 0.9642857142857143,
+            "recall": 0.9,
+            "f1-score": 0.9310344827586207,
+            "support": 30.0
+          },
+          "Obesity_Type_I": {
+            "precision": 1.0,
+            "recall": 0.95,
+            "f1-score": 0.9743589743589743,
+            "support": 40.0
+          },
+          "Obesity_Type_II": {
+            "precision": 0.96,
+            "recall": 1.0,
+            "f1-score": 0.9795918367346939,
+            "support": 24.0
+          },
+          "Obesity_Type_III": {
+            "precision": 1.0,
+            "recall": 0.96875,
+            "f1-score": 0.9841269841269841,
+            "support": 32.0
+          },
+          "Overweight_Level_I": {
+            "precision": 0.9642857142857143,
+            "recall": 0.9642857142857143,
+            "f1-score": 0.9642857142857143,
+            "support": 28.0
+          },
+          "Overweight_Level_II": {
+            "precision": 0.9473684210526315,
+            "recall": 1.0,
+            "f1-score": 0.972972972972973,
+            "support": 36.0
+          },
+          "accuracy": 0.9665071770334929,
+          "macro avg": {
+            "precision": 0.9629573934837093,
+            "recall": 0.9690051020408162,
+            "f1-score": 0.9651958521768514,
+            "support": 209.0
+          },
+          "weighted avg": {
+            "precision": 0.9677718218992457,
+            "recall": 0.9665071770334929,
+            "f1-score": 0.9664339141523481,
+            "support": 209.0
+          }
+        },
+        "roc_auc": 0.9995792144519041
+      },
+      "test_metrics": {
+        "accuracy": 0.9617224880382775,
+        "macro_f1": 0.9612119543672087,
+        "weighted_f1": 0.9616238471021166,
+        "balanced_accuracy": 0.9608678715989739,
+        "macro_precision": 0.9618050017501255,
+        "macro_recall": 0.9608678715989739,
+        "confusion_matrix": [
+          [
+            57,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            4,
+            54,
+            0,
+            0,
+            0,
+            3,
+            0
+          ],
+          [
+            0,
+            0,
+            69,
+            0,
+            0,
+            0,
+            1
+          ],
+          [
+            0,
+            0,
+            1,
+            63,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            60,
+            0,
+            0
+          ],
+          [
+            0,
+            3,
+            0,
+            0,
+            0,
+            52,
+            0
+          ],
+          [
+            0,
+            0,
+            2,
+            0,
+            0,
+            0,
+            47
+          ]
+        ],
+        "classification_report": {
+          "Insufficient_Weight": {
+            "precision": 0.9344262295081968,
+            "recall": 0.9661016949152542,
+            "f1-score": 0.95,
+            "support": 59.0
+          },
+          "Normal_Weight": {
+            "precision": 0.9152542372881356,
+            "recall": 0.8852459016393442,
+            "f1-score": 0.9,
+            "support": 61.0
+          },
+          "Obesity_Type_I": {
+            "precision": 0.9583333333333334,
+            "recall": 0.9857142857142858,
+            "f1-score": 0.971830985915493,
+            "support": 70.0
+          },
+          "Obesity_Type_II": {
+            "precision": 1.0,
+            "recall": 0.984375,
+            "f1-score": 0.9921259842519685,
+            "support": 64.0
+          },
+          "Obesity_Type_III": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 60.0
+          },
+          "Overweight_Level_I": {
+            "precision": 0.9454545454545454,
+            "recall": 0.9454545454545454,
+            "f1-score": 0.9454545454545454,
+            "support": 55.0
+          },
+          "Overweight_Level_II": {
+            "precision": 0.9791666666666666,
+            "recall": 0.9591836734693877,
+            "f1-score": 0.9690721649484536,
+            "support": 49.0
+          },
+          "accuracy": 0.9617224880382775,
+          "macro avg": {
+            "precision": 0.9618050017501255,
+            "recall": 0.9608678715989739,
+            "f1-score": 0.9612119543672087,
+            "support": 418.0
+          },
+          "weighted avg": {
+            "precision": 0.9617802775491864,
+            "recall": 0.9617224880382775,
+            "f1-score": 0.9616238471021166,
+            "support": 418.0
+          }
+        },
+        "roc_auc": 0.9988083173284809
+      },
+      "cv_summary": {
+        "accuracy": {
+          "mean": 0.9636986301369863,
+          "std": 0.007051801466429444
+        },
+        "macro_f1": {
+          "mean": 0.9619539707524829,
+          "std": 0.006945392392495657
+        },
+        "weighted_f1": {
+          "mean": 0.9636439986703023,
+          "std": 0.007006220429074764
+        },
+        "balanced_accuracy": {
+          "mean": 0.9619821632612755,
+          "std": 0.007199155167838237
+        },
+        "roc_auc": {
+          "mean": 0.9979612478957247,
+          "std": 0.0011472109160491973
+        }
+      },
+      "saved": true,
+      "output_dir": "D:\\TXST\\OneDrive - Texas State University\\Hackathon_Monzurul\\Papers\\AVISTA\\examples\\obesity\\outputs\\training\\XGBoost"
+    }
+  ]
+}

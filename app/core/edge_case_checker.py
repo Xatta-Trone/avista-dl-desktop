@@ -603,6 +603,26 @@ def _check_split(df: pd.DataFrame, config: Any, report: EdgeCaseReport) -> None:
                 "Time split selected but the date column is missing.",
                 "Select an existing date column or choose a different split method.",
             )
+        else:
+            invalid_dates = int(pd.to_datetime(df[date_column], errors="coerce").isna().sum())
+            if invalid_dates:
+                report.add(
+                    ERROR,
+                    "split",
+                    f"Date column '{date_column}' has {invalid_dates} invalid date value(s).",
+                    "Fix invalid dates before using a time-based split.",
+                )
+
+    if "strat" in split_method and task_type == "classification" and target_column in df.columns:
+        class_counts = df[target_column][~missing_value_mask(df[target_column])].value_counts()
+        for class_name, count in class_counts[class_counts < 3].items():
+            report.add(
+                ERROR,
+                "split",
+                f"Class '{class_name}' has only {int(count)} samples. "
+                "It may not appear in all train/validation/test subsets.",
+                CLASS_COVERAGE_FIX,
+            )
 
 
 def _check_numerical_scaling(df: pd.DataFrame, config: Any, report: EdgeCaseReport) -> None:
@@ -671,26 +691,6 @@ def _check_numerical_scaling(df: pd.DataFrame, config: Any, report: EdgeCaseRepo
                 "preprocessing",
                 f"Constant numerical columns found for standardization: {constant_columns}.",
                 "Exclude constant numeric features or use no scaling for those columns.",
-            )
-        else:
-            invalid_dates = int(pd.to_datetime(df[date_column], errors="coerce").isna().sum())
-            if invalid_dates:
-                report.add(
-                    ERROR,
-                    "split",
-                    f"Date column '{date_column}' has {invalid_dates} invalid date value(s).",
-                    "Fix invalid dates before using a time-based split.",
-                )
-
-    if "strat" in split_method and task_type == "classification" and target_column in df.columns:
-        class_counts = df[target_column][~missing_value_mask(df[target_column])].value_counts()
-        for class_name, count in class_counts[class_counts < 3].items():
-            report.add(
-                ERROR,
-                "split",
-                f"Class '{class_name}' has only {int(count)} samples. "
-                "It may not appear in all train/validation/test subsets.",
-                CLASS_COVERAGE_FIX,
             )
 
 
@@ -792,13 +792,31 @@ def _check_model_environment(
             "Use CPU mode or install a CUDA-compatible PyTorch environment.",
         )
 
-    if any("tabpfn" in model for model in selected_models) and len(df) > 3000:
-        report.add(
-            WARNING,
-            "model",
-            f"TabPFN is selected with more than 3000 rows ({len(df)} rows).",
-            "Subsample the data or choose another model for larger datasets.",
-        )
+    if any("tabpfn" in model for model in selected_models):
+        feature_count = len(getattr(config, "feature_columns", []) or [])
+        target_column = getattr(config, "target_column", None)
+        class_count = int(df[target_column].nunique(dropna=False)) if target_column in df else 0
+        if len(df) > 50_000:
+            report.add(
+                WARNING,
+                "model",
+                f"TabPFN 2.5 is selected with more than 50,000 rows ({len(df)} rows).",
+                "AVISTA will use reproducible stratified subsampling for each TabPFN fit.",
+            )
+        if feature_count > 2_000:
+            report.add(
+                ERROR,
+                "model",
+                f"TabPFN 2.5 supports at most 2,000 features; {feature_count} are selected.",
+                "Select at most 2,000 modeling features or remove TabPFN.",
+            )
+        if class_count > 10:
+            report.add(
+                ERROR,
+                "model",
+                f"TabPFN 2.5 supports at most 10 classes; the target has {class_count}.",
+                "Use a target with at most 10 classes or remove TabPFN.",
+            )
 
 
 def _duplicate_names(columns: pd.Index) -> list[str]:

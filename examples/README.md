@@ -8,9 +8,9 @@ while AutoGluon is used as a platform-level benchmark.
 
 | Dataset | Task | Split | Models | CV |
 |---|---|---|---|---|
-| Mushroom | Binary classification | 70/10/20 | Logistic Regression, Random Forest, XGBoost | 5-fold |
-| Obesity | 7-class classification | 70/10/20 | Logistic Regression, Random Forest, XGBoost | 5-fold |
-| National Poll (NPHA) | 3-class classification | 70/10/20 | Logistic Regression, Random Forest, XGBoost | 5-fold |
+| [Mushroom](https://archive.ics.uci.edu/dataset/73/mushroom) | Binary classification | 70/10/20 | Logistic Regression, Random Forest, XGBoost | 5-fold |
+| [Obesity](https://archive.ics.uci.edu/dataset/544/estimation+of+obesity+levels+based+on+eating+habits+and+physical+condition) | 7-class classification | 70/10/20 | Logistic Regression, Random Forest, XGBoost | 5-fold |
+| [National Poll on Healthy Aging (NPHA)](https://archive.ics.uci.edu/dataset/936/national+poll+on+healthy+aging+(npha)) | 3-class classification | 70/10/20 | Logistic Regression, Random Forest, XGBoost | 5-fold |
 
 ## Contents
 
@@ -20,7 +20,8 @@ directory containing the saved AVISTA project, its managed dataset, split
 artifacts, trained models, and evaluation outputs. Detailed metrics remain in
 the notebooks and saved AVISTA outputs rather than being duplicated here.
 
-The National Poll (NPHA) directory also contains
+The National Poll on Healthy Aging (NPHA)
+ directory also contains
 `national-poll-data.ipynb`, which records the conversion from the UCI numeric
 codes to the labeled categorical dataset used by its saved AVISTA project.
 It is a data-preparation notebook, not a second validation run. AutoGluon
@@ -61,7 +62,8 @@ project metadata for the exact procedure.
   on Eating Habits and Physical Condition, accessed through `ucimlrepo`
   dataset ID 544.
 
-## National Poll (NPHA)
+## National Poll on Healthy Aging (NPHA)
+
 
 - Task: multiclass classification with three target classes.
 - Notebook: [`national-poll.ipynb`](national-poll/national-poll.ipynb).

@@ -77,8 +77,8 @@ selections from starting a TabPFN fit. Focused Model Selection, training
 preflight, trainer, and existing GUI regression verification passed on
 September 19, 2026: `9 passed`.
 
-The current AVISTA application and update-feed version is `1.0.7`, with the
-release date centralized as July 28, 2026. Focused centralized-version,
+The current AVISTA application and update-feed version is `1.1.0`, with the
+release date centralized as September 20, 2026. Focused centralized-version,
 update-feed, release-tool, and packaging-document verification passed on July
 28, 2026: `23 passed`.
 

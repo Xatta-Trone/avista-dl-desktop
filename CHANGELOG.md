@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.0 - 2026-09-20
+
+- Corrected cross-validation to apply preprocessing and imbalance handling within each
+  fold.
+- Revised TabPFN integration with native preprocessing, removal of the previous
+  3,000-row cap, and external model-weight setup.
+- Updated packaging, dependency installation, reporting, reproducibility metadata, and
+  validation examples.
+
 ## Unreleased
 
 - Moved the TabPFN 2.5 classifier checkpoint to the official TabPFN user cache

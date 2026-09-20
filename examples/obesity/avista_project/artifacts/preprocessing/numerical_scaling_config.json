@@ -1,0 +1,63 @@
+{
+  "target_column": "NObeyesdad",
+  "feature_columns": [
+    "Age",
+    "CAEC",
+    "CALC",
+    "CH2O",
+    "FAF",
+    "family_history_with_overweight",
+    "FAVC",
+    "FCVC",
+    "Gender",
+    "Height",
+    "MTRANS",
+    "NCP",
+    "SCC",
+    "SMOKE",
+    "TUE",
+    "Weight"
+  ],
+  "numeric_columns": [
+    "Age",
+    "CH2O",
+    "FAF",
+    "FCVC",
+    "Height",
+    "NCP",
+    "TUE",
+    "Weight"
+  ],
+  "categorical_columns": [
+    "CAEC",
+    "CALC",
+    "family_history_with_overweight",
+    "FAVC",
+    "Gender",
+    "MTRANS",
+    "SCC",
+    "SMOKE"
+  ],
+  "numerical_scaling_method": "standard",
+  "scaled_numerical_columns": [
+    "Age",
+    "CH2O",
+    "FAF",
+    "FCVC",
+    "Height",
+    "NCP",
+    "TUE",
+    "Weight"
+  ],
+  "numeric_impute_strategy": "median",
+  "categorical_fill_value": "Unknown",
+  "categorical_missing_value_strategy": "replace_missing_and_blank_before_encoding",
+  "categorical_missing_inputs": [
+    "NaN",
+    "None",
+    "pandas.NA",
+    "empty_string",
+    "whitespace_only"
+  ],
+  "categorical_encoder_fit_scope": "training_split_only"
+}

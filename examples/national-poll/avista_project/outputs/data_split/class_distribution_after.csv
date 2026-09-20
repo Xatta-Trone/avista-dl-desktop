@@ -1,0 +1,10 @@
+split,class,count,percent
+Train Set (Balanced),Doctors_0_1,130,24.029574861367838
+Train Set (Balanced),Doctors_2_3,260,48.059149722735675
+Train Set (Balanced),Doctors_4_Plus,151,27.911275415896487
+Validation Set,Doctors_0_1,15,20.833333333333336
+Validation Set,Doctors_2_3,38,52.77777777777778
+Validation Set,Doctors_4_Plus,19,26.38888888888889
+Test Set,Doctors_0_1,28,19.58041958041958
+Test Set,Doctors_2_3,74,51.74825174825175
+Test Set,Doctors_4_Plus,41,28.671328671328673

@@ -1,0 +1,154 @@
+{
+  "target_column": "poisonous",
+  "feature_columns": [
+    "bruises",
+    "cap-color",
+    "cap-shape",
+    "cap-surface",
+    "gill-size",
+    "gill-spacing",
+    "habitat",
+    "ring-number",
+    "stalk-root",
+    "stalk-shape",
+    "stalk-surface-above-ring",
+    "stalk-surface-below-ring",
+    "veil-color"
+  ],
+  "task_type": null,
+  "signature": {
+    "schema_version": 1,
+    "split_signature": {
+      "schema_version": 1,
+      "modeling": {
+        "target_column": "poisonous",
+        "feature_columns": [
+          "bruises",
+          "cap-color",
+          "cap-shape",
+          "cap-surface",
+          "gill-size",
+          "gill-spacing",
+          "habitat",
+          "ring-number",
+          "stalk-root",
+          "stalk-shape",
+          "stalk-surface-above-ring",
+          "stalk-surface-below-ring",
+          "veil-color"
+        ],
+        "label_encoding_columns": [
+          "bruises",
+          "cap-color",
+          "cap-shape",
+          "cap-surface",
+          "gill-size",
+          "gill-spacing",
+          "habitat",
+          "ring-number",
+          "stalk-root",
+          "stalk-shape",
+          "stalk-surface-above-ring",
+          "stalk-surface-below-ring",
+          "veil-color"
+        ],
+        "task_type": null,
+        "numerical_scaling_method": "standard",
+        "scaled_numerical_columns": [],
+        "categorical_missing_value": "Unknown",
+        "categorical_missing_value_strategy": "replace_missing_and_blank_before_encoding"
+      },
+      "split_method": "random",
+      "train_percent": 70.0,
+      "validation_percent": 10.0,
+      "test_percent": 20.0,
+      "random_seed": 42,
+      "group_column": null,
+      "date_column": null
+    },
+    "imbalance_method": "smote",
+    "use_class_weights": true,
+    "smote_ratio_preset": "moderate",
+    "custom_ratio": "",
+    "sampling_strategy": {}
+  },
+  "split_signature": {
+    "schema_version": 1,
+    "modeling": {
+      "target_column": "poisonous",
+      "feature_columns": [
+        "bruises",
+        "cap-color",
+        "cap-shape",
+        "cap-surface",
+        "gill-size",
+        "gill-spacing",
+        "habitat",
+        "ring-number",
+        "stalk-root",
+        "stalk-shape",
+        "stalk-surface-above-ring",
+        "stalk-surface-below-ring",
+        "veil-color"
+      ],
+      "label_encoding_columns": [
+        "bruises",
+        "cap-color",
+        "cap-shape",
+        "cap-surface",
+        "gill-size",
+        "gill-spacing",
+        "habitat",
+        "ring-number",
+        "stalk-root",
+        "stalk-shape",
+        "stalk-surface-above-ring",
+        "stalk-surface-below-ring",
+        "veil-color"
+      ],
+      "task_type": null,
+      "numerical_scaling_method": "standard",
+      "scaled_numerical_columns": [],
+      "categorical_missing_value": "Unknown",
+      "categorical_missing_value_strategy": "replace_missing_and_blank_before_encoding"
+    },
+    "split_method": "random",
+    "train_percent": 70.0,
+    "validation_percent": 10.0,
+    "test_percent": 20.0,
+    "random_seed": 42,
+    "group_column": null,
+    "date_column": null
+  },
+  "stage_completed": true,
+  "original_train_distribution": {
+    "e": 2943,
+    "p": 2743
+  },
+  "balanced_train_distribution": {
+    "e": 2943,
+    "p": 2743
+  },
+  "imbalance_method": "smote",
+  "balancing_preset": "moderate",
+  "random_seed": 42,
+  "sampling_strategy_used": {},
+  "class_weights_enabled": true,
+  "warnings": [],
+  "errors": [],
+  "imbalance_info": {
+    "strategy": "smote",
+    "success": true,
+    "message": "No training classes require resampling.",
+    "error": null,
+    "before_counts": {
+      "0": 2943,
+      "1": 2743
+    },
+    "after_counts": {
+      "0": 2943,
+      "1": 2743
+    },
+    "warnings": []
+  }
+}

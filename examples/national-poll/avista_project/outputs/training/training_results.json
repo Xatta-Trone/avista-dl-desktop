@@ -1,0 +1,635 @@
+{
+  "status": "completed",
+  "output_root": "D:\\TXST\\OneDrive - Texas State University\\Hackathon_Monzurul\\Papers\\AVISTA\\examples\\national-poll2\\outputs\\training",
+  "project_file": "D:\\TXST\\OneDrive - Texas State University\\Hackathon_Monzurul\\Papers\\AVISTA\\examples\\national-poll2\\national-poll2.avista",
+  "project_name": "national-poll2",
+  "project_file_version": "1.0",
+  "application": "AVISTA",
+  "application_description": "An extensible desktop platform for tabular machine learning and deep learning analytics.",
+  "application_version": "1.0.7",
+  "application_release_date": "July 28, 2026",
+  "report_footer": {
+    "generated_by": "AVISTA",
+    "description": "An extensible desktop platform for tabular machine learning and deep learning analytics.",
+    "version": "1.0.7",
+    "release_date": "July 28, 2026",
+    "generated_on": "2026-09-19T19:09:18"
+  },
+  "results": [
+    {
+      "model_name": "Logistic Regression",
+      "status": "trained",
+      "train_metrics": {
+        "accuracy": 0.5175600739371534,
+        "macro_f1": 0.5168188648711132,
+        "weighted_f1": 0.5193348946656238,
+        "balanced_accuracy": 0.5449736797418917,
+        "macro_precision": 0.5273173268362618,
+        "macro_recall": 0.5449736797418917,
+        "confusion_matrix": [
+          [
+            83,
+            25,
+            22
+          ],
+          [
+            80,
+            111,
+            69
+          ],
+          [
+            39,
+            26,
+            86
+          ]
+        ],
+        "classification_report": {
+          "Doctors_0_1": {
+            "precision": 0.41089108910891087,
+            "recall": 0.6384615384615384,
+            "f1-score": 0.5,
+            "support": 130.0
+          },
+          "Doctors_2_3": {
+            "precision": 0.6851851851851852,
+            "recall": 0.4269230769230769,
+            "f1-score": 0.5260663507109005,
+            "support": 260.0
+          },
+          "Doctors_4_Plus": {
+            "precision": 0.4858757062146893,
+            "recall": 0.5695364238410596,
+            "f1-score": 0.524390243902439,
+            "support": 151.0
+          },
+          "accuracy": 0.5175600739371534,
+          "macro avg": {
+            "precision": 0.5273173268362618,
+            "recall": 0.5449736797418917,
+            "f1-score": 0.5168188648711132,
+            "support": 541.0
+          },
+          "weighted avg": {
+            "precision": 0.5636436624227812,
+            "recall": 0.5175600739371534,
+            "f1-score": 0.5193348946656238,
+            "support": 541.0
+          }
+        },
+        "roc_auc": 0.6996863264035239
+      },
+      "validation_metrics": {
+        "accuracy": 0.3611111111111111,
+        "macro_f1": 0.3677345537757437,
+        "weighted_f1": 0.3498220188151538,
+        "balanced_accuracy": 0.4099415204678363,
+        "macro_precision": 0.361269701849412,
+        "macro_recall": 0.4099415204678363,
+        "confusion_matrix": [
+          [
+            7,
+            7,
+            1
+          ],
+          [
+            13,
+            9,
+            16
+          ],
+          [
+            3,
+            6,
+            10
+          ]
+        ],
+        "classification_report": {
+          "Doctors_0_1": {
+            "precision": 0.30434782608695654,
+            "recall": 0.4666666666666667,
+            "f1-score": 0.3684210526315789,
+            "support": 15.0
+          },
+          "Doctors_2_3": {
+            "precision": 0.4090909090909091,
+            "recall": 0.23684210526315788,
+            "f1-score": 0.3,
+            "support": 38.0
+          },
+          "Doctors_4_Plus": {
+            "precision": 0.37037037037037035,
+            "recall": 0.5263157894736842,
+            "f1-score": 0.43478260869565216,
+            "support": 19.0
+          },
+          "accuracy": 0.3611111111111111,
+          "macro avg": {
+            "precision": 0.361269701849412,
+            "recall": 0.4099415204678363,
+            "f1-score": 0.3677345537757437,
+            "support": 72.0
+          },
+          "weighted avg": {
+            "precision": 0.3770515135249435,
+            "recall": 0.3611111111111111,
+            "f1-score": 0.3498220188151538,
+            "support": 72.0
+          }
+        },
+        "roc_auc": 0.5757756705241955
+      },
+      "test_metrics": {
+        "accuracy": 0.3986013986013986,
+        "macro_f1": 0.3763594885670327,
+        "weighted_f1": 0.40580365043201266,
+        "balanced_accuracy": 0.39209592868129456,
+        "macro_precision": 0.3881557510589769,
+        "macro_recall": 0.39209592868129456,
+        "confusion_matrix": [
+          [
+            8,
+            10,
+            10
+          ],
+          [
+            15,
+            28,
+            31
+          ],
+          [
+            10,
+            10,
+            21
+          ]
+        ],
+        "classification_report": {
+          "Doctors_0_1": {
+            "precision": 0.24242424242424243,
+            "recall": 0.2857142857142857,
+            "f1-score": 0.26229508196721313,
+            "support": 28.0
+          },
+          "Doctors_2_3": {
+            "precision": 0.5833333333333334,
+            "recall": 0.3783783783783784,
+            "f1-score": 0.45901639344262296,
+            "support": 74.0
+          },
+          "Doctors_4_Plus": {
+            "precision": 0.3387096774193548,
+            "recall": 0.5121951219512195,
+            "f1-score": 0.4077669902912621,
+            "support": 41.0
+          },
+          "accuracy": 0.3986013986013986,
+          "macro avg": {
+            "precision": 0.3881557510589769,
+            "recall": 0.39209592868129456,
+            "f1-score": 0.3763594885670327,
+            "support": 143.0
+          },
+          "weighted avg": {
+            "precision": 0.4464450505506224,
+            "recall": 0.3986013986013986,
+            "f1-score": 0.40580365043201266,
+            "support": 143.0
+          }
+        },
+        "roc_auc": 0.6001503327917775
+      },
+      "cv_summary": {
+        "accuracy": {
+          "mean": 0.3746868686868687,
+          "std": 0.04122111211096727
+        },
+        "macro_f1": {
+          "mean": 0.36332142845667964,
+          "std": 0.04110532417298274
+        },
+        "weighted_f1": {
+          "mean": 0.38495469564452334,
+          "std": 0.038621255697466904
+        },
+        "balanced_accuracy": {
+          "mean": 0.3905505008730815,
+          "std": 0.05373400157206135
+        },
+        "roc_auc": {
+          "mean": 0.534645948961354,
+          "std": 0.03685528557868296
+        }
+      },
+      "saved": true,
+      "output_dir": "D:\\TXST\\OneDrive - Texas State University\\Hackathon_Monzurul\\Papers\\AVISTA\\examples\\national-poll2\\outputs\\training\\LogisticRegression"
+    },
+    {
+      "model_name": "Random Forest",
+      "status": "trained",
+      "train_metrics": {
+        "accuracy": 0.9519408502772643,
+        "macro_f1": 0.9481114908211606,
+        "weighted_f1": 0.9523227204048883,
+        "balanced_accuracy": 0.9532093734080488,
+        "macro_precision": 0.9444896894595084,
+        "macro_recall": 0.9532093734080488,
+        "confusion_matrix": [
+          [
+            126,
+            3,
+            1
+          ],
+          [
+            9,
+            247,
+            4
+          ],
+          [
+            7,
+            2,
+            142
+          ]
+        ],
+        "classification_report": {
+          "Doctors_0_1": {
+            "precision": 0.8873239436619719,
+            "recall": 0.9692307692307692,
+            "f1-score": 0.9264705882352942,
+            "support": 130.0
+          },
+          "Doctors_2_3": {
+            "precision": 0.9801587301587301,
+            "recall": 0.95,
+            "f1-score": 0.96484375,
+            "support": 260.0
+          },
+          "Doctors_4_Plus": {
+            "precision": 0.9659863945578231,
+            "recall": 0.9403973509933775,
+            "f1-score": 0.9530201342281879,
+            "support": 151.0
+          },
+          "accuracy": 0.9519408502772643,
+          "macro avg": {
+            "precision": 0.9444896894595084,
+            "recall": 0.9532093734080488,
+            "f1-score": 0.9481114908211606,
+            "support": 541.0
+          },
+          "weighted avg": {
+            "precision": 0.9538952460176662,
+            "recall": 0.9519408502772643,
+            "f1-score": 0.9523227204048883,
+            "support": 541.0
+          }
+        },
+        "roc_auc": 0.9951533819372621
+      },
+      "validation_metrics": {
+        "accuracy": 0.4027777777777778,
+        "macro_f1": 0.3425467145956799,
+        "weighted_f1": 0.3992903753359889,
+        "balanced_accuracy": 0.35146198830409353,
+        "macro_precision": 0.3502645502645502,
+        "macro_recall": 0.35146198830409353,
+        "confusion_matrix": [
+          [
+            2,
+            8,
+            5
+          ],
+          [
+            4,
+            19,
+            15
+          ],
+          [
+            3,
+            8,
+            8
+          ]
+        ],
+        "classification_report": {
+          "Doctors_0_1": {
+            "precision": 0.2222222222222222,
+            "recall": 0.13333333333333333,
+            "f1-score": 0.16666666666666666,
+            "support": 15.0
+          },
+          "Doctors_2_3": {
+            "precision": 0.5428571428571428,
+            "recall": 0.5,
+            "f1-score": 0.5205479452054794,
+            "support": 38.0
+          },
+          "Doctors_4_Plus": {
+            "precision": 0.2857142857142857,
+            "recall": 0.42105263157894735,
+            "f1-score": 0.3404255319148936,
+            "support": 19.0
+          },
+          "accuracy": 0.4027777777777778,
+          "macro avg": {
+            "precision": 0.3502645502645502,
+            "recall": 0.35146198830409353,
+            "f1-score": 0.3425467145956799,
+            "support": 72.0
+          },
+          "weighted avg": {
+            "precision": 0.4082010582010581,
+            "recall": 0.4027777777777778,
+            "f1-score": 0.3992903753359889,
+            "support": 72.0
+          }
+        },
+        "roc_auc": 0.5850346593453668
+      },
+      "test_metrics": {
+        "accuracy": 0.43356643356643354,
+        "macro_f1": 0.3774400873904813,
+        "weighted_f1": 0.43103393878909574,
+        "balanced_accuracy": 0.3744388988291427,
+        "macro_precision": 0.39111111111111113,
+        "macro_recall": 0.3744388988291427,
+        "confusion_matrix": [
+          [
+            6,
+            12,
+            10
+          ],
+          [
+            6,
+            42,
+            26
+          ],
+          [
+            6,
+            21,
+            14
+          ]
+        ],
+        "classification_report": {
+          "Doctors_0_1": {
+            "precision": 0.3333333333333333,
+            "recall": 0.21428571428571427,
+            "f1-score": 0.2608695652173913,
+            "support": 28.0
+          },
+          "Doctors_2_3": {
+            "precision": 0.56,
+            "recall": 0.5675675675675675,
+            "f1-score": 0.5637583892617449,
+            "support": 74.0
+          },
+          "Doctors_4_Plus": {
+            "precision": 0.28,
+            "recall": 0.34146341463414637,
+            "f1-score": 0.3076923076923077,
+            "support": 41.0
+          },
+          "accuracy": 0.43356643356643354,
+          "macro avg": {
+            "precision": 0.39111111111111113,
+            "recall": 0.3744388988291427,
+            "f1-score": 0.3774400873904813,
+            "support": 143.0
+          },
+          "weighted avg": {
+            "precision": 0.43533799533799544,
+            "recall": 0.43356643356643354,
+            "f1-score": 0.43103393878909574,
+            "support": 143.0
+          }
+        },
+        "roc_auc": 0.5179917376941893
+      },
+      "cv_summary": {
+        "accuracy": {
+          "mean": 0.3707474747474747,
+          "std": 0.011055988150882308
+        },
+        "macro_f1": {
+          "mean": 0.3033750514147662,
+          "std": 0.008250188716203569
+        },
+        "weighted_f1": {
+          "mean": 0.36949330020918725,
+          "std": 0.010089997148390373
+        },
+        "balanced_accuracy": {
+          "mean": 0.30953788849424524,
+          "std": 0.0029493873492706956
+        },
+        "roc_auc": {
+          "mean": 0.47218027980116367,
+          "std": 0.03078288130925154
+        }
+      },
+      "saved": true,
+      "output_dir": "D:\\TXST\\OneDrive - Texas State University\\Hackathon_Monzurul\\Papers\\AVISTA\\examples\\national-poll2\\outputs\\training\\RandomForest"
+    },
+    {
+      "model_name": "XGBoost",
+      "status": "trained",
+      "train_metrics": {
+        "accuracy": 0.9057301293900185,
+        "macro_f1": 0.8994496746484976,
+        "weighted_f1": 0.9046383653275366,
+        "balanced_accuracy": 0.8836984207845134,
+        "macro_precision": 0.9229987298091835,
+        "macro_recall": 0.8836984207845134,
+        "confusion_matrix": [
+          [
+            104,
+            22,
+            4
+          ],
+          [
+            1,
+            254,
+            5
+          ],
+          [
+            3,
+            16,
+            132
+          ]
+        ],
+        "classification_report": {
+          "Doctors_0_1": {
+            "precision": 0.9629629629629629,
+            "recall": 0.8,
+            "f1-score": 0.8739495798319328,
+            "support": 130.0
+          },
+          "Doctors_2_3": {
+            "precision": 0.8698630136986302,
+            "recall": 0.9769230769230769,
+            "f1-score": 0.9202898550724637,
+            "support": 260.0
+          },
+          "Doctors_4_Plus": {
+            "precision": 0.9361702127659575,
+            "recall": 0.8741721854304636,
+            "f1-score": 0.9041095890410958,
+            "support": 151.0
+          },
+          "accuracy": 0.9057301293900185,
+          "macro avg": {
+            "precision": 0.9229987298091835,
+            "recall": 0.8836984207845134,
+            "f1-score": 0.8994496746484976,
+            "support": 541.0
+          },
+          "weighted avg": {
+            "precision": 0.910741720655247,
+            "recall": 0.9057301293900185,
+            "f1-score": 0.9046383653275366,
+            "support": 541.0
+          }
+        },
+        "roc_auc": 0.9834306516632284
+      },
+      "validation_metrics": {
+        "accuracy": 0.4166666666666667,
+        "macro_f1": 0.2816609713161437,
+        "weighted_f1": 0.37464188326257286,
+        "balanced_accuracy": 0.30701754385964913,
+        "macro_precision": 0.26266061980347694,
+        "macro_recall": 0.30701754385964913,
+        "confusion_matrix": [
+          [
+            0,
+            12,
+            3
+          ],
+          [
+            3,
+            25,
+            10
+          ],
+          [
+            2,
+            12,
+            5
+          ]
+        ],
+        "classification_report": {
+          "Doctors_0_1": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1-score": 0.0,
+            "support": 15.0
+          },
+          "Doctors_2_3": {
+            "precision": 0.5102040816326531,
+            "recall": 0.6578947368421053,
+            "f1-score": 0.5747126436781609,
+            "support": 38.0
+          },
+          "Doctors_4_Plus": {
+            "precision": 0.2777777777777778,
+            "recall": 0.2631578947368421,
+            "f1-score": 0.2702702702702703,
+            "support": 19.0
+          },
+          "accuracy": 0.4166666666666667,
+          "macro avg": {
+            "precision": 0.26266061980347694,
+            "recall": 0.30701754385964913,
+            "f1-score": 0.2816609713161437,
+            "support": 72.0
+          },
+          "weighted avg": {
+            "precision": 0.342576845553036,
+            "recall": 0.4166666666666667,
+            "f1-score": 0.37464188326257286,
+            "support": 72.0
+          }
+        },
+        "roc_auc": 0.5398345567952437
+      },
+      "test_metrics": {
+        "accuracy": 0.4755244755244755,
+        "macro_f1": 0.382067954357111,
+        "weighted_f1": 0.45022781769769726,
+        "balanced_accuracy": 0.38303983425934646,
+        "macro_precision": 0.45222446916076847,
+        "macro_recall": 0.38303983425934646,
+        "confusion_matrix": [
+          [
+            4,
+            15,
+            9
+          ],
+          [
+            2,
+            51,
+            21
+          ],
+          [
+            2,
+            26,
+            13
+          ]
+        ],
+        "classification_report": {
+          "Doctors_0_1": {
+            "precision": 0.5,
+            "recall": 0.14285714285714285,
+            "f1-score": 0.2222222222222222,
+            "support": 28.0
+          },
+          "Doctors_2_3": {
+            "precision": 0.5543478260869565,
+            "recall": 0.6891891891891891,
+            "f1-score": 0.6144578313253012,
+            "support": 74.0
+          },
+          "Doctors_4_Plus": {
+            "precision": 0.3023255813953488,
+            "recall": 0.3170731707317073,
+            "f1-score": 0.30952380952380953,
+            "support": 41.0
+          },
+          "accuracy": 0.4755244755244755,
+          "macro avg": {
+            "precision": 0.45222446916076847,
+            "recall": 0.38303983425934646,
+            "f1-score": 0.382067954357111,
+            "support": 143.0
+          },
+          "weighted avg": {
+            "precision": 0.47144816760590263,
+            "recall": 0.4755244755244755,
+            "f1-score": 0.45022781769769726,
+            "support": 143.0
+          }
+        },
+        "roc_auc": 0.5588799389139355
+      },
+      "cv_summary": {
+        "accuracy": {
+          "mean": 0.4127878787878788,
+          "std": 0.03261619759062805
+        },
+        "macro_f1": {
+          "mean": 0.30650886694920687,
+          "std": 0.023687219336801832
+        },
+        "weighted_f1": {
+          "mean": 0.389932413804963,
+          "std": 0.027171102623637342
+        },
+        "balanced_accuracy": {
+          "mean": 0.3159591192418517,
+          "std": 0.02373828807330874
+        },
+        "roc_auc": {
+          "mean": 0.48560240298312773,
+          "std": 0.02622691204029366
+        }
+      },
+      "saved": true,
+      "output_dir": "D:\\TXST\\OneDrive - Texas State University\\Hackathon_Monzurul\\Papers\\AVISTA\\examples\\national-poll2\\outputs\\training\\XGBoost"
+    }
+  ]
+}

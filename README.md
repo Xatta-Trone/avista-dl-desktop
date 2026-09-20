@@ -175,6 +175,13 @@ Packaged Windows installers can associate `.avista` with `AVISTA.exe`. Legacy `.
 7. Select and train models.
 8. Generate the saved Markdown, PDF, metrics, and diagnostic reports.
 
+## Validation examples
+
+Reproducible validation examples used in the SoftwareX evaluation are
+available in [`examples/`](examples/README.md). They cover Mushroom, Obesity,
+and National Poll (NPHA), with saved AVISTA projects and corresponding Jupyter
+Notebooks for direct-library and AutoGluon comparison.
+
 ## Updates
 
 The updater reads:

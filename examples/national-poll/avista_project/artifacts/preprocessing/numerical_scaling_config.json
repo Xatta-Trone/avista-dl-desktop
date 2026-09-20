@@ -1,0 +1,47 @@
+{
+  "target_column": "Number_of_Doctors_Visited",
+  "feature_columns": [
+    "Bathroom_Needs_Keeps_Patient_from_Sleeping",
+    "Dental_Health",
+    "Employment",
+    "Gender",
+    "Medication_Keeps_Patient_from_Sleeping",
+    "Mental_Health",
+    "Pain_Keeps_Patient_from_Sleeping",
+    "Physical_Health",
+    "Prescription_Sleep_Medication",
+    "Race",
+    "Stress_Keeps_Patient_from_Sleeping",
+    "Trouble_Sleeping",
+    "Uknown_Keeps_Patient_from_Sleeping"
+  ],
+  "numeric_columns": [],
+  "categorical_columns": [
+    "Bathroom_Needs_Keeps_Patient_from_Sleeping",
+    "Dental_Health",
+    "Employment",
+    "Gender",
+    "Medication_Keeps_Patient_from_Sleeping",
+    "Mental_Health",
+    "Pain_Keeps_Patient_from_Sleeping",
+    "Physical_Health",
+    "Prescription_Sleep_Medication",
+    "Race",
+    "Stress_Keeps_Patient_from_Sleeping",
+    "Trouble_Sleeping",
+    "Uknown_Keeps_Patient_from_Sleeping"
+  ],
+  "numerical_scaling_method": "none",
+  "scaled_numerical_columns": [],
+  "numeric_impute_strategy": "median",
+  "categorical_fill_value": "Unknown",
+  "categorical_missing_value_strategy": "replace_missing_and_blank_before_encoding",
+  "categorical_missing_inputs": [
+    "NaN",
+    "None",
+    "pandas.NA",
+    "empty_string",
+    "whitespace_only"
+  ],
+  "categorical_encoder_fit_scope": "training_split_only"
+}

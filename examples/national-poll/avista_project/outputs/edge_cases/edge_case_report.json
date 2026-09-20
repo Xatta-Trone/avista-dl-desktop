@@ -1,0 +1,28 @@
+{
+  "issues": [],
+  "warnings": 0,
+  "errors": 0,
+  "fatals": 0,
+  "can_continue": true,
+  "context": {
+    "project_file": "D:\\TXST\\OneDrive - Texas State University\\Hackathon_Monzurul\\Papers\\AVISTA\\examples\\national-poll2\\national-poll2.avista",
+    "project_name": "national-poll2",
+    "project_file_version": "1.0",
+    "application": "AVISTA",
+    "application_description": "An extensible desktop platform for tabular machine learning and deep learning analytics.",
+    "application_version": "1.0.7",
+    "application_release_date": "July 28, 2026",
+    "target_column": "Number_of_Doctors_Visited",
+    "feature_count": 13,
+    "column_configuration_confirmed": true,
+    "split_confirmed": true,
+    "imbalance_method": "smote"
+  },
+  "report_footer": {
+    "generated_by": "AVISTA",
+    "description": "An extensible desktop platform for tabular machine learning and deep learning analytics.",
+    "version": "1.0.7",
+    "release_date": "July 28, 2026",
+    "generated_on": "2026-09-19T19:08:53"
+  }
+}

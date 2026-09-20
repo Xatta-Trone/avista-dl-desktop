@@ -1,0 +1,7 @@
+split,class,count,percent
+Train Set (Balanced),e,2943,51.75870559268378
+Train Set (Balanced),p,2743,48.24129440731622
+Validation Set,e,422,51.90651906519065
+Validation Set,p,391,48.09348093480935
+Test Set,e,843,51.87692307692308
+Test Set,p,782,48.12307692307692

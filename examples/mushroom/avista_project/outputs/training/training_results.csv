@@ -1,0 +1,4 @@
+model,status,train_accuracy,train_macro_f1,validation_accuracy,validation_macro_f1,test_accuracy,test_macro_f1,cv_accuracy_mean,cv_accuracy_std,cv_macro_f1_mean,cv_macro_f1_std,roc_auc,saved
+Logistic Regression,trained,0.9850510024621878,0.9850401707830521,0.986469864698647,0.9864488707392283,0.976,0.9759882151865114,0.9827653631716678,0.0036266172066996703,0.982754102862312,0.0036254606946480683,0.9992733903092414,True
+Random Forest,trained,1.0,1.0,1.0,1.0,1.0,1.0,1.0,0.0,1.0,0.0,1.0,True
+XGBoost,trained,1.0,1.0,1.0,1.0,1.0,1.0,1.0,0.0,1.0,0.0,0.9999999999999999,True

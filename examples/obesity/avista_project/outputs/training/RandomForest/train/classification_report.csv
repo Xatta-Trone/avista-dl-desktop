@@ -1,0 +1,11 @@
+,precision,recall,f1-score,support,generated_by,version,generated_on
+Insufficient_Weight,1.0,1.0,1.0,189.0,AVISTA,1.0.7,2026-09-19T19:01:29
+Normal_Weight,1.0,1.0,1.0,191.0,AVISTA,1.0.7,2026-09-19T19:01:29
+Obesity_Type_I,1.0,1.0,1.0,241.0,AVISTA,1.0.7,2026-09-19T19:01:29
+Obesity_Type_II,1.0,1.0,1.0,209.0,AVISTA,1.0.7,2026-09-19T19:01:29
+Obesity_Type_III,1.0,1.0,1.0,232.0,AVISTA,1.0.7,2026-09-19T19:01:29
+Overweight_Level_I,1.0,1.0,1.0,193.0,AVISTA,1.0.7,2026-09-19T19:01:29
+Overweight_Level_II,1.0,1.0,1.0,205.0,AVISTA,1.0.7,2026-09-19T19:01:29
+accuracy,1.0,1.0,1.0,1.0,AVISTA,1.0.7,2026-09-19T19:01:29
+macro avg,1.0,1.0,1.0,1460.0,AVISTA,1.0.7,2026-09-19T19:01:29
+weighted avg,1.0,1.0,1.0,1460.0,AVISTA,1.0.7,2026-09-19T19:01:29

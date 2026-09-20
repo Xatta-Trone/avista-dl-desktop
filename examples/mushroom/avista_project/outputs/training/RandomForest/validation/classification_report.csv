@@ -1,0 +1,6 @@
+,precision,recall,f1-score,support,generated_by,version,generated_on
+e,1.0,1.0,1.0,422.0,AVISTA,1.0.7,2026-09-19T18:57:20
+p,1.0,1.0,1.0,391.0,AVISTA,1.0.7,2026-09-19T18:57:20
+accuracy,1.0,1.0,1.0,1.0,AVISTA,1.0.7,2026-09-19T18:57:20
+macro avg,1.0,1.0,1.0,813.0,AVISTA,1.0.7,2026-09-19T18:57:20
+weighted avg,1.0,1.0,1.0,813.0,AVISTA,1.0.7,2026-09-19T18:57:20

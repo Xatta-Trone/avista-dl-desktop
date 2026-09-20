@@ -1,0 +1,32 @@
+{
+  "project_file": "D:\\TXST\\OneDrive - Texas State University\\Hackathon_Monzurul\\Papers\\AVISTA\\examples\\national-poll2\\national-poll2.avista",
+  "project_name": "national-poll2",
+  "project_file_version": "1.0",
+  "application": "AVISTA",
+  "application_description": "An extensible desktop platform for tabular machine learning and deep learning analytics.",
+  "application_version": "1.0.7",
+  "application_release_date": "July 28, 2026",
+  "report_footer": {
+    "generated_by": "AVISTA",
+    "description": "An extensible desktop platform for tabular machine learning and deep learning analytics.",
+    "version": "1.0.7",
+    "release_date": "July 28, 2026",
+    "generated_on": "2026-09-19T19:09:01"
+  },
+  "dataset_size": 756,
+  "feature_count": 60,
+  "target_column": "Number_of_Doctors_Visited",
+  "train_size": 541,
+  "validation_size": 72,
+  "test_size": 143,
+  "imbalance_method": "smote",
+  "numerical_scaling_method": "none",
+  "random_seed": 42,
+  "split_method": "random",
+  "model_name": "Logistic Regression",
+  "training_timestamp": "2026-09-19T19:09:01",
+  "cv_preprocessing_scope": "fold_training_only",
+  "cv_imbalance_scope": "fold_training_only",
+  "cv_source": "original_external_training_partition",
+  "cv_resampling_before_split": false
+}

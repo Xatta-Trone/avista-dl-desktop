@@ -1,0 +1,47 @@
+{
+  "target_column": "poisonous",
+  "feature_columns": [
+    "bruises",
+    "cap-color",
+    "cap-shape",
+    "cap-surface",
+    "gill-size",
+    "gill-spacing",
+    "habitat",
+    "ring-number",
+    "stalk-root",
+    "stalk-shape",
+    "stalk-surface-above-ring",
+    "stalk-surface-below-ring",
+    "veil-color"
+  ],
+  "numeric_columns": [],
+  "categorical_columns": [
+    "bruises",
+    "cap-color",
+    "cap-shape",
+    "cap-surface",
+    "gill-size",
+    "gill-spacing",
+    "habitat",
+    "ring-number",
+    "stalk-root",
+    "stalk-shape",
+    "stalk-surface-above-ring",
+    "stalk-surface-below-ring",
+    "veil-color"
+  ],
+  "numerical_scaling_method": "standard",
+  "scaled_numerical_columns": [],
+  "numeric_impute_strategy": "median",
+  "categorical_fill_value": "Unknown",
+  "categorical_missing_value_strategy": "replace_missing_and_blank_before_encoding",
+  "categorical_missing_inputs": [
+    "NaN",
+    "None",
+    "pandas.NA",
+    "empty_string",
+    "whitespace_only"
+  ],
+  "categorical_encoder_fit_scope": "training_split_only"
+}

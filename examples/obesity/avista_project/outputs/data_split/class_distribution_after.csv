@@ -1,0 +1,22 @@
+split,class,count,percent
+Train Set (Balanced),Insufficient_Weight,189,12.945205479452055
+Train Set (Balanced),Normal_Weight,191,13.082191780821917
+Train Set (Balanced),Obesity_Type_I,241,16.506849315068493
+Train Set (Balanced),Obesity_Type_II,209,14.315068493150685
+Train Set (Balanced),Obesity_Type_III,232,15.890410958904111
+Train Set (Balanced),Overweight_Level_I,193,13.219178082191782
+Train Set (Balanced),Overweight_Level_II,205,14.04109589041096
+Validation Set,Insufficient_Weight,19,9.090909090909092
+Validation Set,Normal_Weight,30,14.354066985645932
+Validation Set,Obesity_Type_I,40,19.138755980861244
+Validation Set,Obesity_Type_II,24,11.483253588516746
+Validation Set,Obesity_Type_III,32,15.311004784688995
+Validation Set,Overweight_Level_I,28,13.397129186602871
+Validation Set,Overweight_Level_II,36,17.22488038277512
+Test Set,Insufficient_Weight,59,14.114832535885165
+Test Set,Normal_Weight,61,14.5933014354067
+Test Set,Obesity_Type_I,70,16.74641148325359
+Test Set,Obesity_Type_II,64,15.311004784688995
+Test Set,Obesity_Type_III,60,14.354066985645932
+Test Set,Overweight_Level_I,55,13.157894736842104
+Test Set,Overweight_Level_II,49,11.722488038277511

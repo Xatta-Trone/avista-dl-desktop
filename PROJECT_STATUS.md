@@ -133,6 +133,13 @@ top-level widgets after every test so timers and signal-owned state cannot leak
 across the full suite. `pip check`, application/test/script compilation, and
 `git diff --check` passed after the full suite.
 
+Public SoftwareX validation materials are organized under `examples/` for the
+Mushroom, Obesity, and National Poll (NPHA) datasets. Each example includes a
+portable saved AVISTA project and its primary Jupyter Notebook; the notebooks
+also contain the AutoGluon platform comparison. `examples/README.md` records
+the protocol, UCI dataset identifiers, folder contents, reproducibility notes,
+and the National Poll split-method distinction.
+
 The Light/Dark theme regression caused by a global transparent `QLabel` rule
 is fixed. The central QSS no longer applies broad label or widget
 transparency; top-level backgrounds are scoped to windows and dialogs while

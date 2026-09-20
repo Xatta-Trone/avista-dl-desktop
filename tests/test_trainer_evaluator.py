@@ -182,6 +182,35 @@ def test_train_selected_classification_model(tmp_path):
     assert Path(model_result["artifact_paths"]["preprocessing"]).exists()
 
 
+def test_legacy_train_selected_models_fits_preprocessing_on_training_only(tmp_path):
+    df = pd.DataFrame(
+        {
+            "x1": list(range(20)),
+            "x2": [value % 5 for value in range(20)],
+            "cat": ["training-category"] * 16 + ["test-only-category"] * 4,
+            "date": pd.date_range("2026-01-01", periods=20),
+            "target": [0, 1] * 10,
+        }
+    )
+    config = make_config(
+        tmp_path,
+        split_method="time",
+        date_column="date",
+        label_encoding_columns=["cat"],
+    )
+
+    result = train_selected_models(df, config)
+    artifact_path = Path(
+        result["results"][0]["artifact_paths"]["preprocessing"]
+    )
+    artifacts = joblib.load(artifact_path)
+
+    assert result["results"][0]["status"] == "trained"
+    assert artifacts.encoder is not None
+    assert set(artifacts.encoder.categories_[0]) == {"training-category", "Unknown"}
+    assert "test-only-category" not in artifacts.encoder.categories_[0]
+
+
 def test_train_selected_regression_model(tmp_path):
     df = pd.DataFrame(
         {
@@ -243,6 +272,7 @@ def test_train_saved_models_runs_cv_and_saves_requested_outputs(tmp_path):
     assert model_result["saved"] is True
     assert len([item for item in progress if item.get("fold")]) == 3
     assert (output_dir / "trained_model.joblib").exists()
+
     assert (output_dir / "preprocessing_artifact.joblib").exists()
     assert (output_dir / "cv_results.csv").exists()
     assert (output_dir / "cv_summary.json").exists()
@@ -265,6 +295,9 @@ def test_train_saved_models_runs_cv_and_saves_requested_outputs(tmp_path):
     assert training_metadata["application_description"] == APP_DESCRIPTION
     assert training_metadata["application_version"] == __version__
     assert training_metadata["application_release_date"] == RELEASE_DATE
+    assert training_metadata["original_dataset_rows"] == 20
+    assert training_metadata["original_training_rows"] == 12
+    assert training_metadata["effective_training_rows"] == 12
     assert training_metadata["report_footer"]["generated_by"] == APP_NAME
     assert training_metadata["report_footer"]["description"] == APP_DESCRIPTION
     assert training_metadata["report_footer"]["version"] == __version__
@@ -295,6 +328,21 @@ def test_train_saved_models_runs_cv_and_saves_requested_outputs(tmp_path):
             "pr_curve.pdf",
         ):
             assert (split_output / filename).exists()
+
+
+def test_saved_training_data_distinguishes_original_and_effective_rows(tmp_path):
+    config = make_config(tmp_path)
+    split_dir = save_training_bundle(tmp_path, config)
+    original_X = np.load(split_dir / "X_train_balanced.npy")
+    original_y = np.load(split_dir / "y_train_balanced.npy")
+    np.save(split_dir / "X_train_balanced.npy", np.vstack([original_X, original_X[:4]]))
+    np.save(split_dir / "y_train_balanced.npy", np.concatenate([original_y, original_y[:4]]))
+
+    data = trainer_module._load_saved_training_data(split_dir, config.target_column)
+
+    assert data["original_training_rows"] == 12
+    assert data["effective_training_rows"] == 16
+    assert data["original_dataset_rows"] == 20
 
 
 def test_saved_training_uses_encoded_targets_and_decodes_exports(tmp_path):

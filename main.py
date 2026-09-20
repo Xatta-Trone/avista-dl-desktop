@@ -5,6 +5,7 @@ from __future__ import annotations
 import multiprocessing
 import sys
 from pathlib import Path
+from typing import Callable
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QFont, QPainter, QPixmap
@@ -19,6 +20,7 @@ from app.__version__ import (
 from app.core.project_config import ProjectConfig
 from app.gui.about_dialog import application_icon
 from app.gui.main_window import MainWindow
+from app.gui.project_trust import confirm_project_file_open
 from app.gui.theme import apply_theme, load_theme_setting
 
 
@@ -63,7 +65,11 @@ def run_requested_packaging_smoke(arguments: list[str]) -> int | None:
     return run_packaging_smoke(kind, output_path)
 
 
-def load_startup_project(arguments: list[str]) -> ProjectConfig | None:
+def load_startup_project(
+    arguments: list[str],
+    *,
+    confirm_open: Callable[[Path], bool] | None = None,
+) -> ProjectConfig | None:
     """Load an optional AVISTA or legacy project command-line argument."""
 
     if not arguments:
@@ -75,6 +81,8 @@ def load_startup_project(arguments: list[str]) -> ProjectConfig | None:
         )
     if not project_path.exists() or not project_path.is_file():
         raise FileNotFoundError(f"Project file does not exist: {project_path}")
+    if confirm_open is not None and not confirm_open(project_path):
+        return None
     return ProjectConfig.load(project_path)
 
 
@@ -142,7 +150,10 @@ def main() -> int:
     splash.show()
     app.processEvents()
     try:
-        initial_config = load_startup_project(sys.argv[1:])
+        initial_config = load_startup_project(
+            sys.argv[1:],
+            confirm_open=lambda path: confirm_project_file_open(None, path),
+        )
     except (OSError, ValueError) as exc:
         QMessageBox.critical(None, "AVISTA Project Error", str(exc))
         initial_config = None

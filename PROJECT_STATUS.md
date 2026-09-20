@@ -108,6 +108,23 @@ version, and resource verification passed on September 19, 2026: `35 passed`
 across three targeted pytest invocations. `pip check`, application imports,
 Python compilation, and release-metadata synchronization also passed.
 
+The final application-code cleanup now prompts before an existing `.avista`
+or legacy project is opened from the GUI or command line. Project files are
+plain JSON, but they can reference external datasets and project-local saved
+artifacts; joblib and NumPy object artifacts are therefore restricted by a
+trust confirmation at the user-controlled open boundary. Reports and saved
+training metadata now distinguish original dataset/training rows from the
+effective post-resampling training count. The legacy in-memory
+`train_selected_models()` compatibility API remains available for its focused
+classification/regression tests, but now splits raw rows before fitting feature
+preprocessing on training rows only. Cache-only TabPFN status, model selection,
+training preflight, and package exclusion remain unchanged. Focused cleanup
+verification passed on September 19, 2026 across project-open, report, trainer,
+TabPFN manager/selection, resource, and packaging tests; modified Python files
+also compiled successfully. The existing Training-page readiness smoke test
+still stops at its pre-existing Edge-Case Report expectation mismatch before
+reaching row-count assertions.
+
 The Light/Dark theme regression caused by a global transparent `QLabel` rule
 is fixed. The central QSS no longer applies broad label or widget
 transparency; top-level backgrounds are scoped to windows and dialogs while

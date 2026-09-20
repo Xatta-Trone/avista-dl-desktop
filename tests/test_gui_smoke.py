@@ -619,11 +619,16 @@ def test_startup_environment_check_never_triggers_gpu_repair(
     window.close()
 
 
-def test_project_setup_load_existing_project(tmp_path):
+def test_project_setup_load_existing_project(tmp_path, monkeypatch):
     from PySide6.QtWidgets import QApplication
 
     from app.core.project_config import ProjectConfig
     from app.gui.main_window import MainWindow
+
+    monkeypatch.setattr(
+        "app.gui.project_setup_page.confirm_project_file_open",
+        lambda *_args: True,
+    )
 
     app = QApplication.instance() or QApplication([])
     input_file = tmp_path / "data" / "data.csv"
@@ -671,6 +676,39 @@ def test_project_setup_load_existing_project(tmp_path):
     assert page.current_dataset_value.text() == str(input_file)
     assert page.current_modified_value.text() != "Not available"
     assert "project_config.json" not in page.status_label.text()
+    window.close()
+    assert app is not None
+
+
+def test_project_setup_cancelled_trust_warning_does_not_load_project(
+    tmp_path,
+    monkeypatch,
+):
+    from PySide6.QtWidgets import QApplication
+
+    from app.core.project_config import ProjectConfig
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+    config = ProjectConfig(
+        project_name="untrusted-demo",
+        project_dir=str(tmp_path),
+        input_file=str(tmp_path / "external.csv"),
+        output_dir=str(tmp_path / "outputs"),
+    )
+    project_file = config.save()
+    monkeypatch.setattr(
+        "app.gui.project_setup_page.confirm_project_file_open",
+        lambda *_args: False,
+    )
+    window = MainWindow()
+    page = window.project_setup_page
+    page.existing_project_file_input.setText(str(project_file))
+
+    page.load_project()
+
+    assert window.config is None
+    assert window.dataframe is None
     window.close()
     assert app is not None
 

@@ -154,18 +154,7 @@ def collect_report_summary(
 ) -> dict[str, Any]:
     project_dir = Path(config.project_dir)
     split_dir = project_dir / "outputs" / "data_split"
-    rows = {"train": 0, "validation": 0, "test": 0}
-    for key, filename in (
-        ("train", "y_train_balanced.npy"),
-        ("validation", "y_val.npy"),
-        ("test", "y_test.npy"),
-    ):
-        path = split_dir / filename
-        if path.exists():
-            try:
-                rows[key] = int(len(np.load(path, allow_pickle=True)))
-            except (OSError, ValueError):
-                pass
+    rows = _split_row_counts(split_dir)
     dataset_rows = _dataset_rows(project_dir, config, rows)
     training_dir = project_dir / "outputs" / "training"
     performance = collect_model_performance(training_dir)
@@ -181,8 +170,11 @@ def collect_report_summary(
         "project_name": config.project_name,
         "target_column": config.target_column or "Not available",
         "dataset_rows": dataset_rows,
+        "original_dataset_rows": dataset_rows,
         "feature_count": len(config.feature_columns or []),
-        "train_rows": rows["train"],
+        "train_rows": rows["original_train"],
+        "original_training_rows": rows["original_train"],
+        "effective_training_rows": rows["effective_train"],
         "validation_rows": rows["validation"],
         "test_rows": rows["test"],
         "imbalance_method": config.imbalance_method or "none",
@@ -506,9 +498,19 @@ def build_markdown_report(
         "",
         _markdown_pairs(
             [
-                ("Dataset rows", summary["dataset_rows"]),
+                (
+                    "Original dataset rows",
+                    summary.get("original_dataset_rows", summary.get("dataset_rows", 0)),
+                ),
                 ("Feature count", summary["feature_count"]),
-                ("Train rows", summary["train_rows"]),
+                (
+                    "Training rows",
+                    summary.get("original_training_rows", summary.get("train_rows", 0)),
+                ),
+                (
+                    "Effective training rows",
+                    summary.get("effective_training_rows", summary.get("train_rows", 0)),
+                ),
                 ("Validation rows", summary["validation_rows"]),
                 ("Test rows", summary["test_rows"]),
             ]
@@ -637,13 +639,20 @@ def write_pdf_report(
             APP_DESCRIPTION,
             f"Project: {summary['project_name']}",
             f"Target: {summary['target_column']}",
-            f"Dataset rows: {summary['dataset_rows']}",
+            (
+                "Original dataset rows: "
+                f"{summary.get('original_dataset_rows', summary.get('dataset_rows', 0))}"
+            ),
             f"Features: {summary['feature_count']}",
             (
-                "Split rows: "
-                f"{summary['train_rows']} train / "
+                "Original split rows: "
+                f"{summary.get('original_training_rows', summary.get('train_rows', 0))} train / "
                 f"{summary['validation_rows']} validation / "
                 f"{summary['test_rows']} test"
+            ),
+            (
+                "Effective training rows: "
+                f"{summary.get('effective_training_rows', summary.get('train_rows', 0))}"
             ),
             f"Imbalance method: {summary['imbalance_method']}",
             (
@@ -1045,8 +1054,50 @@ def _dataset_rows(
         except OSError:
             pass
     return int(
-        split_rows["train"] + split_rows["validation"] + split_rows["test"]
+        split_rows["original_train"]
+        + split_rows["validation"]
+        + split_rows["test"]
     )
+
+
+def _split_row_counts(split_dir: Path) -> dict[str, int]:
+    """Return explicit original/effective counts from saved split artifacts."""
+
+    original_train = _array_length(
+        split_dir / "y_train.npy",
+        split_dir / "y_train_encoded.npy",
+    )
+    effective_train = _array_length(
+        split_dir / "y_train_balanced.npy",
+        split_dir / "y_train_balanced_encoded.npy",
+    )
+    validation = _array_length(split_dir / "y_val.npy", split_dir / "y_val_encoded.npy")
+    test = _array_length(split_dir / "y_test.npy", split_dir / "y_test_encoded.npy")
+
+    if original_train == 0:
+        metadata = _read_json(split_dir / "split_indices.json")
+        original_train = len(metadata.get("train_index") or [])
+    if original_train == 0:
+        original_train = effective_train
+    if effective_train == 0:
+        effective_train = original_train
+    return {
+        "original_train": int(original_train),
+        "effective_train": int(effective_train),
+        "validation": int(validation),
+        "test": int(test),
+    }
+
+
+def _array_length(*paths: Path) -> int:
+    for path in paths:
+        if not path.is_file():
+            continue
+        try:
+            return int(len(np.load(path, allow_pickle=True)))
+        except (OSError, ValueError):
+            continue
+    return 0
 
 
 def _read_json(path: Path) -> dict[str, Any]:

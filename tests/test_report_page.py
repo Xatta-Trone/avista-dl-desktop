@@ -43,6 +43,7 @@ def _report_project(tmp_path: Path, *, include_outputs: bool = True) -> ProjectC
     ).to_csv(data_dir / "modeling_subset.csv", index=False)
     split_dir = tmp_path / "outputs" / "data_split"
     split_dir.mkdir(parents=True, exist_ok=True)
+    np.save(split_dir / "y_train.npy", np.array([0, 1] * 4))
     np.save(split_dir / "y_train_balanced.npy", np.array([0, 1] * 4))
     np.save(split_dir / "y_val.npy", np.array([0, 1]))
     np.save(split_dir / "y_test.npy", np.array([0, 1]))
@@ -186,6 +187,8 @@ def test_report_generation_creates_markdown_pdf_and_expected_figures(tmp_path):
     assert RELEASE_DATE in markdown
     assert artifacts.summary["description"] == APP_DESCRIPTION
     assert artifacts.summary["release_date"] == RELEASE_DATE
+    assert artifacts.summary["original_training_rows"] == 8
+    assert artifacts.summary["effective_training_rows"] == 8
     assert "## Reproducibility Metadata" in markdown
     assert "## Classification Reports" in markdown
     assert (
@@ -260,6 +263,24 @@ def test_report_includes_tabpfn_raw_input_and_effective_rows(tmp_path):
     assert "External resampling applied: No" in markdown
     assert "Available external-training rows: 73200" in markdown
     assert "Effective training rows: 50000" in markdown
+
+
+def test_report_distinguishes_original_and_resampled_training_rows(tmp_path):
+    config = _report_project(tmp_path)
+    split_dir = tmp_path / "outputs" / "data_split"
+    np.save(split_dir / "y_train.npy", np.array([0, 0, 0, 1, 1, 1]))
+    np.save(split_dir / "y_train_balanced.npy", np.array([0, 1] * 5))
+
+    summary = collect_report_summary(config)
+    markdown = build_markdown_report(config, summary, pd.DataFrame(), {}, {}, {}, {})
+
+    assert summary["original_dataset_rows"] == 12
+    assert summary["original_training_rows"] == 6
+    assert summary["effective_training_rows"] == 10
+    assert summary["validation_rows"] == 2
+    assert summary["test_rows"] == 2
+    assert "Training rows: 6" in markdown
+    assert "Effective training rows: 10" in markdown
 
 
 def test_report_roc_and_pr_comparisons_have_no_sd_band(tmp_path, monkeypatch):

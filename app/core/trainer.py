@@ -79,15 +79,49 @@ def train_selected_models(
     config: Any,
     environment_info: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Train selected sklearn-compatible models and save artifacts."""
+    """Train through the legacy two-way API with training-only preprocessing.
+
+    The GUI and workers use :func:`train_saved_models`; this compatibility API
+    remains for callers that still supply an in-memory dataframe.
+    """
 
     environment_info = environment_info or {}
     task_type = str(getattr(config, "task_type", "") or "").strip().lower()
     if task_type not in {"classification", "regression"}:
         raise ValueError("config.task_type must be 'classification' or 'regression'.")
 
-    X, y, preprocessing_artifacts = build_preprocessing_pipeline(df, config)
-    split = split_data(X, y, df, config)
+    target_column = getattr(config, "target_column", None)
+    if not target_column or target_column not in df.columns:
+        raise ValueError("A valid target_column is required for training.")
+
+    raw_features = df.drop(columns=[target_column])
+    raw_target = df[target_column]
+    raw_split = split_data(raw_features, raw_target, df, config)
+    train_df = df.loc[raw_split["train_index"]]
+    test_df = df.loc[raw_split["test_index"]]
+    X_train, y_train, preprocessing_artifacts = build_preprocessing_pipeline(
+        train_df,
+        config,
+    )
+    X_test = transform_split_features(test_df, preprocessing_artifacts)
+    if task_type == "classification":
+        if preprocessing_artifacts.target_encoder is None:
+            raise ValueError("Classification target encoder was not fitted.")
+        y_test = encode_target(
+            preprocessing_artifacts.target_encoder,
+            test_df[target_column],
+        )
+    else:
+        y_test = pd.to_numeric(test_df[target_column], errors="coerce")
+        if y_test.isna().any():
+            raise ValueError("Regression target must be numeric.")
+    split = {
+        **raw_split,
+        "X_train": X_train,
+        "X_test": X_test,
+        "y_train": y_train,
+        "y_test": y_test,
+    }
     imbalance = apply_imbalance_strategy(
         split["X_train"],
         split["y_train"],
@@ -374,6 +408,19 @@ def _load_saved_training_data(
             "Saved split target does not match the current configured target. "
             "Confirm Data Split & Imbalance again."
         )
+    original_training_rows = len(data["split_metadata"].get("train_index") or [])
+    if original_training_rows == 0:
+        original_target_path = split_dir / "y_train.npy"
+        original_training_rows = (
+            int(len(np.load(original_target_path, allow_pickle=True)))
+            if original_target_path.is_file()
+            else int(len(data["y_train"]))
+        )
+    data["original_training_rows"] = int(original_training_rows)
+    data["effective_training_rows"] = int(len(data["y_train"]))
+    data["original_dataset_rows"] = int(
+        original_training_rows + len(data["y_val"]) + len(data["y_test"])
+    )
     imbalance_path = split_dir / "imbalance_config.json"
     if imbalance_path.exists():
         imbalance_metadata = json.loads(imbalance_path.read_text(encoding="utf-8"))
@@ -1754,6 +1801,9 @@ def _train_saved_torch_classifier(
                 **inferred_config,
                 "target_column": config.target_column,
                 "train_size": int(len(y_train)),
+                "original_dataset_rows": int(data["original_dataset_rows"]),
+                "original_training_rows": int(data["original_training_rows"]),
+                "effective_training_rows": int(data["effective_training_rows"]),
                 "validation_size": int(len(y_val)),
                 "test_size": int(len(y_test)),
                 "best_validation_macro_f1": best_metric,
@@ -1855,11 +1905,14 @@ def _save_model_outputs(
             **_project_metadata(config),
             "report_footer": report_footer(),
             "dataset_size": int(
-                len(data["y_train"]) + len(data["y_val"]) + len(data["y_test"])
+                data["original_dataset_rows"]
             ),
+            "original_dataset_rows": int(data["original_dataset_rows"]),
             "feature_count": int(data["X_train"].shape[1]),
             "target_column": config.target_column,
             "train_size": int(len(data["y_train"])),
+            "original_training_rows": int(data["original_training_rows"]),
+            "effective_training_rows": int(data["effective_training_rows"]),
             "validation_size": int(len(data["y_val"])),
             "test_size": int(len(data["y_test"])),
             "imbalance_method": config.imbalance_method,
@@ -2397,6 +2450,8 @@ def _train_saved_tabpfn(
                 ),
                 "modeling_split_rows": int(len(X_train) + len(X_val) + len(X_test)),
                 "external_training_rows": int(len(y_train)),
+                "original_training_rows": int(len(y_train)),
+                "effective_training_rows": int(len(prepared_train)),
                 "train_size": int(len(y_train)),
                 "validation_size": int(len(y_val)),
                 "test_size": int(len(y_test)),

@@ -881,9 +881,6 @@ class ModelSelectionPage(QWidget):
         if usable and status.active_checkpoint_source == "user_cache":
             label = "Ready"
             label_state = "ready"
-        elif usable:
-            label = "Legacy model available"
-            label_state = "legacy"
         else:
             label = "Setup required"
             label_state = "missing"
@@ -1542,9 +1539,6 @@ class ModelSelectionPage(QWidget):
             }}
             QLabel#tabpfnCheckpointStatusLabel[status="ready"] {{
                 color: {SUCCESS_COLOR};
-            }}
-            QLabel#tabpfnCheckpointStatusLabel[status="legacy"] {{
-                color: #B45309;
             }}
             QLabel#modelSelectionEmptyMessage {{
                 color: #5B6573;

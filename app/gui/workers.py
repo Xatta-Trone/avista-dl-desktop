@@ -39,10 +39,7 @@ from app.training.deep_worker_launcher import (
     build_deep_worker_launch,
     sanitized_worker_arguments,
 )
-from app.utils.resources import (
-    resolve_tabpfn_checkpoint,
-    tabpfn_checkpoint_candidates,
-)
+from app.utils.resources import resolve_tabpfn_checkpoint
 
 WINDOWS_CREATE_NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 
@@ -865,7 +862,7 @@ def _worker_runtime_context(config: Any, model_name: str) -> dict[str, Any]:
     try:
         checkpoint = resolve_tabpfn_checkpoint()
     except FileNotFoundError:
-        checkpoint = tabpfn_checkpoint_candidates()[0]
+        checkpoint = get_tabpfn_model_status().cache_path
     return {
         "cuda_requested": cuda_requested,
         "torch_version": None,

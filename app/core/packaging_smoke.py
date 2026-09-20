@@ -12,10 +12,7 @@ from typing import Any
 import numpy as np
 
 from app.__version__ import __version__
-from app.utils.resources import (
-    is_packaged_application,
-    resolve_tabpfn_checkpoint,
-)
+from app.utils.resources import is_packaged_application
 
 
 def run_packaging_smoke(kind: str, output_path: str | Path) -> int:
@@ -109,25 +106,9 @@ def _tabpfn_smoke() -> dict[str, Any]:
     import torch
     from tabpfn import TabPFNClassifier
 
-    checkpoint = resolve_tabpfn_checkpoint()
-    features = np.asarray(
-        [
-            [float(index), float(index % 3), float((index * index) % 5)]
-            for index in range(12)
-        ],
-        dtype=np.float32,
-    )
-    target = np.asarray([0, 1] * 6, dtype=np.int64)
-    model = TabPFNClassifier(
-        n_estimators=2,
-        auto_scale_n_estimators=False,
-        model_path=str(checkpoint),
-        device="cpu",
-        n_preprocessing_jobs=1,
-        show_progress_bar=False,
-    )
-    model.fit(features, target)
-    predictions = model.predict(features[:2])
+    from app.core.tabpfn_model_manager import get_tabpfn_model_status
+
+    status = get_tabpfn_model_status()
     return {
         "package": "tabpfn",
         "package_version": str(getattr(tabpfn, "__version__", "unknown")),
@@ -135,10 +116,9 @@ def _tabpfn_smoke() -> dict[str, Any]:
         "torch_version": str(torch.__version__),
         "sklearn_version": str(sklearn.__version__),
         "joblib_version": str(joblib.__version__),
-        "checkpoint_path": str(checkpoint),
-        "checkpoint_exists": checkpoint.is_file(),
-        "checkpoint_size": checkpoint.stat().st_size,
-        "device": "cpu",
-        "n_estimators": 2,
-        "predictions": np.asarray(predictions).tolist(),
+        "classifier_imported": TabPFNClassifier is not None,
+        "checkpoint_path": str(status.cache_path),
+        "checkpoint_exists": status.cache_checkpoint_exists,
+        "checkpoint_source": status.active_checkpoint_source,
+        "checkpoint_required_for_package_smoke": False,
     }

@@ -80,22 +80,8 @@ def get_app_resource_path(
     return candidates[0]
 
 
-def tabpfn_checkpoint_candidates() -> list[Path]:
-    """Return supported source and packaged TabPFN checkpoint locations."""
-
-    candidates = app_resource_candidates(
-        Path("app") / "assets" / TABPFN_CHECKPOINT_FILENAME
-    )
-    for candidate in app_resource_candidates(
-        Path("assets") / TABPFN_CHECKPOINT_FILENAME
-    ):
-        if candidate not in candidates:
-            candidates.append(candidate)
-    return candidates
-
-
 def resolve_tabpfn_checkpoint() -> Path:
-    """Resolve the official user-cache checkpoint, then the bundled fallback."""
+    """Resolve the official TabPFN user-cache checkpoint."""
 
     from app.core.tabpfn_model_manager import resolve_tabpfn_model_checkpoint
 

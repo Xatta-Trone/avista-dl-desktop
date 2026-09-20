@@ -56,7 +56,6 @@ from app.utils.plotting import (
 from app.utils.resources import (
     is_packaged_application,
     resolve_tabpfn_checkpoint,
-    tabpfn_checkpoint_candidates,
 )
 from app.models.sklearn_models import create_sklearn_model
 
@@ -2170,7 +2169,7 @@ def _train_saved_tabpfn(
             f"n_estimators={n_estimators}; "
             f"checkpoint exists={model_path.is_file()}; "
             f"checkpoint size={model_path.stat().st_size}; "
-            f"bundled checkpoint={model_path}; "
+            f"user-cache checkpoint={model_path}; "
             f"supported maximum training samples={TABPFN_MAX_SAMPLES}; "
             "input representation=raw pandas DataFrame; "
             "AVISTA external preprocessing/resampling=disabled; "

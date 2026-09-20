@@ -7,9 +7,8 @@ TorchVision, TorchAudio, TabPFN, psutil, and their dependencies.
 
 Each component remains licensed by its respective copyright holders under
 its own license terms. Building or distributing AVISTA does not alter those
-terms. Release maintainers must preserve license files emitted in the Nuitka
-standalone distribution and review the Nuitka compilation license report
-before public distribution.
+terms. Release maintainers must preserve third-party license files collected
+in the PyInstaller distribution and review them before public distribution.
 
 Primary project license references:
 
@@ -24,13 +23,13 @@ Primary project license references:
 - LightGBM: https://github.com/microsoft/LightGBM/blob/master/LICENSE
 - PyTorch: https://github.com/pytorch/pytorch/blob/main/LICENSE
 - TabPFN: https://github.com/PriorLabs/TabPFN/blob/main/LICENSE
-- Nuitka: https://nuitka.net/doc/License.html
+- PyInstaller: https://pyinstaller.org/en/stable/license.html
 
 TabPFN model weights are separate from the Apache-2.0 licensed AVISTA source.
-The bundled legacy TabPFN 2.5 checkpoint and independently downloaded TabPFN
-2.5 weights are distributed by Prior Labs GmbH under the TabPFN-2.5 License
-v1.1 for non-commercial/non-production use. Users must review and accept the
-official terms; AVISTA does not grant that license:
+AVISTA does not redistribute the TabPFN 2.5 model weights. Users obtain them
+separately through the official Prior Labs mechanism under the TabPFN-2.5
+License v1.1 for non-commercial/non-production use. Users must review and
+accept the official terms; AVISTA does not grant that license:
 https://huggingface.co/Prior-Labs/tabpfn_2_5
 
 This notice is informational and is not a substitute for legal review.

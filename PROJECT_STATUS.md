@@ -51,27 +51,27 @@ deterministic stratified subsampling to exactly 50,000. Focused TabPFN trainer,
 edge-case, registry, and report verification passed on September 19, 2026:
 `12 passed`.
 
-TabPFN 2.5 checkpoint management is in a staged migration. Runtime resolution
-prefers a structurally valid official user-cache checkpoint and retains the
-existing bundled checkpoint as a legacy fallback. Startup checks only status;
-when the cached copy is absent it offers setup without blocking AVISTA or
-starting a silent download. Help now includes **TabPFN Model Status**, with
-license, cache, download/re-download, verification, and cache-folder actions.
-Downloads and tiny verification runs use a QThread worker and the pinned
-`tabpfn==8.0.8` v2.5 downloader/browser-auth flow. AVISTA stores no credentials;
-the TabPFN package owns its authentication cache. The separate TabPFN-2.5
-License v1.1 is identified in the UI and third-party notices. The first real
-empty-cache download attempt reached the official license gate and stopped
-because no Prior Labs/Hugging Face authentication or accepted license was
-available in the unattended test process; no checkpoint was downloaded or
-altered. Focused checkpoint-manager, resource, trainer, packaging/runtime, and
-main-window verification passed on September 19, 2026: `25 passed, 36
-deselected` across four targeted pytest invocations.
+TabPFN 2.5 checkpoint management now uses only the official TabPFN user cache.
+The Prior Labs browser-auth and license flow successfully acquired the pinned
+v2.5 classifier checkpoint independently; its 42,935,499-byte file and SHA256
+`5d7170e2d3af01f9c501bb09ec3bd12e9944f8604de18002c647873c6ec04a12`
+matched the former bundled copy. A cache-only real fit/predict and AVISTA
+training integration succeeded before the repository copies were removed.
+Startup checks only status; when the cached copy is absent it offers setup
+without blocking AVISTA or starting a silent download. **TabPFN Model Status**
+provides license, cache, download/re-download, checksum, verification, and
+cache-folder actions. Downloads and verification use a QThread worker and the
+pinned `tabpfn==8.0.8` official downloader/browser-auth flow. AVISTA stores no
+credentials; the TabPFN package owns its authentication cache. AVISTA does not
+redistribute the separately licensed TabPFN 2.5 model weights. Focused model
+manager, Model Selection, resource, trainer, GUI, packaging, and audit
+verification passed on September 19, 2026: `47 passed` across five targeted
+pytest invocations. Python compilation, PowerShell parsing, and
+`git diff --check` also passed.
 
-Model Selection now keeps TabPFN 2.5 visible while resolving checkpoint
-readiness through the centralized model manager. User-cache and temporary
-legacy-bundled checkpoints enable normal selection with concise source-aware
-status; complete absence disables and clears the TabPFN selection and exposes
+Model Selection keeps TabPFN 2.5 visible while resolving checkpoint readiness
+through the centralized model manager. A valid user-cache checkpoint enables
+normal selection; its absence disables and clears the selection and exposes
 **Set Up TabPFN 2.5**, which opens the existing status dialog. Main-window
 status signals refresh the row after setup without restarting AVISTA. Training
 preflight and the existing trainer checkpoint resolution prevent stale
@@ -149,8 +149,8 @@ audit, and workflow artifact list now all require it. TabPFN modules, package
 data, and inspected dynamic dependencies are collected for both analyses.
 PyInstaller `MERGE` was removed so `AVISTADeepWorker.exe` retains its own
 pure-Python dependency archive in the shared onedir folder. The checkpoint is
-resolved centrally from supported source and `_internal/app/assets` paths.
-Missing packaged TabPFN dependencies now produce a packaging failure; only
+resolved centrally from the official user cache. Missing packaged TabPFN
+dependencies now produce a packaging failure; only
 intentional/source optional absence remains skipped.
 
 Git history shows v1.0.1–v1.0.3 share PyInstaller spec blob `d24a688` and
@@ -162,10 +162,11 @@ analysis. Inno Setup already copied the full release tree recursively and was
 not the component omitting these files.
 
 Release builds now run a pre-build package/architecture diagnostic and a
-post-build audit requiring AMD64 `AVISTA.exe`, `AVISTADeepWorker.exe`, the
-XGBoost `VERSION` data and DLL, and the TabPFN checkpoint. The frozen GUI must
-fit a tiny XGBoost dataset, and the frozen worker must fit a tiny two-estimator
-CPU TabPFN dataset, before Inno Setup or GitHub publication can proceed.
+post-build audit requiring AMD64 `AVISTA.exe`, `AVISTADeepWorker.exe`, and the
+XGBoost `VERSION` data and DLL while explicitly rejecting redistributed TabPFN
+2.5 weights. The frozen GUI must fit a tiny XGBoost dataset, and the frozen
+worker must expose TabPFN package/checkpoint-manager support, before Inno Setup
+or GitHub publication can proceed.
 
 Focused verification for the XGBoost `VERSION` package-data regression passed
 on July 27, 2026: `20 passed`. This covered the PyInstaller declaration,
@@ -310,7 +311,7 @@ Focused checkbox-based numerical-scaling verification passed on July 3, 2026: `7
 - Startup and manual environment checks share the same worker lifecycle, cached main-window result, Environment-page running/error state, and disabled Run GPU Check control.
 - Startup environment results are saved to the active project's `logs/environment_info.json`, the repository-level `logs/environment_info.json` in development, or `%LOCALAPPDATA%\AVISTA\logs\environment_info.json` in packaged mode when no project is loaded.
 - Startup environment logging records check start, completion, and failure; GPU runtime repair remains an explicit user action and is never triggered by startup checks.
-- Startup runtime inventory records the AVISTA version, bundled executable path, PyTorch/CUDA/GPU details, XGBoost and TabPFN availability, and bundled checkpoint existence.
+- Startup runtime inventory records the AVISTA version, bundled executable path, PyTorch/CUDA/GPU details, XGBoost and TabPFN availability, and user-cache checkpoint status/source.
 - AVISTA checks GitHub-hosted `updates.json` once after startup when automatic checks are enabled, using a `QThread` worker so the GUI and project loading remain responsive.
 - Automatic update checks stay silent when AVISTA is up to date or the network check fails; manual **Help > Check for Updates** checks show an up-to-date message or a compact network warning.
 - Update availability compares `app.__version__.__version__` with metadata `latest_version` using semantic version comparison.
@@ -492,10 +493,10 @@ Focused checkbox-based numerical-scaling verification passed on July 3, 2026: `7
   - saves state dict, configuration, metadata, history, curves, split evaluations, and optional CV summaries under `outputs/training/TabResNet`.
   - creates `failure_reason.json` with the exact Python training error when training fails.
 - TabPFN 2.5 is trainable from confirmed saved split artifacts:
-  - uses the locked `tabpfn==8.0.8` Python package with the official TabPFN 2.5 classifier checkpoint, preferring the official user-cache copy and retaining the bundled copy as a temporary legacy fallback; the package version and model version are recorded separately.
+  - uses the locked `tabpfn==8.0.8` Python package with the official TabPFN 2.5 classifier checkpoint from the official user cache; the package version and model version are recorded separately.
   - exposes only `n_estimators`; checkpoint selection is not user-editable.
-  - resolves a structurally valid `%APPDATA%/tabpfn/tabpfn-v2.5-classifier-v2.5_default.ckpt` (or `TABPFN_MODEL_CACHE_DIR`) first, then the bundled `app/assets/tabpfn-v2.5-classifier-v2.5_default.ckpt` in development and packaged modes, and passes the selected path to every CV/final `TabPFNClassifier`.
-  - when neither the user-cache nor bundled checkpoint is usable, training creates `failure_reason.json` with a clear error and does not trigger a download; download remains an explicit user action under **Help > TabPFN Model Status**.
+  - resolves a structurally valid `%APPDATA%/tabpfn/tabpfn-v2.5-classifier-v2.5_default.ckpt` (or `TABPFN_MODEL_CACHE_DIR`) and passes that path to every CV/final `TabPFNClassifier`; there is no application-bundled fallback.
+  - when the user-cache checkpoint is unusable, training creates `failure_reason.json` with a clear error and does not trigger a download; download remains an explicit user action under **Help > TabPFN Model Status**.
   - Model Selection exposes only `n_estimators`, with the installed TabPFN package default of `8` and an allowed range of 1 through 100.
   - the same selected `n_estimators` value is used for both CV and final training.
   - reconstructs raw pandas feature frames from the saved external train/validation/test indices, supplies configured categorical indices to TabPFN, and leaves feature preprocessing to TabPFN.
@@ -764,10 +765,10 @@ AutoInt: 1 passed
 TabResNet: 1 passed
 ```
 
-Missing bundled-checkpoint handling also passed:
+Missing user-cache-checkpoint handling also passed:
 
 ```powershell
-.venv\Scripts\python.exe -m pytest tests/test_trainer_evaluator.py::test_tabpfn_missing_bundled_checkpoint_saves_failure_reason -q
+.venv\Scripts\python.exe -m pytest tests/test_trainer_evaluator.py::test_tabpfn_missing_user_cache_checkpoint_saves_failure_reason -q
 ```
 
 Result: `1 passed`. PyInstaller-spec Python syntax and PowerShell build-script
@@ -1122,15 +1123,23 @@ This run covered centered half-width ROC/PR/training previews, the 900-pixel cap
 - Cancellation is cooperative and cannot interrupt an estimator while its current `fit()` call is executing.
 - MambaAttention, FT-Transformer, AutoInt, TabResNet, and TabPFN 2.5 training are implemented.
 - No XAI page or XAI computation is implemented yet.
-- The packaging workflow is implemented, but a full standalone build and installer smoke test remain pending on a Windows build host with Inno Setup 6.
-- Inno Setup 6 is installed on the current development machine, but a complete
-  standalone/installer build has not been run for this worker change. The
-  local host only has Python 3.13; the locked Python 3.12/NumPy 1.26.4 release
-  build is verified by the Windows release workflow.
+- The packaging workflow and checkpoint-exclusion gates are implemented, but
+  a fresh standalone build and installer smoke test for the cache-only TabPFN
+  migration remain pending on a Windows release host with Python 3.12 and Inno
+  Setup 6. The current host has Python 3.11/3.14 and no Inno Setup installation;
+  a local clean build was intentionally stopped during dependency setup and
+  produced no release artifact.
 
 ## 9. Next Immediate Task
 
-Add the first XAI workflow while keeping it separate from model training:
+Complete the release-host verification for the cache-only TabPFN migration:
+
+- build the PyInstaller onedir distribution with supported Python 3.12;
+- confirm the complete distribution contains no TabPFN checkpoint;
+- build and inspect the Inno Setup payload;
+- simulate an empty cache followed by setup without restarting AVISTA.
+
+Then add the first XAI workflow while keeping it separate from model training:
 
 - SHAP support for compatible trained models
 - feature importance summaries

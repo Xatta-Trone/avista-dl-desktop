@@ -19,6 +19,7 @@ from app.core.tabpfn_model_manager import (
     TABPFN_LICENSE_URL,
     TabPFNModelState,
     TabPFNModelStatus,
+    checkpoint_sha256,
 )
 from app.gui.about_dialog import application_icon
 from app.gui.theme import apply_theme_to_widget, current_theme
@@ -117,8 +118,6 @@ class TabPFNModelDialog(QDialog):
         self.status = status
         if status.state == TabPFNModelState.AVAILABLE_IN_USER_CACHE:
             headline = "Installed / Ready"
-        elif status.state == TabPFNModelState.AVAILABLE_AS_LEGACY_BUNDLED_COPY:
-            headline = "Legacy bundled checkpoint available"
         elif status.state == TabPFNModelState.DOWNLOAD_IN_PROGRESS:
             headline = "Download in progress"
         elif status.state == TabPFNModelState.DOWNLOAD_FAILED:
@@ -126,17 +125,13 @@ class TabPFNModelDialog(QDialog):
         else:
             headline = "Not installed"
 
-        legacy = "Available" if status.legacy_bundled_checkpoint_exists else "Not available"
         cached = "Installed" if status.cache_checkpoint_exists else "Not installed"
+        checksum = "Unavailable"
+        if status.cache_checkpoint_exists and status.cache_path.is_file():
+            checksum = checkpoint_sha256(status.cache_path)
         failure = (
             f"\nLast download error: {status.last_download_error}"
             if status.last_download_error
-            else ""
-        )
-        migration_note = (
-            "\n\nA legacy bundled checkpoint is currently available. Future AVISTA "
-            "releases will use the separately downloaded user-cache copy."
-            if status.legacy_bundled_checkpoint_exists and not status.cache_checkpoint_exists
             else ""
         )
         self.status_label.setText(
@@ -147,9 +142,9 @@ class TabPFNModelDialog(QDialog):
             f"License: {status.license_name}\n"
             f"Preferred cache: {status.cache_path}\n"
             f"User-cache checkpoint: {cached}\n"
-            f"Legacy bundled checkpoint: {legacy}\n"
+            f"SHA256: {checksum}\n"
             f"Active source: {status.active_checkpoint_source}"
-            f"{failure}{migration_note}"
+            f"{failure}"
         )
         installed = status.cache_checkpoint_exists
         self.download_button.setText("Re-download" if installed else "Download / Set Up")

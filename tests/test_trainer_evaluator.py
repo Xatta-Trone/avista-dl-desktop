@@ -1071,6 +1071,23 @@ def test_tabpfn_uses_one_estimator_value_and_internal_batching(tmp_path, monkeyp
     fake_module.__version__ = "8.0.8"
     fake_module.TabPFNClassifier = FakeTabPFNClassifier
     monkeypatch.setitem(sys.modules, "tabpfn", fake_module)
+    checkpoint = (
+        tmp_path
+        / "cache"
+        / "tabpfn-v2.5-classifier-v2.5_default.ckpt"
+    )
+    checkpoint.parent.mkdir(parents=True)
+    checkpoint.write_bytes(b"mock checkpoint")
+    monkeypatch.setattr(
+        trainer_module,
+        "resolve_tabpfn_checkpoint",
+        lambda: checkpoint.resolve(),
+    )
+    monkeypatch.setattr(
+        trainer_module,
+        "get_tabpfn_model_status",
+        lambda: types.SimpleNamespace(active_checkpoint_source="user_cache"),
+    )
     monkeypatch.setattr(
         trainer_module,
         "_prepare_cv_fold",
@@ -1090,12 +1107,6 @@ def test_tabpfn_uses_one_estimator_value_and_internal_batching(tmp_path, monkeyp
         n_estimators,
         n_estimators,
     ]
-    checkpoint = (
-        Path(__file__).resolve().parents[1]
-        / "app"
-        / "assets"
-        / "tabpfn-v2.5-classifier-v2.5_default.ckpt"
-    )
     assert {
         instance.model_path for instance in FakeTabPFNClassifier.instances
     } == {str(checkpoint.resolve())}
@@ -1120,7 +1131,7 @@ def test_tabpfn_uses_one_estimator_value_and_internal_batching(tmp_path, monkeyp
     training_metadata = json.loads(
         (output_dir / "training_metadata.json").read_text(encoding="utf-8")
     )
-    assert training_metadata["tabpfn_checkpoint_source"] == "bundled_legacy"
+    assert training_metadata["tabpfn_checkpoint_source"] == "user_cache"
     assert training_metadata["tabpfn_checkpoint_path"] == str(checkpoint.resolve())
     assert training_metadata["tabpfn_input_representation"] == "raw_dataframe"
     assert training_metadata["tabpfn_external_one_hot_encoding"] is False
@@ -1330,7 +1341,7 @@ def test_tabpfn_limits_report_clear_errors():
         )
 
 
-def test_tabpfn_missing_bundled_checkpoint_saves_failure_reason(
+def test_tabpfn_missing_user_cache_checkpoint_saves_failure_reason(
     tmp_path,
     monkeypatch,
 ):
@@ -1352,13 +1363,10 @@ def test_tabpfn_missing_bundled_checkpoint_saves_failure_reason(
         ),
     )
     monkeypatch.setattr(
-        "app.core.trainer.tabpfn_checkpoint_candidates",
-        lambda: [missing_checkpoint],
-    )
-    monkeypatch.setattr(
         "app.core.trainer.get_tabpfn_model_status",
         lambda: types.SimpleNamespace(
             cache_path=missing_checkpoint,
+            active_checkpoint_path=None,
             active_checkpoint_source="unavailable",
         ),
     )

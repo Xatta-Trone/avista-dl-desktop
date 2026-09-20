@@ -33,10 +33,8 @@ def _status(
     state: TabPFNModelState,
     *,
     cached: bool,
-    bundled: bool,
 ) -> TabPFNModelStatus:
     cache_path = tmp_path / "cache" / TABPFN_CHECKPOINT_FILENAME
-    bundled_path = tmp_path / "bundle" / TABPFN_CHECKPOINT_FILENAME if bundled else None
     return TabPFNModelStatus(
         state=state,
         model_version="2.5",
@@ -45,10 +43,8 @@ def _status(
         cache_dir=cache_path.parent,
         cache_path=cache_path,
         cache_checkpoint_exists=cached,
-        legacy_bundled_path=bundled_path,
-        legacy_bundled_checkpoint_exists=bundled,
-        active_checkpoint_path=cache_path if cached else bundled_path,
-        active_checkpoint_source="user_cache" if cached else ("bundled_legacy" if bundled else "unavailable"),
+        active_checkpoint_path=cache_path if cached else None,
+        active_checkpoint_source="user_cache" if cached else "unavailable",
         license_name="TabPFN-2.5 License v1.1",
         license_url=manager.TABPFN_LICENSE_URL,
         download_authentication_required=True,
@@ -63,14 +59,16 @@ def _reset_download_state():
     manager.reset_tabpfn_download_state()
 
 
-def test_tabpfn_status_resolver_reports_cache_bundle_and_missing(tmp_path, monkeypatch):
+def test_tabpfn_status_resolver_reports_cache_and_missing_without_bundle_fallback(
+    tmp_path,
+):
     cache_dir = tmp_path / "cache"
-    bundled = _checkpoint(tmp_path / "bundle" / TABPFN_CHECKPOINT_FILENAME)
-    monkeypatch.setattr(manager, "tabpfn_checkpoint_candidates", lambda: [bundled])
+    _checkpoint(tmp_path / "bundle" / TABPFN_CHECKPOINT_FILENAME)
 
-    bundle_status = manager.get_tabpfn_model_status(cache_dir=cache_dir)
-    assert bundle_status.state == TabPFNModelState.AVAILABLE_AS_LEGACY_BUNDLED_COPY
-    assert bundle_status.active_checkpoint_source == "bundled_legacy"
+    missing_status = manager.get_tabpfn_model_status(cache_dir=cache_dir)
+    assert missing_status.state == TabPFNModelState.MISSING
+    assert missing_status.active_checkpoint_source == "unavailable"
+    assert missing_status.active_checkpoint_path is None
 
     _checkpoint(cache_dir / TABPFN_CHECKPOINT_FILENAME)
     cache_status = manager.get_tabpfn_model_status(cache_dir=cache_dir)
@@ -78,7 +76,6 @@ def test_tabpfn_status_resolver_reports_cache_bundle_and_missing(tmp_path, monke
     assert cache_status.active_checkpoint_source == "user_cache"
     assert cache_status.active_checkpoint_path == cache_dir / TABPFN_CHECKPOINT_FILENAME
 
-    monkeypatch.setattr(manager, "tabpfn_checkpoint_candidates", lambda: [])
     (cache_dir / TABPFN_CHECKPOINT_FILENAME).unlink()
     missing_status = manager.get_tabpfn_model_status(cache_dir=cache_dir)
     assert missing_status.state == TabPFNModelState.MISSING
@@ -177,9 +174,8 @@ def test_startup_status_check_never_downloads_and_only_offers_when_cache_missing
     app = QApplication.instance() or QApplication([])
     missing = _status(
         tmp_path,
-        TabPFNModelState.AVAILABLE_AS_LEGACY_BUNDLED_COPY,
+        TabPFNModelState.MISSING,
         cached=False,
-        bundled=True,
     )
     monkeypatch.setattr("app.gui.main_window.get_tabpfn_model_status", lambda: missing)
     window = MainWindow()
@@ -196,7 +192,6 @@ def test_startup_status_check_never_downloads_and_only_offers_when_cache_missing
         tmp_path,
         TabPFNModelState.AVAILABLE_IN_USER_CACHE,
         cached=True,
-        bundled=True,
     )
     monkeypatch.setattr("app.gui.main_window.get_tabpfn_model_status", lambda: cached)
     shown.clear()
@@ -208,7 +203,7 @@ def test_startup_status_check_never_downloads_and_only_offers_when_cache_missing
 
 def test_help_menu_contains_tabpfn_status_and_opens_dialog(tmp_path, monkeypatch):
     app = QApplication.instance() or QApplication([])
-    status = _status(tmp_path, TabPFNModelState.MISSING, cached=False, bundled=False)
+    status = _status(tmp_path, TabPFNModelState.MISSING, cached=False)
     monkeypatch.setattr("app.gui.main_window.get_tabpfn_model_status", lambda: status)
     window = MainWindow()
     shown = []
@@ -224,7 +219,7 @@ def test_help_menu_contains_tabpfn_status_and_opens_dialog(tmp_path, monkeypatch
 def test_tabpfn_dialog_actions_follow_cache_status(tmp_path):
     app = QApplication.instance() or QApplication([])
     missing = TabPFNModelDialog(
-        _status(tmp_path, TabPFNModelState.MISSING, cached=False, bundled=False)
+        _status(tmp_path, TabPFNModelState.MISSING, cached=False)
     )
     assert missing.download_button.text() == "Download / Set Up"
     assert missing.download_button.property("avistaButtonRole") == "primary"
@@ -237,7 +232,6 @@ def test_tabpfn_dialog_actions_follow_cache_status(tmp_path):
             tmp_path,
             TabPFNModelState.AVAILABLE_IN_USER_CACHE,
             cached=True,
-            bundled=True,
         )
     )
     assert installed.download_button.text() == "Re-download"
@@ -262,7 +256,6 @@ def test_tabpfn_dialog_button_roles_render_in_light_and_dark_themes(tmp_path):
             tmp_path,
             TabPFNModelState.AVAILABLE_IN_USER_CACHE,
             cached=True,
-            bundled=True,
         )
     )
 
@@ -296,7 +289,6 @@ def test_tabpfn_worker_success_and_failure_signals(tmp_path, monkeypatch):
         tmp_path,
         TabPFNModelState.AVAILABLE_IN_USER_CACHE,
         cached=True,
-        bundled=True,
     )
     monkeypatch.setattr("app.gui.workers.get_tabpfn_model_status", lambda: status)
     monkeypatch.setattr("app.gui.workers.download_tabpfn_model", lambda **kwargs: verification)

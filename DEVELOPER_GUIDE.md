@@ -117,17 +117,14 @@ The installer may also associate legacy `.xtab` files with AVISTA for migration.
 
 ## Packaged Resources
 
-Use `get_app_resource_path(relative_path)` for bundled files. `AVISTA.spec` includes:
+Use `get_app_resource_path(relative_path)` for bundled files. The PyInstaller
+specification includes:
 
 ```text
-app/assets/tabpfn-v2.5-classifier-v2.5_default.ckpt
 app/assets/logo.png
 ```
 
-Keep that relative destination unchanged.
-
-For Nuitka builds, include the logo with:
-
-```powershell
---include-data-file=app/assets/logo.png=app/assets/logo.png
-```
+Keep that relative destination unchanged. TabPFN 2.5 model weights must not be
+added to `app/assets` or any package manifest. AVISTA resolves the checkpoint
+from the official TabPFN user cache and offers setup through **Help → TabPFN
+Model Status**.

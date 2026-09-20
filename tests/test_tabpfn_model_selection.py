@@ -90,16 +90,16 @@ def test_tabpfn_setup_uses_existing_dialog_and_refreshes_after_success(
     window.close()
 
 
-def test_legacy_tabpfn_checkpoint_remains_selectable(tmp_path, monkeypatch):
+def test_ready_user_cache_checkpoint_is_selectable(tmp_path, monkeypatch):
     checkpoint = tmp_path / "tabpfn-v2.5-classifier-v2.5_default.ckpt"
     app, window, _current = _window(
         tmp_path,
         monkeypatch,
-        _status(checkpoint, "bundled_legacy"),
+        _status(checkpoint, "user_cache"),
     )
     page = window.model_selection_page
 
-    assert page.tabpfn_checkpoint_status_label.text() == "Legacy model available"
+    assert page.tabpfn_checkpoint_status_label.text() == "Ready"
     assert page.model_checkboxes["tabpfn"].isEnabled()
     assert page.tabpfn_setup_button.isHidden()
     window.close()

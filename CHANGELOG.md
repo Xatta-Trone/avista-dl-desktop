@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Moved the TabPFN 2.5 classifier checkpoint to the official TabPFN user cache
+  and removed AVISTA's redistributed checkpoint copies and bundled fallback.
+- Added user-initiated Prior Labs license/authentication, download,
+  verification, startup-status, Help-menu, and Model Selection setup flows.
+- Kept TabPFN Python support in packaged builds while adding release gates that
+  reject the TabPFN 2.5 model weights if they are reintroduced.
+- Documented that AVISTA source remains Apache-2.0 and TabPFN 2.5 weights are
+  obtained separately under the TabPFN-2.5 License v1.1.
+
 ## 1.0.7 - 2026-07-28
 
 - Hid the packaged AVISTADeepWorker.exe terminal window during training while preserving

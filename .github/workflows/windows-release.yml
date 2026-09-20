@@ -39,8 +39,7 @@ jobs:
         run: |
           $assets = @(
             "app/assets/logo.png",
-            "app/assets/logo.ico",
-            "app/assets/tabpfn-v2.5-classifier-v2.5_default.ckpt"
+            "app/assets/logo.ico"
           )
           foreach ($asset in $assets) {
             if (-not (Test-Path -LiteralPath $asset)) {
@@ -104,13 +103,19 @@ jobs:
             "release/AVISTA/AVISTA.exe",
             "release/AVISTA/AVISTADeepWorker.exe",
             "release/AVISTA/_internal/xgboost/VERSION",
-            "release/AVISTA/_internal/xgboost/lib/xgboost.dll",
-            "release/AVISTA/_internal/app/assets/tabpfn-v2.5-classifier-v2.5_default.ckpt"
+            "release/AVISTA/_internal/xgboost/lib/xgboost.dll"
           )
           foreach ($artifact in $requiredArtifacts) {
             if (-not (Test-Path -LiteralPath $artifact)) {
               throw "Required release artifact was not created: $artifact"
             }
+          }
+          $forbiddenCheckpoints = @(
+            Get-ChildItem -LiteralPath "release/AVISTA" -Recurse -File `
+              -Filter "tabpfn-v2.5-classifier-v2.5_default.ckpt"
+          )
+          if ($forbiddenCheckpoints.Count -gt 0) {
+            throw "Forbidden TabPFN checkpoint was packaged: $($forbiddenCheckpoints.FullName -join ', ')"
           }
           python scripts/audit_packaged_release.py `
             --dist-dir release/AVISTA `

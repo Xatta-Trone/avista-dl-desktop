@@ -6,10 +6,6 @@ analysis = Analysis(
     binaries=[],
     datas=[
         (
-            "app/assets/tabpfn-v2.5-classifier-v2.5_default.ckpt",
-            "app/assets",
-        ),
-        (
             "app/assets/logo.png",
             "app/assets",
         ),

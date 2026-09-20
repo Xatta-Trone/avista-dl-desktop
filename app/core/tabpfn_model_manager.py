@@ -20,10 +20,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from app.core.user_settings import app_settings_dir
-from app.utils.resources import (
-    TABPFN_CHECKPOINT_FILENAME,
-    tabpfn_checkpoint_candidates,
-)
+from app.utils.resources import TABPFN_CHECKPOINT_FILENAME
 
 
 TABPFN_MODEL_VERSION = "2.5"
@@ -36,7 +33,6 @@ class TabPFNModelState(str, Enum):
     """Availability state for the supported TabPFN checkpoint."""
 
     AVAILABLE_IN_USER_CACHE = "AVAILABLE_IN_USER_CACHE"
-    AVAILABLE_AS_LEGACY_BUNDLED_COPY = "AVAILABLE_AS_LEGACY_BUNDLED_COPY"
     MISSING = "MISSING"
     DOWNLOAD_IN_PROGRESS = "DOWNLOAD_IN_PROGRESS"
     DOWNLOAD_FAILED = "DOWNLOAD_FAILED"
@@ -53,8 +49,6 @@ class TabPFNModelStatus:
     cache_dir: Path
     cache_path: Path
     cache_checkpoint_exists: bool
-    legacy_bundled_path: Path | None
-    legacy_bundled_checkpoint_exists: bool
     active_checkpoint_path: Path | None
     active_checkpoint_source: str
     license_name: str
@@ -68,7 +62,6 @@ class TabPFNModelStatus:
         for key in (
             "cache_dir",
             "cache_path",
-            "legacy_bundled_path",
             "active_checkpoint_path",
         ):
             value = data[key]
@@ -136,39 +129,26 @@ def _plausible_checkpoint(path: Path) -> bool:
         return False
 
 
-def _legacy_bundled_checkpoint() -> Path | None:
-    for candidate in tabpfn_checkpoint_candidates():
-        if _plausible_checkpoint(candidate):
-            return candidate.resolve()
-    return None
-
-
 def get_tabpfn_model_status(
     *,
     cache_dir: str | Path | None = None,
 ) -> TabPFNModelStatus:
-    """Resolve cache-first availability while preserving the bundled fallback."""
+    """Resolve availability exclusively from the official TabPFN user cache."""
 
     cache_path = get_tabpfn_cache_path(cache_dir)
     cache_exists = _plausible_checkpoint(cache_path)
-    bundled_path = _legacy_bundled_checkpoint()
     if _download_in_progress:
         state = TabPFNModelState.DOWNLOAD_IN_PROGRESS
     elif cache_exists:
         state = TabPFNModelState.AVAILABLE_IN_USER_CACHE
     elif _last_download_error:
         state = TabPFNModelState.DOWNLOAD_FAILED
-    elif bundled_path is not None:
-        state = TabPFNModelState.AVAILABLE_AS_LEGACY_BUNDLED_COPY
     else:
         state = TabPFNModelState.MISSING
 
     if cache_exists:
         active_path = cache_path.resolve()
         active_source = "user_cache"
-    elif bundled_path is not None:
-        active_path = bundled_path
-        active_source = "bundled_legacy"
     else:
         active_path = None
         active_source = "unavailable"
@@ -181,8 +161,6 @@ def get_tabpfn_model_status(
         cache_dir=cache_path.parent,
         cache_path=cache_path,
         cache_checkpoint_exists=cache_exists,
-        legacy_bundled_path=bundled_path,
-        legacy_bundled_checkpoint_exists=bundled_path is not None,
         active_checkpoint_path=active_path,
         active_checkpoint_source=active_source,
         license_name=TABPFN_LICENSE_NAME,
@@ -200,14 +178,13 @@ def get_tabpfn_model_status(
 
 
 def resolve_tabpfn_model_checkpoint() -> tuple[Path, str]:
-    """Return the verified cache checkpoint or temporary bundled fallback."""
+    """Return the verified official user-cache checkpoint."""
 
     status = get_tabpfn_model_status()
     if status.active_checkpoint_path is None:
         raise FileNotFoundError(
-            "TabPFN 2.5 checkpoint is unavailable. Expected user cache path: "
-            f"{status.cache_path}. Legacy bundled paths: "
-            + ", ".join(str(path) for path in tabpfn_checkpoint_candidates())
+            "TabPFN 2.5 checkpoint is unavailable. Expected official user-cache "
+            f"path: {status.cache_path}. Use Help > TabPFN Model Status to set it up."
         )
     log_tabpfn_model_event(
         "Checkpoint source selected",

@@ -195,7 +195,7 @@ Key content:
 Writing roadmap:
 
 Describe runtime awareness as part of reproducibility. AVISTA records CPU, RAM,
-disk, PyTorch/CUDA, XGBoost, TabPFN, and bundled checkpoint status. Emphasize
+disk, PyTorch/CUDA, XGBoost, TabPFN, and user-cache checkpoint status. Emphasize
 that GPU repair is explicit and user-confirmed, not automatic.
 
 ### 7.5.3 Data Management Module

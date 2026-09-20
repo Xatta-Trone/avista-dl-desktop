@@ -7,6 +7,6 @@
     "Updated packaging, dependency installation, reporting, reproducibility metadata, and validation examples."
   ],
   "installer_url": "https://github.com/Xatta-Trone/avista-dl-desktop/releases/download/v1.1.0/AVISTA_Setup.exe",
-  "sha256": "",
+  "sha256": "9ff893829e605d69f4c7cfceb7b190af1d0bc19a649f093c1aa8828db875e5d1",
   "mandatory": false
 }

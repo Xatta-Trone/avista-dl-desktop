@@ -1,0 +1,50 @@
+{
+  "cv_inner_validation_fraction": {
+    "mean": 0.125,
+    "std": 0.0
+  },
+  "cv_inner_random_seed": {
+    "mean": 42.0,
+    "std": 0.0
+  },
+  "cv_inner_train_size": {
+    "mean": 378.8,
+    "std": 0.4
+  },
+  "cv_inner_train_original_size": {
+    "mean": 349.2,
+    "std": 0.4
+  },
+  "cv_inner_validation_size": {
+    "mean": 50.0,
+    "std": 0.0
+  },
+  "cv_epochs_trained": {
+    "mean": 63.0,
+    "std": 8.024961059095553
+  },
+  "cv_best_epoch": {
+    "mean": 33.0,
+    "std": 8.024961059095553
+  },
+  "accuracy": {
+    "mean": 0.33666666666666667,
+    "std": 0.02319003617456811
+  },
+  "macro_f1": {
+    "mean": 0.31917453347729385,
+    "std": 0.021556900586071827
+  },
+  "weighted_f1": {
+    "mean": 0.333094408677002,
+    "std": 0.025613336458174044
+  },
+  "balanced_accuracy": {
+    "mean": 0.353073841612741,
+    "std": 0.01697534607938249
+  },
+  "roc_auc": {
+    "mean": 0.5297806167588825,
+    "std": 0.019191947156432007
+  }
+}

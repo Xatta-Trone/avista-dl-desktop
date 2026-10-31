@@ -1,0 +1,6 @@
+fold,cv_outer_validation_role,cv_inner_validation_role,cv_inner_validation_fraction,cv_inner_random_seed,cv_inner_preprocessing_scope,cv_inner_imbalance_scope,cv_inner_validation_resampled,cv_outer_validation_resampled,cv_early_stopping_enabled,cv_early_stopping_disabled_reason,cv_inner_train_size,cv_inner_train_original_size,cv_inner_validation_size,cv_epochs_trained,cv_best_epoch,accuracy,macro_f1,weighted_f1,balanced_accuracy,roc_auc
+1,fold_scoring_only,early_stopping,0.125,42,inner_training_only,inner_training_only,False,False,True,,3979,3979,569,36,6,0.9982425307557118,0.9982405689548547,0.9982426340083885,0.99830220713073,0.9999721673300119
+2,fold_scoring_only,early_stopping,0.125,42,inner_training_only,inner_training_only,False,False,True,,3980,3980,569,49,19,0.9991204925241864,0.9991194026498468,0.9991205197710451,0.9991511035653651,1.0
+3,fold_scoring_only,early_stopping,0.125,42,inner_training_only,inner_training_only,False,False,True,,3980,3980,569,39,9,0.9991204925241864,0.9991194026498468,0.9991205197710451,0.9991511035653651,0.9999752147026384
+4,fold_scoring_only,early_stopping,0.125,42,inner_training_only,inner_training_only,False,False,True,,3980,3980,569,46,16,1.0,1.0,1.0,1.0,0.9999999999999999
+5,fold_scoring_only,early_stopping,0.125,42,inner_training_only,inner_training_only,False,False,True,,3980,3980,569,42,12,1.0,1.0,1.0,1.0,1.0

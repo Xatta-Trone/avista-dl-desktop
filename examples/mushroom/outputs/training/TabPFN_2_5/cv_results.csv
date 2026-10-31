@@ -1,0 +1,6 @@
+fold,available_training_rows,effective_training_rows,training_subsampled,training_subsampling_strategy,training_subsampling_seed,training_row_limit,validation_rows,accuracy,macro_f1,weighted_f1,balanced_accuracy,roc_auc
+1,4548,4548,False,none,42,50000,1138,1.0,1.0,1.0,1.0,1.0
+2,4549,4549,False,none,42,50000,1137,1.0,1.0,1.0,1.0,0.9999999999999999
+3,4549,4549,False,none,42,50000,1137,1.0,1.0,1.0,1.0,1.0
+4,4549,4549,False,none,42,50000,1137,1.0,1.0,1.0,1.0,1.0
+5,4549,4549,False,none,42,50000,1137,1.0,1.0,1.0,1.0,1.0

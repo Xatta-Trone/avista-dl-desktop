@@ -1,0 +1,22 @@
+{
+  "n_estimators": 8,
+  "model_path": "C:\\Users\\monzu\\AppData\\Roaming\\tabpfn\\tabpfn-v2.5-classifier-v2.5_default.ckpt",
+  "categorical_features_indices": [
+    1,
+    2,
+    5,
+    6,
+    8,
+    10,
+    12,
+    13
+  ],
+  "tabpfn_input_representation": "raw_dataframe",
+  "tabpfn_external_one_hot_encoding": false,
+  "tabpfn_external_scaling": false,
+  "tabpfn_external_resampling_applied": false,
+  "cv_preprocessing_scope": "fold_training_only",
+  "cv_imbalance_scope": "fold_training_only",
+  "cv_source": "original_external_training_partition",
+  "cv_resampling_before_split": false
+}

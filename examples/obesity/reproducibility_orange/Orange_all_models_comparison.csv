@@ -1,0 +1,64 @@
+Dataset,Model,Split,Metric,AVISTA,Orange,Absolute Difference
+obesity,Logistic Regression,Train,accuracy,0.897945205479452,0.897945205479452,0.0
+obesity,Logistic Regression,Train,macro_f1,0.8932195539657715,0.8932195539657715,0.0
+obesity,Logistic Regression,Train,weighted_f1,0.896933757871678,0.896933757871678,0.0
+obesity,Logistic Regression,Train,balanced_accuracy,0.8950062332490926,0.8950062332490926,0.0
+obesity,Logistic Regression,Train,macro_precision,0.8941112586352858,0.8941112586352858,0.0
+obesity,Logistic Regression,Train,macro_recall,0.8950062332490926,0.8950062332490926,0.0
+obesity,Logistic Regression,Train,roc_auc,0.9897509725619641,0.9897509725619641,0.0
+obesity,Logistic Regression,Validation,accuracy,0.8660287081339713,0.8660287081339713,0.0
+obesity,Logistic Regression,Validation,macro_f1,0.8641224472245038,0.8641224472245038,0.0
+obesity,Logistic Regression,Validation,weighted_f1,0.865250517230312,0.865250517230312,0.0
+obesity,Logistic Regression,Validation,balanced_accuracy,0.8776218820861678,0.8776218820861678,0.0
+obesity,Logistic Regression,Validation,macro_precision,0.8641603436246292,0.8641603436246292,0.0
+obesity,Logistic Regression,Validation,macro_recall,0.8776218820861678,0.8776218820861678,0.0
+obesity,Logistic Regression,Validation,roc_auc,0.9837621901342775,0.9837621901342775,0.0
+obesity,Logistic Regression,Test,accuracy,0.861244019138756,0.861244019138756,0.0
+obesity,Logistic Regression,Test,macro_f1,0.8533302720783017,0.8533302720783017,0.0
+obesity,Logistic Regression,Test,weighted_f1,0.8594235495617598,0.8594235495617598,0.0
+obesity,Logistic Regression,Test,balanced_accuracy,0.8562268857702396,0.8562268857702396,0.0
+obesity,Logistic Regression,Test,macro_precision,0.8547712243789062,0.8547712243789062,0.0
+obesity,Logistic Regression,Test,macro_recall,0.8562268857702396,0.8562268857702396,0.0
+obesity,Logistic Regression,Test,roc_auc,0.9851906680045899,0.9851906680045899,0.0
+obesity,Random Forest,Train,accuracy,1.0,1.0,0.0
+obesity,Random Forest,Train,macro_f1,1.0,1.0,0.0
+obesity,Random Forest,Train,weighted_f1,1.0,1.0,0.0
+obesity,Random Forest,Train,balanced_accuracy,1.0,1.0,0.0
+obesity,Random Forest,Train,macro_precision,1.0,1.0,0.0
+obesity,Random Forest,Train,macro_recall,1.0,1.0,0.0
+obesity,Random Forest,Train,roc_auc,1.0,1.0,0.0
+obesity,Random Forest,Validation,accuracy,0.9186602870813397,0.937799043062201,0.019138755980861233
+obesity,Random Forest,Validation,macro_f1,0.9209160476413428,0.9399519861925878,0.01903593855124497
+obesity,Random Forest,Validation,weighted_f1,0.9193741617613799,0.9383937699727174,0.019019608211337524
+obesity,Random Forest,Validation,balanced_accuracy,0.9227674841866571,0.9413615884950473,0.018594104308390147
+obesity,Random Forest,Validation,macro_precision,0.9205825488089971,0.9405225247993936,0.01993997599039643
+obesity,Random Forest,Validation,macro_recall,0.9227674841866571,0.9413615884950473,0.018594104308390147
+obesity,Random Forest,Validation,roc_auc,0.9955825139511669,0.9961984618103946,0.0006159478592276946
+obesity,Random Forest,Test,accuracy,0.9425837320574163,0.9282296650717703,0.014354066985646008
+obesity,Random Forest,Test,macro_f1,0.9410100211356637,0.9259049157420406,0.015105105393623086
+obesity,Random Forest,Test,weighted_f1,0.9431774747173466,0.9288898757251797,0.014287598992166917
+obesity,Random Forest,Test,balanced_accuracy,0.9412343756294173,0.9255590919732318,0.015675283656185424
+obesity,Random Forest,Test,macro_precision,0.9435708358758627,0.929927327356199,0.013643508519663672
+obesity,Random Forest,Test,macro_recall,0.9412343756294173,0.9255590919732318,0.015675283656185424
+obesity,Random Forest,Test,roc_auc,0.9933845932707797,0.9938379725748946,0.00045337930411493144
+obesity,XGBoost,Train,accuracy,1.0,1.0,0.0
+obesity,XGBoost,Train,macro_f1,1.0,1.0,0.0
+obesity,XGBoost,Train,weighted_f1,1.0,1.0,0.0
+obesity,XGBoost,Train,balanced_accuracy,1.0,1.0,0.0
+obesity,XGBoost,Train,macro_precision,1.0,1.0,0.0
+obesity,XGBoost,Train,macro_recall,1.0,1.0,0.0
+obesity,XGBoost,Train,roc_auc,1.0,1.0,0.0
+obesity,XGBoost,Validation,accuracy,0.9665071770334929,0.9617224880382775,0.004784688995215336
+obesity,XGBoost,Validation,macro_f1,0.9651958521768514,0.9614240634215359,0.003771788755315586
+obesity,XGBoost,Validation,weighted_f1,0.9664339141523481,0.9616500605736273,0.004783853578720798
+obesity,XGBoost,Validation,balanced_accuracy,0.9690051020408162,0.9650368480725623,0.003968253968253954
+obesity,XGBoost,Validation,macro_precision,0.9629573934837093,0.9590911790911791,0.0038662143925302095
+obesity,XGBoost,Validation,macro_recall,0.9690051020408162,0.9650368480725623,0.003968253968253954
+obesity,XGBoost,Validation,roc_auc,0.9995792144519041,0.9996021523361137,2.2937884209595083e-05
+obesity,XGBoost,Test,accuracy,0.9617224880382775,0.9569377990430622,0.004784688995215336
+obesity,XGBoost,Test,macro_f1,0.9612119543672087,0.9562335993888537,0.004978354978355082
+obesity,XGBoost,Test,weighted_f1,0.9616238471021166,0.9567992856986078,0.004824561403508731
+obesity,XGBoost,Test,balanced_accuracy,0.9608678715989739,0.9559285486268642,0.00493932297210975
+obesity,XGBoost,Test,macro_precision,0.9618050017501255,0.9567862916466696,0.005018710103455892
+obesity,XGBoost,Test,macro_recall,0.9608678715989739,0.9559285486268642,0.00493932297210975
+obesity,XGBoost,Test,roc_auc,0.9988083173284809,0.9987538665979604,5.445073052046112e-05

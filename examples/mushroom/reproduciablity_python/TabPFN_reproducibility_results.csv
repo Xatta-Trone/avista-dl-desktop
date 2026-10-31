@@ -1,0 +1,15 @@
+Dataset,Model,Split,Metric,AVISTA,Python,Absolute Difference
+mushroom,TabPFN 2.5,Validation,accuracy,1.0,1.0,0.0
+mushroom,TabPFN 2.5,Validation,macro_f1,1.0,1.0,0.0
+mushroom,TabPFN 2.5,Validation,weighted_f1,1.0,1.0,0.0
+mushroom,TabPFN 2.5,Validation,balanced_accuracy,1.0,1.0,0.0
+mushroom,TabPFN 2.5,Validation,macro_precision,1.0,1.0,0.0
+mushroom,TabPFN 2.5,Validation,macro_recall,1.0,1.0,0.0
+mushroom,TabPFN 2.5,Validation,roc_auc,1.0,1.0,0.0
+mushroom,TabPFN 2.5,Test,accuracy,1.0,1.0,0.0
+mushroom,TabPFN 2.5,Test,macro_f1,1.0,1.0,0.0
+mushroom,TabPFN 2.5,Test,weighted_f1,1.0,1.0,0.0
+mushroom,TabPFN 2.5,Test,balanced_accuracy,1.0,1.0,0.0
+mushroom,TabPFN 2.5,Test,macro_precision,1.0,1.0,0.0
+mushroom,TabPFN 2.5,Test,macro_recall,1.0,1.0,0.0
+mushroom,TabPFN 2.5,Test,roc_auc,1.0,1.0,0.0

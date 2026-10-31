@@ -1,0 +1,7 @@
+Dataset,Model,Split,Metric,AVISTA,Python Corrected,Absolute Difference
+obesity,Logistic Regression,Train,accuracy,0.897945205479452,0.897945205479452,0.0
+obesity,Logistic Regression,Train,macro_f1,0.8932195539657715,0.8932195539657715,0.0
+obesity,Logistic Regression,Validation,accuracy,0.8660287081339713,0.8660287081339713,0.0
+obesity,Logistic Regression,Validation,macro_f1,0.8641224472245038,0.8641224472245038,0.0
+obesity,Logistic Regression,Test,accuracy,0.861244019138756,0.861244019138756,0.0
+obesity,Logistic Regression,Test,macro_f1,0.8533302720783017,0.8533302720783017,0.0

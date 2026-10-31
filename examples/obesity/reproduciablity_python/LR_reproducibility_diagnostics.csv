@@ -1,0 +1,2 @@
+Dataset,Model,Test Samples,Prediction Disagreements,Prediction Agreement,Max Coefficient Difference,Max Intercept Difference,AVISTA Iterations,Python Iterations
+obesity,Logistic Regression,418,0,1.0,5.274384746734029e-07,3.3588640615533905e-06,100,100

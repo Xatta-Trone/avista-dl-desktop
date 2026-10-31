@@ -1,0 +1,2 @@
+Dataset,Model,Test Samples,Prediction Disagreements,Prediction Agreement,Max Coefficient Difference,Max Intercept Difference,AVISTA Iterations,Python Iterations
+national-poll2,Logistic Regression,143,0,1.0,5.3607785045484135e-06,6.804263462889537e-06,95,95

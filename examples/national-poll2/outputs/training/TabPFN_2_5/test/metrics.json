@@ -1,0 +1,59 @@
+{
+  "accuracy": 0.5174825174825175,
+  "macro_f1": 0.2273425499231951,
+  "weighted_f1": 0.3529373851954497,
+  "balanced_accuracy": 0.3333333333333333,
+  "macro_precision": 0.1724941724941725,
+  "macro_recall": 0.3333333333333333,
+  "confusion_matrix": [
+    [
+      0,
+      28,
+      0
+    ],
+    [
+      0,
+      74,
+      0
+    ],
+    [
+      0,
+      41,
+      0
+    ]
+  ],
+  "classification_report": {
+    "Doctors_0_1": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 28.0
+    },
+    "Doctors_2_3": {
+      "precision": 0.5174825174825175,
+      "recall": 1.0,
+      "f1-score": 0.6820276497695853,
+      "support": 74.0
+    },
+    "Doctors_4_Plus": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 41.0
+    },
+    "accuracy": 0.5174825174825175,
+    "macro avg": {
+      "precision": 0.1724941724941725,
+      "recall": 0.3333333333333333,
+      "f1-score": 0.2273425499231951,
+      "support": 143.0
+    },
+    "weighted avg": {
+      "precision": 0.267788155900044,
+      "recall": 0.5174825174825175,
+      "f1-score": 0.3529373851954497,
+      "support": 143.0
+    }
+  },
+  "roc_auc": 0.5483077115897901
+}

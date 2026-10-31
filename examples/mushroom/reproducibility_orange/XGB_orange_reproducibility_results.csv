@@ -1,0 +1,22 @@
+Dataset,Model,Split,Metric,AVISTA,Orange,Signed Difference,Absolute Difference
+mushroom,XGBoost,Train,accuracy,1.0,1.0,0.0,0.0
+mushroom,XGBoost,Train,macro_f1,1.0,1.0,0.0,0.0
+mushroom,XGBoost,Train,weighted_f1,1.0,1.0,0.0,0.0
+mushroom,XGBoost,Train,balanced_accuracy,1.0,1.0,0.0,0.0
+mushroom,XGBoost,Train,macro_precision,1.0,1.0,0.0,0.0
+mushroom,XGBoost,Train,macro_recall,1.0,1.0,0.0,0.0
+mushroom,XGBoost,Train,roc_auc,1.0,1.0,0.0,0.0
+mushroom,XGBoost,Validation,accuracy,1.0,1.0,0.0,0.0
+mushroom,XGBoost,Validation,macro_f1,1.0,1.0,0.0,0.0
+mushroom,XGBoost,Validation,weighted_f1,1.0,1.0,0.0,0.0
+mushroom,XGBoost,Validation,balanced_accuracy,1.0,1.0,0.0,0.0
+mushroom,XGBoost,Validation,macro_precision,1.0,1.0,0.0,0.0
+mushroom,XGBoost,Validation,macro_recall,1.0,1.0,0.0,0.0
+mushroom,XGBoost,Validation,roc_auc,1.0,1.0,0.0,0.0
+mushroom,XGBoost,Test,accuracy,1.0,1.0,0.0,0.0
+mushroom,XGBoost,Test,macro_f1,1.0,1.0,0.0,0.0
+mushroom,XGBoost,Test,weighted_f1,1.0,1.0,0.0,0.0
+mushroom,XGBoost,Test,balanced_accuracy,1.0,1.0,0.0,0.0
+mushroom,XGBoost,Test,macro_precision,1.0,1.0,0.0,0.0
+mushroom,XGBoost,Test,macro_recall,1.0,1.0,0.0,0.0
+mushroom,XGBoost,Test,roc_auc,0.9999999999999999,0.9999999999999999,0.0,0.0

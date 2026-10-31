@@ -1,0 +1,6 @@
+Dataset,Model,Metric,AVISTA Mean,Python Mean,Mean Abs Diff,AVISTA Std,Python Std
+mushroom,XGBoost,accuracy,1.0,1.0,0.0,0.0,0.0
+mushroom,XGBoost,macro_f1,1.0,1.0,0.0,0.0,0.0
+mushroom,XGBoost,weighted_f1,1.0,1.0,0.0,0.0,0.0
+mushroom,XGBoost,balanced_accuracy,1.0,1.0,0.0,0.0,0.0
+mushroom,XGBoost,roc_auc,1.0,1.0,0.0,0.0,0.0

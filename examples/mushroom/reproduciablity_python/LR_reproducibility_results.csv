@@ -1,0 +1,7 @@
+Dataset,Model,Split,Metric,AVISTA,Python Corrected,Absolute Difference
+mushroom,Logistic Regression,Train,accuracy,0.9850510024621878,0.9850510024621878,0.0
+mushroom,Logistic Regression,Train,macro_f1,0.9850401707830521,0.9850401707830521,0.0
+mushroom,Logistic Regression,Validation,accuracy,0.986469864698647,0.986469864698647,0.0
+mushroom,Logistic Regression,Validation,macro_f1,0.9864488707392283,0.9864488707392283,0.0
+mushroom,Logistic Regression,Test,accuracy,0.976,0.976,0.0
+mushroom,Logistic Regression,Test,macro_f1,0.9759882151865114,0.9759882151865114,0.0

@@ -1,0 +1,42 @@
+{
+  "available_training_rows": {
+    "mean": 4548.8,
+    "std": 0.39999999999999997
+  },
+  "effective_training_rows": {
+    "mean": 4548.8,
+    "std": 0.39999999999999997
+  },
+  "training_subsampling_seed": {
+    "mean": 42.0,
+    "std": 0.0
+  },
+  "training_row_limit": {
+    "mean": 50000.0,
+    "std": 0.0
+  },
+  "validation_rows": {
+    "mean": 1137.2,
+    "std": 0.4000000000000001
+  },
+  "accuracy": {
+    "mean": 1.0,
+    "std": 0.0
+  },
+  "macro_f1": {
+    "mean": 1.0,
+    "std": 0.0
+  },
+  "weighted_f1": {
+    "mean": 1.0,
+    "std": 0.0
+  },
+  "balanced_accuracy": {
+    "mean": 1.0,
+    "std": 0.0
+  },
+  "roc_auc": {
+    "mean": 1.0,
+    "std": 4.965068306494546e-17
+  }
+}

@@ -1,0 +1,6 @@
+Metric,AVISTA Mean,Python Mean,AVISTA Std,Python Std,Protocol
+accuracy,0.9431506849315069,0.9452054794520548,0.010522117462833719,0.006849315068493178,"exported-feature CV diagnostic, not fold-local pipeline parity"
+macro_f1,0.9397277422479249,0.9415312254554641,0.011152641088268026,0.008100093321933977,"exported-feature CV diagnostic, not fold-local pipeline parity"
+weighted_f1,0.942564116027245,0.9450373562078054,0.010487101000837546,0.007064645502167785,"exported-feature CV diagnostic, not fold-local pipeline parity"
+balanced_accuracy,0.9405750087435163,0.9417149480509099,0.010731430448458793,0.007778301273914223,"exported-feature CV diagnostic, not fold-local pipeline parity"
+roc_auc,0.9954139134813721,0.9965914430159826,0.002231148996142071,0.0014066855021949178,"exported-feature CV diagnostic, not fold-local pipeline parity"

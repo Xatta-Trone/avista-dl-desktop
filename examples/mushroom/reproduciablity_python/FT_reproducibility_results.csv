@@ -1,0 +1,22 @@
+Dataset,Model,Split,Metric,AVISTA,Python,Absolute Difference
+mushroom,FT-Transformer,Train,accuracy,1.0,1.0,0.0
+mushroom,FT-Transformer,Train,macro_f1,1.0,1.0,0.0
+mushroom,FT-Transformer,Train,weighted_f1,1.0,1.0,0.0
+mushroom,FT-Transformer,Train,balanced_accuracy,1.0,1.0,0.0
+mushroom,FT-Transformer,Train,macro_precision,1.0,1.0,0.0
+mushroom,FT-Transformer,Train,macro_recall,1.0,1.0,0.0
+mushroom,FT-Transformer,Train,roc_auc,1.0,1.0,0.0
+mushroom,FT-Transformer,Validation,accuracy,1.0,1.0,0.0
+mushroom,FT-Transformer,Validation,macro_f1,1.0,1.0,0.0
+mushroom,FT-Transformer,Validation,weighted_f1,1.0,1.0,0.0
+mushroom,FT-Transformer,Validation,balanced_accuracy,1.0,1.0,0.0
+mushroom,FT-Transformer,Validation,macro_precision,1.0,1.0,0.0
+mushroom,FT-Transformer,Validation,macro_recall,1.0,1.0,0.0
+mushroom,FT-Transformer,Validation,roc_auc,1.0,1.0,0.0
+mushroom,FT-Transformer,Test,accuracy,1.0,1.0,0.0
+mushroom,FT-Transformer,Test,macro_f1,1.0,1.0,0.0
+mushroom,FT-Transformer,Test,weighted_f1,1.0,1.0,0.0
+mushroom,FT-Transformer,Test,balanced_accuracy,1.0,1.0,0.0
+mushroom,FT-Transformer,Test,macro_precision,1.0,1.0,0.0
+mushroom,FT-Transformer,Test,macro_recall,1.0,1.0,0.0
+mushroom,FT-Transformer,Test,roc_auc,1.0,1.0,0.0

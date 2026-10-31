@@ -1,0 +1,49 @@
+{
+  "dataset": "obesity",
+  "orange_version": "3.40.0",
+  "xgboost_version": "3.0.2",
+  "n_classes": 7,
+  "avista_parameters": {
+    "n_estimators": 300,
+    "learning_rate": 0.05,
+    "max_depth": 5,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "objective": "multi:softprob",
+    "eval_metric": "mlogloss",
+    "tree_method": "auto",
+    "booster": "gbtree",
+    "gamma": 0.0,
+    "min_child_weight": 1.0,
+    "reg_alpha": 0.0,
+    "reg_lambda": 1.0,
+    "scale_pos_weight": 1.0,
+    "random_state": 42,
+    "n_jobs": null,
+    "verbosity": 0,
+    "enable_categorical": false
+  },
+  "orange_parameters": {
+    "n_estimators": 300,
+    "learning_rate": 0.05,
+    "max_depth": 5,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "objective": "multi:softprob",
+    "tree_method": "auto",
+    "booster": "gbtree",
+    "gamma": 0.0,
+    "min_child_weight": 1.0,
+    "reg_alpha": 0.0,
+    "reg_lambda": 1.0,
+    "scale_pos_weight": 1.0,
+    "random_state": 42,
+    "n_jobs": null,
+    "verbosity": 0
+  },
+  "unsupported_parameters": {
+    "eval_metric": "mlogloss",
+    "enable_categorical": false
+  },
+  "effective_trained_objective": "multi:softprob"
+}

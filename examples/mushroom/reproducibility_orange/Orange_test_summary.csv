@@ -1,0 +1,4 @@
+Dataset,Model,AVISTA_accuracy,AVISTA_macro_f1,AVISTA_roc_auc,Orange_accuracy,Orange_macro_f1,Orange_roc_auc
+mushroom,Logistic Regression,0.976,0.9759882151865114,0.9992733903092414,0.976,0.9759882151865114,0.9992733903092414
+mushroom,Random Forest,1.0,1.0,1.0,1.0,1.0,1.0
+mushroom,XGBoost,1.0,1.0,0.9999999999999999,1.0,1.0,0.9999999999999999

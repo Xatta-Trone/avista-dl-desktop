@@ -1,0 +1,50 @@
+{
+  "model_name": "FT-Transformer",
+  "status": "failed",
+  "error": "FT-Transformer deep-learning worker failed. Review the worker log for launch and runtime details.",
+  "return_code": 1,
+  "return_code_decimal": 1,
+  "return_code_hex": "0x00000001",
+  "windows_status": "",
+  "windows_status_explanation": "",
+  "native_process_termination": false,
+  "executable_path": "C:\\Program Files\\AVISTA\\AVISTADeepWorker.exe",
+  "sanitized_arguments": [
+    "--project-dir",
+    "<project-dir>",
+    "--config",
+    "<project-config>",
+    "--model",
+    "FT-Transformer",
+    "--output-dir",
+    "<model-output-dir>",
+    "--log-path",
+    "<worker-log>"
+  ],
+  "working_directory": "D:\\TXST\\OneDrive - Texas State University\\Hackathon_Monzurul\\Papers\\AVISTA\\examples\\national-poll2",
+  "packaged_mode": true,
+  "worker_mode": "packaged",
+  "process_start_success": true,
+  "worker_executable_exists": true,
+  "worker_log_path": "D:\\TXST\\OneDrive - Texas State University\\Hackathon_Monzurul\\Papers\\AVISTA\\examples\\national-poll2\\logs\\training\\FT_Transformer_worker_20261031_154747_730519.log",
+  "stderr_log_path": "D:\\TXST\\OneDrive - Texas State University\\Hackathon_Monzurul\\Papers\\AVISTA\\examples\\national-poll2\\logs\\training\\FT_Transformer_worker_20261031_154747_730519.log",
+  "worker_config_path": "D:\\TXST\\OneDrive - Texas State University\\Hackathon_Monzurul\\Papers\\AVISTA\\examples\\national-poll2\\national-poll2.avista",
+  "stdout_tail": "",
+  "stderr_tail": "",
+  "last_valid_json_event": null,
+  "exception_type": "",
+  "traceback": "",
+  "required_assets": {
+    "tabpfn_checkpoint": {
+      "required": false,
+      "exists": true
+    }
+  },
+  "cuda_requested": false,
+  "torch_version": null,
+  "cuda_available": null,
+  "cuda_version": null,
+  "device": "automatic",
+  "last_successful_stage": "launcher_initialized",
+  "saved": false
+}

@@ -1,0 +1,9 @@
+row_identifier,actual_class,predicted_class,probability_confidence
+672,Insufficient_Weight,Normal_Weight,0.48022825
+138,Insufficient_Weight,Normal_Weight,0.79763335
+318,Normal_Weight,Overweight_Level_I,0.8947582
+443,Normal_Weight,Overweight_Level_I,0.554411
+280,Normal_Weight,Overweight_Level_I,0.7614145
+101,Normal_Weight,Overweight_Level_I,0.58339626
+225,Normal_Weight,Overweight_Level_I,0.55932623
+240,Normal_Weight,Overweight_Level_I,0.7242486

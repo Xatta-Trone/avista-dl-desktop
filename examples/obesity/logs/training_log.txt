@@ -1,0 +1,636 @@
+[2026-09-19T19:01:19] Training worker started.
+[2026-09-19T19:01:19] Training target diagnostics:
+current target column=NObeyesdad
+current task_type=auto
+saved target column=NObeyesdad
+saved task_type=unknown
+y_train dtype=int64
+unique target classes=7
+detected target type=classification
+[2026-09-19T19:01:19] Training target diagnostics:
+current target column=NObeyesdad
+current task_type=auto
+saved target column=NObeyesdad
+saved task_type=unknown
+y_train dtype=int64
+unique target classes=7
+detected target type=classification
+[2026-09-19T19:01:19] Logistic Regression started
+[2026-09-19T19:01:19] Fold 1/5 completed
+[2026-09-19T19:01:19] Fold 2/5 completed
+[2026-09-19T19:01:20] Fold 3/5 completed
+[2026-09-19T19:01:20] Fold 4/5 completed
+[2026-09-19T19:01:20] Fold 5/5 completed
+[2026-09-19T19:01:20] Logistic Regression: fitting
+[2026-09-19T19:01:20] Logistic Regression: evaluating train
+[2026-09-19T19:01:20] Logistic Regression: evaluating validation
+[2026-09-19T19:01:20] Logistic Regression: evaluating test
+[2026-09-19T19:01:27] Logistic Regression: saving
+[2026-09-19T19:01:27] Training workflow complete
+[2026-09-19T19:01:27] Model result updated: Logistic Regression
+[2026-09-19T19:01:27] Training target diagnostics:
+current target column=NObeyesdad
+current task_type=auto
+saved target column=NObeyesdad
+saved task_type=unknown
+y_train dtype=int64
+unique target classes=7
+detected target type=classification
+[2026-09-19T19:01:27] Training target diagnostics:
+current target column=NObeyesdad
+current task_type=auto
+saved target column=NObeyesdad
+saved task_type=unknown
+y_train dtype=int64
+unique target classes=7
+detected target type=classification
+[2026-09-19T19:01:27] Random Forest started
+[2026-09-19T19:01:27] Fold 1/5 completed
+[2026-09-19T19:01:28] Fold 2/5 completed
+[2026-09-19T19:01:28] Fold 3/5 completed
+[2026-09-19T19:01:28] Fold 4/5 completed
+[2026-09-19T19:01:29] Fold 5/5 completed
+[2026-09-19T19:01:29] Random Forest: fitting
+[2026-09-19T19:01:29] Random Forest: evaluating train
+[2026-09-19T19:01:29] Random Forest: evaluating validation
+[2026-09-19T19:01:29] Random Forest: evaluating test
+[2026-09-19T19:01:36] Random Forest: saving
+[2026-09-19T19:01:36] Training workflow complete
+[2026-09-19T19:01:36] Model result updated: Random Forest
+[2026-09-19T19:01:36] Training target diagnostics:
+current target column=NObeyesdad
+current task_type=auto
+saved target column=NObeyesdad
+saved task_type=unknown
+y_train dtype=int64
+unique target classes=7
+detected target type=classification
+[2026-09-19T19:01:36] Training target diagnostics:
+current target column=NObeyesdad
+current task_type=auto
+saved target column=NObeyesdad
+saved task_type=unknown
+y_train dtype=int64
+unique target classes=7
+detected target type=classification
+[2026-09-19T19:01:36] XGBoost started
+[2026-09-19T19:01:37] Fold 1/5 completed
+[2026-09-19T19:01:39] Fold 2/5 completed
+[2026-09-19T19:01:40] Fold 3/5 completed
+[2026-09-19T19:01:42] Fold 4/5 completed
+[2026-09-19T19:01:44] Fold 5/5 completed
+[2026-09-19T19:01:44] XGBoost: fitting
+[2026-09-19T19:01:45] XGBoost: evaluating train
+[2026-09-19T19:01:45] XGBoost: evaluating validation
+[2026-09-19T19:01:45] XGBoost: evaluating test
+[2026-09-19T19:01:51] XGBoost: saving
+[2026-09-19T19:01:51] Training workflow complete
+[2026-09-19T19:01:51] Model result updated: XGBoost
+[2026-09-19T19:01:51] Training worker finished.
+[2026-10-31T15:50:11] Training worker started.
+[2026-10-31T15:50:11] Training target diagnostics:
+current target column=NObeyesdad
+current task_type=auto
+saved target column=NObeyesdad
+saved task_type=unknown
+y_train dtype=int64
+unique target classes=7
+detected target type=classification
+[2026-10-31T15:50:11] Training target diagnostics:
+current target column=NObeyesdad
+current task_type=auto
+saved target column=NObeyesdad
+saved task_type=unknown
+y_train dtype=int64
+unique target classes=7
+detected target type=classification
+[2026-10-31T15:50:11] Logistic Regression started
+[2026-10-31T15:50:11] Fold 1/5 completed
+[2026-10-31T15:50:12] Fold 2/5 completed
+[2026-10-31T15:50:12] Fold 3/5 completed
+[2026-10-31T15:50:12] Fold 4/5 completed
+[2026-10-31T15:50:12] Fold 5/5 completed
+[2026-10-31T15:50:12] Logistic Regression: fitting
+[2026-10-31T15:50:12] Logistic Regression: evaluating train
+[2026-10-31T15:50:12] Logistic Regression: evaluating validation
+[2026-10-31T15:50:12] Logistic Regression: evaluating test
+[2026-10-31T15:50:18] Logistic Regression: saving
+[2026-10-31T15:50:18] Training workflow complete
+[2026-10-31T15:50:18] Model result updated: Logistic Regression
+[2026-10-31T15:50:18] Training target diagnostics:
+current target column=NObeyesdad
+current task_type=auto
+saved target column=NObeyesdad
+saved task_type=unknown
+y_train dtype=int64
+unique target classes=7
+detected target type=classification
+[2026-10-31T15:50:18] Training target diagnostics:
+current target column=NObeyesdad
+current task_type=auto
+saved target column=NObeyesdad
+saved task_type=unknown
+y_train dtype=int64
+unique target classes=7
+detected target type=classification
+[2026-10-31T15:50:18] Random Forest started
+[2026-10-31T15:50:19] Fold 1/5 completed
+[2026-10-31T15:50:19] Fold 2/5 completed
+[2026-10-31T15:50:19] Fold 3/5 completed
+[2026-10-31T15:50:20] Fold 4/5 completed
+[2026-10-31T15:50:20] Fold 5/5 completed
+[2026-10-31T15:50:20] Random Forest: fitting
+[2026-10-31T15:50:21] Random Forest: evaluating train
+[2026-10-31T15:50:21] Random Forest: evaluating validation
+[2026-10-31T15:50:21] Random Forest: evaluating test
+[2026-10-31T15:50:27] Random Forest: saving
+[2026-10-31T15:50:27] Training workflow complete
+[2026-10-31T15:50:27] Model result updated: Random Forest
+[2026-10-31T15:50:27] Training target diagnostics:
+current target column=NObeyesdad
+current task_type=auto
+saved target column=NObeyesdad
+saved task_type=unknown
+y_train dtype=int64
+unique target classes=7
+detected target type=classification
+[2026-10-31T15:50:27] Training target diagnostics:
+current target column=NObeyesdad
+current task_type=auto
+saved target column=NObeyesdad
+saved task_type=unknown
+y_train dtype=int64
+unique target classes=7
+detected target type=classification
+[2026-10-31T15:50:27] XGBoost started
+[2026-10-31T15:50:29] Fold 1/5 completed
+[2026-10-31T15:50:31] Fold 2/5 completed
+[2026-10-31T15:50:32] Fold 3/5 completed
+[2026-10-31T15:50:34] Fold 4/5 completed
+[2026-10-31T15:50:35] Fold 5/5 completed
+[2026-10-31T15:50:35] XGBoost: fitting
+[2026-10-31T15:50:37] XGBoost: evaluating train
+[2026-10-31T15:50:37] XGBoost: evaluating validation
+[2026-10-31T15:50:37] XGBoost: evaluating test
+[2026-10-31T15:50:44] XGBoost: saving
+[2026-10-31T15:50:44] Training workflow complete
+[2026-10-31T15:50:44] Model result updated: XGBoost
+[2026-10-31T15:50:44] Starting FT-Transformer with AVISTADeepWorker.exe (packaged mode). Worker log: D:\TXST\OneDrive - Texas State University\Hackathon_Monzurul\Papers\AVISTA\examples\obesity\logs\training\FT_Transformer_worker_20261031_155044_146546.log
+[2026-10-31T15:50:48] Training target diagnostics:
+current target column=NObeyesdad
+current task_type=auto
+saved target column=NObeyesdad
+saved task_type=unknown
+y_train dtype=int64
+unique target classes=7
+detected target type=classification
+[2026-10-31T15:50:48] FT-Transformer started in subprocess
+[2026-10-31T15:50:48] Training target diagnostics:
+current target column=NObeyesdad
+current task_type=auto
+saved target column=NObeyesdad
+saved task_type=unknown
+y_train dtype=int64
+unique target classes=7
+detected target type=classification
+[2026-10-31T15:50:48] FT-Transformer started
+[2026-10-31T15:50:48] FT-Transformer configuration: device=cuda; n_features=39; n_classes=7; d_token=128; n_heads=8; n_layers=3; dropout=0.1; learning_rate=0.001; focal_gamma=1.0
+[2026-10-31T15:50:51] FT-Transformer fold 1/5 epoch 1/80: validation macro-F1=0.3530
+[2026-10-31T15:50:51] FT-Transformer fold 1/5 epoch 2/80: validation macro-F1=0.4797
+[2026-10-31T15:50:52] FT-Transformer fold 1/5 epoch 3/80: validation macro-F1=0.5497
+[2026-10-31T15:50:52] FT-Transformer fold 1/5 epoch 4/80: validation macro-F1=0.6016
+[2026-10-31T15:50:52] FT-Transformer fold 1/5 epoch 5/80: validation macro-F1=0.6582
+[2026-10-31T15:50:53] FT-Transformer fold 1/5 epoch 6/80: validation macro-F1=0.7324
+[2026-10-31T15:50:54] FT-Transformer fold 1/5 epoch 7/80: validation macro-F1=0.8129
+[2026-10-31T15:50:54] FT-Transformer fold 1/5 epoch 8/80: validation macro-F1=0.8448
+[2026-10-31T15:50:54] FT-Transformer fold 1/5 epoch 9/80: validation macro-F1=0.8044
+[2026-10-31T15:50:55] FT-Transformer fold 1/5 epoch 10/80: validation macro-F1=0.7535
+[2026-10-31T15:50:55] FT-Transformer fold 1/5 epoch 11/80: validation macro-F1=0.8749
+[2026-10-31T15:50:56] FT-Transformer fold 1/5 epoch 12/80: validation macro-F1=0.8489
+[2026-10-31T15:50:56] FT-Transformer fold 1/5 epoch 13/80: validation macro-F1=0.8717
+[2026-10-31T15:50:56] FT-Transformer fold 1/5 epoch 14/80: validation macro-F1=0.8828
+[2026-10-31T15:50:57] FT-Transformer fold 1/5 epoch 15/80: validation macro-F1=0.8518
+[2026-10-31T15:50:57] FT-Transformer fold 1/5 epoch 16/80: validation macro-F1=0.8951
+[2026-10-31T15:50:57] FT-Transformer fold 1/5 epoch 17/80: validation macro-F1=0.9197
+[2026-10-31T15:50:58] FT-Transformer fold 1/5 epoch 18/80: validation macro-F1=0.9097
+[2026-10-31T15:50:58] FT-Transformer fold 1/5 epoch 19/80: validation macro-F1=0.8712
+[2026-10-31T15:50:59] FT-Transformer fold 1/5 epoch 20/80: validation macro-F1=0.9248
+[2026-10-31T15:50:59] FT-Transformer fold 1/5 epoch 21/80: validation macro-F1=0.9004
+[2026-10-31T15:50:59] FT-Transformer fold 1/5 epoch 22/80: validation macro-F1=0.8920
+[2026-10-31T15:50:59] FT-Transformer fold 1/5 epoch 23/80: validation macro-F1=0.9169
+[2026-10-31T15:51:00] FT-Transformer fold 1/5 epoch 24/80: validation macro-F1=0.8094
+[2026-10-31T15:51:00] FT-Transformer fold 1/5 epoch 25/80: validation macro-F1=0.8510
+[2026-10-31T15:51:00] FT-Transformer fold 1/5 epoch 26/80: validation macro-F1=0.8799
+[2026-10-31T15:51:00] FT-Transformer fold 1/5 epoch 27/80: validation macro-F1=0.9288
+[2026-10-31T15:51:00] FT-Transformer fold 1/5 epoch 28/80: validation macro-F1=0.9230
+[2026-10-31T15:51:00] FT-Transformer fold 1/5 epoch 29/80: validation macro-F1=0.9292
+[2026-10-31T15:51:00] FT-Transformer fold 1/5 epoch 30/80: validation macro-F1=0.9228
+[2026-10-31T15:51:01] FT-Transformer fold 1/5 epoch 31/80: validation macro-F1=0.9655
+[2026-10-31T15:51:01] FT-Transformer fold 1/5 epoch 32/80: validation macro-F1=0.9354
+[2026-10-31T15:51:01] FT-Transformer fold 1/5 epoch 33/80: validation macro-F1=0.9222
+[2026-10-31T15:51:01] FT-Transformer fold 1/5 epoch 34/80: validation macro-F1=0.9286
+[2026-10-31T15:51:01] FT-Transformer fold 1/5 epoch 35/80: validation macro-F1=0.8618
+[2026-10-31T15:51:01] FT-Transformer fold 1/5 epoch 36/80: validation macro-F1=0.8898
+[2026-10-31T15:51:01] FT-Transformer fold 1/5 epoch 37/80: validation macro-F1=0.9207
+[2026-10-31T15:51:01] FT-Transformer fold 1/5 epoch 38/80: validation macro-F1=0.9144
+[2026-10-31T15:51:02] FT-Transformer fold 1/5 epoch 39/80: validation macro-F1=0.8846
+[2026-10-31T15:51:02] FT-Transformer fold 1/5 epoch 40/80: validation macro-F1=0.9141
+[2026-10-31T15:51:02] FT-Transformer fold 1/5 epoch 41/80: validation macro-F1=0.8938
+[2026-10-31T15:51:02] FT-Transformer fold 1/5 epoch 42/80: validation macro-F1=0.9512
+[2026-10-31T15:51:02] FT-Transformer fold 1/5 epoch 43/80: validation macro-F1=0.9296
+[2026-10-31T15:51:02] FT-Transformer fold 1/5 epoch 44/80: validation macro-F1=0.9502
+[2026-10-31T15:51:02] FT-Transformer fold 1/5 epoch 45/80: validation macro-F1=0.9174
+[2026-10-31T15:51:03] FT-Transformer fold 1/5 epoch 46/80: validation macro-F1=0.9292
+[2026-10-31T15:51:03] FT-Transformer fold 1/5 epoch 47/80: validation macro-F1=0.9226
+[2026-10-31T15:51:03] FT-Transformer fold 1/5 epoch 48/80: validation macro-F1=0.9169
+[2026-10-31T15:51:04] FT-Transformer fold 1/5 epoch 49/80: validation macro-F1=0.9098
+[2026-10-31T15:51:04] FT-Transformer fold 1/5 epoch 50/80: validation macro-F1=0.8998
+[2026-10-31T15:51:05] FT-Transformer fold 1/5 epoch 51/80: validation macro-F1=0.9171
+[2026-10-31T15:51:05] FT-Transformer fold 1/5 epoch 52/80: validation macro-F1=0.9161
+[2026-10-31T15:51:05] FT-Transformer fold 1/5 epoch 53/80: validation macro-F1=0.9239
+[2026-10-31T15:51:06] FT-Transformer fold 1/5 epoch 54/80: validation macro-F1=0.9152
+[2026-10-31T15:51:06] FT-Transformer fold 1/5 epoch 55/80: validation macro-F1=0.9151
+[2026-10-31T15:51:06] FT-Transformer fold 1/5 epoch 56/80: validation macro-F1=0.9032
+[2026-10-31T15:51:06] FT-Transformer fold 1/5 epoch 57/80: validation macro-F1=0.9161
+[2026-10-31T15:51:07] FT-Transformer fold 1/5 epoch 58/80: validation macro-F1=0.9221
+[2026-10-31T15:51:07] FT-Transformer fold 1/5 epoch 59/80: validation macro-F1=0.9291
+[2026-10-31T15:51:07] FT-Transformer fold 1/5 epoch 60/80: validation macro-F1=0.9291
+[2026-10-31T15:51:08] FT-Transformer fold 1/5 epoch 61/80: validation macro-F1=0.9215
+[2026-10-31T15:51:08] FT-Transformer best validation macro-F1=0.9655 at epoch 31
+[2026-10-31T15:51:08] FT-Transformer fold 2/5 epoch 1/80: validation macro-F1=0.2539
+[2026-10-31T15:51:08] FT-Transformer fold 2/5 epoch 2/80: validation macro-F1=0.4878
+[2026-10-31T15:51:08] FT-Transformer fold 2/5 epoch 3/80: validation macro-F1=0.6162
+[2026-10-31T15:51:09] FT-Transformer fold 2/5 epoch 4/80: validation macro-F1=0.6804
+[2026-10-31T15:51:09] FT-Transformer fold 2/5 epoch 5/80: validation macro-F1=0.6665
+[2026-10-31T15:51:09] FT-Transformer fold 2/5 epoch 6/80: validation macro-F1=0.6442
+[2026-10-31T15:51:09] FT-Transformer fold 2/5 epoch 7/80: validation macro-F1=0.6596
+[2026-10-31T15:51:09] FT-Transformer fold 2/5 epoch 8/80: validation macro-F1=0.7735
+[2026-10-31T15:51:09] FT-Transformer fold 2/5 epoch 9/80: validation macro-F1=0.7641
+[2026-10-31T15:51:10] FT-Transformer fold 2/5 epoch 10/80: validation macro-F1=0.7372
+[2026-10-31T15:51:10] FT-Transformer fold 2/5 epoch 11/80: validation macro-F1=0.8570
+[2026-10-31T15:51:10] FT-Transformer fold 2/5 epoch 12/80: validation macro-F1=0.8518
+[2026-10-31T15:51:10] FT-Transformer fold 2/5 epoch 13/80: validation macro-F1=0.8207
+[2026-10-31T15:51:10] FT-Transformer fold 2/5 epoch 14/80: validation macro-F1=0.8552
+[2026-10-31T15:51:10] FT-Transformer fold 2/5 epoch 15/80: validation macro-F1=0.8822
+[2026-10-31T15:51:10] FT-Transformer fold 2/5 epoch 16/80: validation macro-F1=0.9103
+[2026-10-31T15:51:11] FT-Transformer fold 2/5 epoch 17/80: validation macro-F1=0.9073
+[2026-10-31T15:51:11] FT-Transformer fold 2/5 epoch 18/80: validation macro-F1=0.9288
+[2026-10-31T15:51:11] FT-Transformer fold 2/5 epoch 19/80: validation macro-F1=0.8904
+[2026-10-31T15:51:11] FT-Transformer fold 2/5 epoch 20/80: validation macro-F1=0.8617
+[2026-10-31T15:51:11] FT-Transformer fold 2/5 epoch 21/80: validation macro-F1=0.9419
+[2026-10-31T15:51:11] FT-Transformer fold 2/5 epoch 22/80: validation macro-F1=0.9147
+[2026-10-31T15:51:11] FT-Transformer fold 2/5 epoch 23/80: validation macro-F1=0.9191
+[2026-10-31T15:51:12] FT-Transformer fold 2/5 epoch 24/80: validation macro-F1=0.9120
+[2026-10-31T15:51:12] FT-Transformer fold 2/5 epoch 25/80: validation macro-F1=0.9464
+[2026-10-31T15:51:12] FT-Transformer fold 2/5 epoch 26/80: validation macro-F1=0.9573
+[2026-10-31T15:51:12] FT-Transformer fold 2/5 epoch 27/80: validation macro-F1=0.9351
+[2026-10-31T15:51:12] FT-Transformer fold 2/5 epoch 28/80: validation macro-F1=0.9284
+[2026-10-31T15:51:12] FT-Transformer fold 2/5 epoch 29/80: validation macro-F1=0.9663
+[2026-10-31T15:51:12] FT-Transformer fold 2/5 epoch 30/80: validation macro-F1=0.9280
+[2026-10-31T15:51:13] FT-Transformer fold 2/5 epoch 31/80: validation macro-F1=0.9359
+[2026-10-31T15:51:13] FT-Transformer fold 2/5 epoch 32/80: validation macro-F1=0.9064
+[2026-10-31T15:51:13] FT-Transformer fold 2/5 epoch 33/80: validation macro-F1=0.9347
+[2026-10-31T15:51:13] FT-Transformer fold 2/5 epoch 34/80: validation macro-F1=0.9644
+[2026-10-31T15:51:13] FT-Transformer fold 2/5 epoch 35/80: validation macro-F1=0.9656
+[2026-10-31T15:51:13] FT-Transformer fold 2/5 epoch 36/80: validation macro-F1=0.9381
+[2026-10-31T15:51:13] FT-Transformer fold 2/5 epoch 37/80: validation macro-F1=0.9574
+[2026-10-31T15:51:14] FT-Transformer fold 2/5 epoch 38/80: validation macro-F1=0.9652
+[2026-10-31T15:51:14] FT-Transformer fold 2/5 epoch 39/80: validation macro-F1=0.9191
+[2026-10-31T15:51:14] FT-Transformer fold 2/5 epoch 40/80: validation macro-F1=0.9592
+[2026-10-31T15:51:14] FT-Transformer fold 2/5 epoch 41/80: validation macro-F1=0.9352
+[2026-10-31T15:51:14] FT-Transformer fold 2/5 epoch 42/80: validation macro-F1=0.9190
+[2026-10-31T15:51:14] FT-Transformer fold 2/5 epoch 43/80: validation macro-F1=0.9061
+[2026-10-31T15:51:14] FT-Transformer fold 2/5 epoch 44/80: validation macro-F1=0.9503
+[2026-10-31T15:51:15] FT-Transformer fold 2/5 epoch 45/80: validation macro-F1=0.9130
+[2026-10-31T15:51:15] FT-Transformer fold 2/5 epoch 46/80: validation macro-F1=0.9275
+[2026-10-31T15:51:15] FT-Transformer fold 2/5 epoch 47/80: validation macro-F1=0.9412
+[2026-10-31T15:51:15] FT-Transformer fold 2/5 epoch 48/80: validation macro-F1=0.9566
+[2026-10-31T15:51:15] FT-Transformer fold 2/5 epoch 49/80: validation macro-F1=0.9489
+[2026-10-31T15:51:15] FT-Transformer fold 2/5 epoch 50/80: validation macro-F1=0.9490
+[2026-10-31T15:51:15] FT-Transformer fold 2/5 epoch 51/80: validation macro-F1=0.9488
+[2026-10-31T15:51:16] FT-Transformer fold 2/5 epoch 52/80: validation macro-F1=0.9419
+[2026-10-31T15:51:16] FT-Transformer fold 2/5 epoch 53/80: validation macro-F1=0.9488
+[2026-10-31T15:51:16] FT-Transformer fold 2/5 epoch 54/80: validation macro-F1=0.9638
+[2026-10-31T15:51:16] FT-Transformer fold 2/5 epoch 55/80: validation macro-F1=0.9638
+[2026-10-31T15:51:16] FT-Transformer fold 2/5 epoch 56/80: validation macro-F1=0.9336
+[2026-10-31T15:51:16] FT-Transformer fold 2/5 epoch 57/80: validation macro-F1=0.9483
+[2026-10-31T15:51:16] FT-Transformer fold 2/5 epoch 58/80: validation macro-F1=0.9637
+[2026-10-31T15:51:16] FT-Transformer fold 2/5 epoch 59/80: validation macro-F1=0.9562
+[2026-10-31T15:51:16] FT-Transformer best validation macro-F1=0.9663 at epoch 29
+[2026-10-31T15:51:17] FT-Transformer fold 3/5 epoch 1/80: validation macro-F1=0.4959
+[2026-10-31T15:51:17] FT-Transformer fold 3/5 epoch 2/80: validation macro-F1=0.5850
+[2026-10-31T15:51:17] FT-Transformer fold 3/5 epoch 3/80: validation macro-F1=0.6241
+[2026-10-31T15:51:17] FT-Transformer fold 3/5 epoch 4/80: validation macro-F1=0.6328
+[2026-10-31T15:51:17] FT-Transformer fold 3/5 epoch 5/80: validation macro-F1=0.6551
+[2026-10-31T15:51:17] FT-Transformer fold 3/5 epoch 6/80: validation macro-F1=0.6764
+[2026-10-31T15:51:18] FT-Transformer fold 3/5 epoch 7/80: validation macro-F1=0.6335
+[2026-10-31T15:51:18] FT-Transformer fold 3/5 epoch 8/80: validation macro-F1=0.7250
+[2026-10-31T15:51:18] FT-Transformer fold 3/5 epoch 9/80: validation macro-F1=0.8322
+[2026-10-31T15:51:18] FT-Transformer fold 3/5 epoch 10/80: validation macro-F1=0.7560
+[2026-10-31T15:51:18] FT-Transformer fold 3/5 epoch 11/80: validation macro-F1=0.7632
+[2026-10-31T15:51:18] FT-Transformer fold 3/5 epoch 12/80: validation macro-F1=0.8246
+[2026-10-31T15:51:18] FT-Transformer fold 3/5 epoch 13/80: validation macro-F1=0.8994
+[2026-10-31T15:51:18] FT-Transformer fold 3/5 epoch 14/80: validation macro-F1=0.8988
+[2026-10-31T15:51:19] FT-Transformer fold 3/5 epoch 15/80: validation macro-F1=0.9082
+[2026-10-31T15:51:19] FT-Transformer fold 3/5 epoch 16/80: validation macro-F1=0.8726
+[2026-10-31T15:51:19] FT-Transformer fold 3/5 epoch 17/80: validation macro-F1=0.9093
+[2026-10-31T15:51:19] FT-Transformer fold 3/5 epoch 18/80: validation macro-F1=0.8888
+[2026-10-31T15:51:19] FT-Transformer fold 3/5 epoch 19/80: validation macro-F1=0.9395
+[2026-10-31T15:51:19] FT-Transformer fold 3/5 epoch 20/80: validation macro-F1=0.9229
+[2026-10-31T15:51:19] FT-Transformer fold 3/5 epoch 21/80: validation macro-F1=0.9620
+[2026-10-31T15:51:19] FT-Transformer fold 3/5 epoch 22/80: validation macro-F1=0.9170
+[2026-10-31T15:51:20] FT-Transformer fold 3/5 epoch 23/80: validation macro-F1=0.9319
+[2026-10-31T15:51:20] FT-Transformer fold 3/5 epoch 24/80: validation macro-F1=0.9405
+[2026-10-31T15:51:20] FT-Transformer fold 3/5 epoch 25/80: validation macro-F1=0.9162
+[2026-10-31T15:51:20] FT-Transformer fold 3/5 epoch 26/80: validation macro-F1=0.9475
+[2026-10-31T15:51:20] FT-Transformer fold 3/5 epoch 27/80: validation macro-F1=0.9407
+[2026-10-31T15:51:20] FT-Transformer fold 3/5 epoch 28/80: validation macro-F1=0.9339
+[2026-10-31T15:51:20] FT-Transformer fold 3/5 epoch 29/80: validation macro-F1=0.9646
+[2026-10-31T15:51:21] FT-Transformer fold 3/5 epoch 30/80: validation macro-F1=0.9393
+[2026-10-31T15:51:21] FT-Transformer fold 3/5 epoch 31/80: validation macro-F1=0.9306
+[2026-10-31T15:51:21] FT-Transformer fold 3/5 epoch 32/80: validation macro-F1=0.9338
+[2026-10-31T15:51:21] FT-Transformer fold 3/5 epoch 33/80: validation macro-F1=0.9185
+[2026-10-31T15:51:21] FT-Transformer fold 3/5 epoch 34/80: validation macro-F1=0.9177
+[2026-10-31T15:51:21] FT-Transformer fold 3/5 epoch 35/80: validation macro-F1=0.9136
+[2026-10-31T15:51:21] FT-Transformer fold 3/5 epoch 36/80: validation macro-F1=0.9694
+[2026-10-31T15:51:21] FT-Transformer fold 3/5 epoch 37/80: validation macro-F1=0.9398
+[2026-10-31T15:51:22] FT-Transformer fold 3/5 epoch 38/80: validation macro-F1=0.9412
+[2026-10-31T15:51:22] FT-Transformer fold 3/5 epoch 39/80: validation macro-F1=0.9178
+[2026-10-31T15:51:22] FT-Transformer fold 3/5 epoch 40/80: validation macro-F1=0.9325
+[2026-10-31T15:51:22] FT-Transformer fold 3/5 epoch 41/80: validation macro-F1=0.9475
+[2026-10-31T15:51:22] FT-Transformer fold 3/5 epoch 42/80: validation macro-F1=0.9475
+[2026-10-31T15:51:22] FT-Transformer fold 3/5 epoch 43/80: validation macro-F1=0.9552
+[2026-10-31T15:51:22] FT-Transformer fold 3/5 epoch 44/80: validation macro-F1=0.9395
+[2026-10-31T15:51:22] FT-Transformer fold 3/5 epoch 45/80: validation macro-F1=0.9402
+[2026-10-31T15:51:23] FT-Transformer fold 3/5 epoch 46/80: validation macro-F1=0.9475
+[2026-10-31T15:51:23] FT-Transformer fold 3/5 epoch 47/80: validation macro-F1=0.9423
+[2026-10-31T15:51:23] FT-Transformer fold 3/5 epoch 48/80: validation macro-F1=0.9476
+[2026-10-31T15:51:23] FT-Transformer fold 3/5 epoch 49/80: validation macro-F1=0.9554
+[2026-10-31T15:51:23] FT-Transformer fold 3/5 epoch 50/80: validation macro-F1=0.9476
+[2026-10-31T15:51:23] FT-Transformer fold 3/5 epoch 51/80: validation macro-F1=0.9402
+[2026-10-31T15:51:23] FT-Transformer fold 3/5 epoch 52/80: validation macro-F1=0.9397
+[2026-10-31T15:51:23] FT-Transformer fold 3/5 epoch 53/80: validation macro-F1=0.9554
+[2026-10-31T15:51:24] FT-Transformer fold 3/5 epoch 54/80: validation macro-F1=0.9476
+[2026-10-31T15:51:24] FT-Transformer fold 3/5 epoch 55/80: validation macro-F1=0.9554
+[2026-10-31T15:51:24] FT-Transformer fold 3/5 epoch 56/80: validation macro-F1=0.9476
+[2026-10-31T15:51:24] FT-Transformer fold 3/5 epoch 57/80: validation macro-F1=0.9476
+[2026-10-31T15:51:24] FT-Transformer fold 3/5 epoch 58/80: validation macro-F1=0.9476
+[2026-10-31T15:51:24] FT-Transformer fold 3/5 epoch 59/80: validation macro-F1=0.9554
+[2026-10-31T15:51:24] FT-Transformer fold 3/5 epoch 60/80: validation macro-F1=0.9554
+[2026-10-31T15:51:24] FT-Transformer fold 3/5 epoch 61/80: validation macro-F1=0.9402
+[2026-10-31T15:51:25] FT-Transformer fold 3/5 epoch 62/80: validation macro-F1=0.9476
+[2026-10-31T15:51:25] FT-Transformer fold 3/5 epoch 63/80: validation macro-F1=0.9476
+[2026-10-31T15:51:25] FT-Transformer fold 3/5 epoch 64/80: validation macro-F1=0.9554
+[2026-10-31T15:51:25] FT-Transformer fold 3/5 epoch 65/80: validation macro-F1=0.9476
+[2026-10-31T15:51:25] FT-Transformer fold 3/5 epoch 66/80: validation macro-F1=0.9476
+[2026-10-31T15:51:25] FT-Transformer best validation macro-F1=0.9694 at epoch 36
+[2026-10-31T15:51:25] FT-Transformer fold 4/5 epoch 1/80: validation macro-F1=0.3499
+[2026-10-31T15:51:25] FT-Transformer fold 4/5 epoch 2/80: validation macro-F1=0.4532
+[2026-10-31T15:51:26] FT-Transformer fold 4/5 epoch 3/80: validation macro-F1=0.5509
+[2026-10-31T15:51:26] FT-Transformer fold 4/5 epoch 4/80: validation macro-F1=0.5818
+[2026-10-31T15:51:26] FT-Transformer fold 4/5 epoch 5/80: validation macro-F1=0.6499
+[2026-10-31T15:51:26] FT-Transformer fold 4/5 epoch 6/80: validation macro-F1=0.6466
+[2026-10-31T15:51:26] FT-Transformer fold 4/5 epoch 7/80: validation macro-F1=0.7465
+[2026-10-31T15:51:26] FT-Transformer fold 4/5 epoch 8/80: validation macro-F1=0.7385
+[2026-10-31T15:51:26] FT-Transformer fold 4/5 epoch 9/80: validation macro-F1=0.7627
+[2026-10-31T15:51:27] FT-Transformer fold 4/5 epoch 10/80: validation macro-F1=0.8201
+[2026-10-31T15:51:27] FT-Transformer fold 4/5 epoch 11/80: validation macro-F1=0.8092
+[2026-10-31T15:51:27] FT-Transformer fold 4/5 epoch 12/80: validation macro-F1=0.8668
+[2026-10-31T15:51:27] FT-Transformer fold 4/5 epoch 13/80: validation macro-F1=0.8935
+[2026-10-31T15:51:27] FT-Transformer fold 4/5 epoch 14/80: validation macro-F1=0.8721
+[2026-10-31T15:51:27] FT-Transformer fold 4/5 epoch 15/80: validation macro-F1=0.8736
+[2026-10-31T15:51:27] FT-Transformer fold 4/5 epoch 16/80: validation macro-F1=0.8861
+[2026-10-31T15:51:27] FT-Transformer fold 4/5 epoch 17/80: validation macro-F1=0.9171
+[2026-10-31T15:51:28] FT-Transformer fold 4/5 epoch 18/80: validation macro-F1=0.8828
+[2026-10-31T15:51:28] FT-Transformer fold 4/5 epoch 19/80: validation macro-F1=0.8906
+[2026-10-31T15:51:28] FT-Transformer fold 4/5 epoch 20/80: validation macro-F1=0.9067
+[2026-10-31T15:51:28] FT-Transformer fold 4/5 epoch 21/80: validation macro-F1=0.9072
+[2026-10-31T15:51:28] FT-Transformer fold 4/5 epoch 22/80: validation macro-F1=0.8924
+[2026-10-31T15:51:28] FT-Transformer fold 4/5 epoch 23/80: validation macro-F1=0.9133
+[2026-10-31T15:51:28] FT-Transformer fold 4/5 epoch 24/80: validation macro-F1=0.9279
+[2026-10-31T15:51:28] FT-Transformer fold 4/5 epoch 25/80: validation macro-F1=0.8994
+[2026-10-31T15:51:29] FT-Transformer fold 4/5 epoch 26/80: validation macro-F1=0.9268
+[2026-10-31T15:51:29] FT-Transformer fold 4/5 epoch 27/80: validation macro-F1=0.9485
+[2026-10-31T15:51:29] FT-Transformer fold 4/5 epoch 28/80: validation macro-F1=0.9365
+[2026-10-31T15:51:29] FT-Transformer fold 4/5 epoch 29/80: validation macro-F1=0.8686
+[2026-10-31T15:51:29] FT-Transformer fold 4/5 epoch 30/80: validation macro-F1=0.9137
+[2026-10-31T15:51:29] FT-Transformer fold 4/5 epoch 31/80: validation macro-F1=0.9430
+[2026-10-31T15:51:30] FT-Transformer fold 4/5 epoch 32/80: validation macro-F1=0.9065
+[2026-10-31T15:51:30] FT-Transformer fold 4/5 epoch 33/80: validation macro-F1=0.9122
+[2026-10-31T15:51:30] FT-Transformer fold 4/5 epoch 34/80: validation macro-F1=0.9424
+[2026-10-31T15:51:30] FT-Transformer fold 4/5 epoch 35/80: validation macro-F1=0.9362
+[2026-10-31T15:51:30] FT-Transformer fold 4/5 epoch 36/80: validation macro-F1=0.9288
+[2026-10-31T15:51:30] FT-Transformer fold 4/5 epoch 37/80: validation macro-F1=0.9120
+[2026-10-31T15:51:30] FT-Transformer fold 4/5 epoch 38/80: validation macro-F1=0.9222
+[2026-10-31T15:51:31] FT-Transformer fold 4/5 epoch 39/80: validation macro-F1=0.9125
+[2026-10-31T15:51:31] FT-Transformer fold 4/5 epoch 40/80: validation macro-F1=0.9352
+[2026-10-31T15:51:31] FT-Transformer fold 4/5 epoch 41/80: validation macro-F1=0.9204
+[2026-10-31T15:51:31] FT-Transformer fold 4/5 epoch 42/80: validation macro-F1=0.9287
+[2026-10-31T15:51:31] FT-Transformer fold 4/5 epoch 43/80: validation macro-F1=0.9353
+[2026-10-31T15:51:31] FT-Transformer fold 4/5 epoch 44/80: validation macro-F1=0.9356
+[2026-10-31T15:51:31] FT-Transformer fold 4/5 epoch 45/80: validation macro-F1=0.9141
+[2026-10-31T15:51:32] FT-Transformer fold 4/5 epoch 46/80: validation macro-F1=0.9273
+[2026-10-31T15:51:32] FT-Transformer fold 4/5 epoch 47/80: validation macro-F1=0.9358
+[2026-10-31T15:51:32] FT-Transformer fold 4/5 epoch 48/80: validation macro-F1=0.9283
+[2026-10-31T15:51:32] FT-Transformer fold 4/5 epoch 49/80: validation macro-F1=0.9282
+[2026-10-31T15:51:32] FT-Transformer fold 4/5 epoch 50/80: validation macro-F1=0.9362
+[2026-10-31T15:51:32] FT-Transformer fold 4/5 epoch 51/80: validation macro-F1=0.9427
+[2026-10-31T15:51:32] FT-Transformer fold 4/5 epoch 52/80: validation macro-F1=0.9276
+[2026-10-31T15:51:32] FT-Transformer fold 4/5 epoch 53/80: validation macro-F1=0.9349
+[2026-10-31T15:51:33] FT-Transformer fold 4/5 epoch 54/80: validation macro-F1=0.9133
+[2026-10-31T15:51:33] FT-Transformer fold 4/5 epoch 55/80: validation macro-F1=0.9205
+[2026-10-31T15:51:33] FT-Transformer fold 4/5 epoch 56/80: validation macro-F1=0.9433
+[2026-10-31T15:51:33] FT-Transformer fold 4/5 epoch 57/80: validation macro-F1=0.9433
+[2026-10-31T15:51:33] FT-Transformer best validation macro-F1=0.9485 at epoch 27
+[2026-10-31T15:51:33] FT-Transformer fold 5/5 epoch 1/80: validation macro-F1=0.4951
+[2026-10-31T15:51:33] FT-Transformer fold 5/5 epoch 2/80: validation macro-F1=0.4227
+[2026-10-31T15:51:34] FT-Transformer fold 5/5 epoch 3/80: validation macro-F1=0.5839
+[2026-10-31T15:51:34] FT-Transformer fold 5/5 epoch 4/80: validation macro-F1=0.6419
+[2026-10-31T15:51:34] FT-Transformer fold 5/5 epoch 5/80: validation macro-F1=0.6353
+[2026-10-31T15:51:34] FT-Transformer fold 5/5 epoch 6/80: validation macro-F1=0.6865
+[2026-10-31T15:51:34] FT-Transformer fold 5/5 epoch 7/80: validation macro-F1=0.7671
+[2026-10-31T15:51:34] FT-Transformer fold 5/5 epoch 8/80: validation macro-F1=0.8832
+[2026-10-31T15:51:35] FT-Transformer fold 5/5 epoch 9/80: validation macro-F1=0.8106
+[2026-10-31T15:51:35] FT-Transformer fold 5/5 epoch 10/80: validation macro-F1=0.8110
+[2026-10-31T15:51:35] FT-Transformer fold 5/5 epoch 11/80: validation macro-F1=0.8638
+[2026-10-31T15:51:35] FT-Transformer fold 5/5 epoch 12/80: validation macro-F1=0.8613
+[2026-10-31T15:51:35] FT-Transformer fold 5/5 epoch 13/80: validation macro-F1=0.8963
+[2026-10-31T15:51:35] FT-Transformer fold 5/5 epoch 14/80: validation macro-F1=0.8732
+[2026-10-31T15:51:35] FT-Transformer fold 5/5 epoch 15/80: validation macro-F1=0.9066
+[2026-10-31T15:51:36] FT-Transformer fold 5/5 epoch 16/80: validation macro-F1=0.8889
+[2026-10-31T15:51:36] FT-Transformer fold 5/5 epoch 17/80: validation macro-F1=0.9150
+[2026-10-31T15:51:36] FT-Transformer fold 5/5 epoch 18/80: validation macro-F1=0.9436
+[2026-10-31T15:51:36] FT-Transformer fold 5/5 epoch 19/80: validation macro-F1=0.9047
+[2026-10-31T15:51:36] FT-Transformer fold 5/5 epoch 20/80: validation macro-F1=0.9327
+[2026-10-31T15:51:36] FT-Transformer fold 5/5 epoch 21/80: validation macro-F1=0.9574
+[2026-10-31T15:51:36] FT-Transformer fold 5/5 epoch 22/80: validation macro-F1=0.9479
+[2026-10-31T15:51:36] FT-Transformer fold 5/5 epoch 23/80: validation macro-F1=0.9635
+[2026-10-31T15:51:37] FT-Transformer fold 5/5 epoch 24/80: validation macro-F1=0.9273
+[2026-10-31T15:51:37] FT-Transformer fold 5/5 epoch 25/80: validation macro-F1=0.9489
+[2026-10-31T15:51:37] FT-Transformer fold 5/5 epoch 26/80: validation macro-F1=0.9465
+[2026-10-31T15:51:37] FT-Transformer fold 5/5 epoch 27/80: validation macro-F1=0.9240
+[2026-10-31T15:51:37] FT-Transformer fold 5/5 epoch 28/80: validation macro-F1=0.9643
+[2026-10-31T15:51:37] FT-Transformer fold 5/5 epoch 29/80: validation macro-F1=0.8650
+[2026-10-31T15:51:37] FT-Transformer fold 5/5 epoch 30/80: validation macro-F1=0.9621
+[2026-10-31T15:51:37] FT-Transformer fold 5/5 epoch 31/80: validation macro-F1=0.9373
+[2026-10-31T15:51:38] FT-Transformer fold 5/5 epoch 32/80: validation macro-F1=0.9485
+[2026-10-31T15:51:38] FT-Transformer fold 5/5 epoch 33/80: validation macro-F1=0.9579
+[2026-10-31T15:51:38] FT-Transformer fold 5/5 epoch 34/80: validation macro-F1=0.9653
+[2026-10-31T15:51:38] FT-Transformer fold 5/5 epoch 35/80: validation macro-F1=0.9582
+[2026-10-31T15:51:38] FT-Transformer fold 5/5 epoch 36/80: validation macro-F1=0.9544
+[2026-10-31T15:51:38] FT-Transformer fold 5/5 epoch 37/80: validation macro-F1=0.9849
+[2026-10-31T15:51:38] FT-Transformer fold 5/5 epoch 38/80: validation macro-F1=0.9570
+[2026-10-31T15:51:39] FT-Transformer fold 5/5 epoch 39/80: validation macro-F1=0.9786
+[2026-10-31T15:51:39] FT-Transformer fold 5/5 epoch 40/80: validation macro-F1=0.9774
+[2026-10-31T15:51:39] FT-Transformer fold 5/5 epoch 41/80: validation macro-F1=0.9786
+[2026-10-31T15:51:39] FT-Transformer fold 5/5 epoch 42/80: validation macro-F1=0.9714
+[2026-10-31T15:51:39] FT-Transformer fold 5/5 epoch 43/80: validation macro-F1=0.9493
+[2026-10-31T15:51:39] FT-Transformer fold 5/5 epoch 44/80: validation macro-F1=0.9786
+[2026-10-31T15:51:39] FT-Transformer fold 5/5 epoch 45/80: validation macro-F1=0.9650
+[2026-10-31T15:51:39] FT-Transformer fold 5/5 epoch 46/80: validation macro-F1=0.9410
+[2026-10-31T15:51:40] FT-Transformer fold 5/5 epoch 47/80: validation macro-F1=0.9572
+[2026-10-31T15:51:40] FT-Transformer fold 5/5 epoch 48/80: validation macro-F1=0.9574
+[2026-10-31T15:51:40] FT-Transformer fold 5/5 epoch 49/80: validation macro-F1=0.9563
+[2026-10-31T15:51:40] FT-Transformer fold 5/5 epoch 50/80: validation macro-F1=0.9645
+[2026-10-31T15:51:40] FT-Transformer fold 5/5 epoch 51/80: validation macro-F1=0.9567
+[2026-10-31T15:51:40] FT-Transformer fold 5/5 epoch 52/80: validation macro-F1=0.9645
+[2026-10-31T15:51:40] FT-Transformer fold 5/5 epoch 53/80: validation macro-F1=0.9497
+[2026-10-31T15:51:40] FT-Transformer fold 5/5 epoch 54/80: validation macro-F1=0.9575
+[2026-10-31T15:51:41] FT-Transformer fold 5/5 epoch 55/80: validation macro-F1=0.9642
+[2026-10-31T15:51:41] FT-Transformer fold 5/5 epoch 56/80: validation macro-F1=0.9574
+[2026-10-31T15:51:41] FT-Transformer fold 5/5 epoch 57/80: validation macro-F1=0.9504
+[2026-10-31T15:51:41] FT-Transformer fold 5/5 epoch 58/80: validation macro-F1=0.9651
+[2026-10-31T15:51:41] FT-Transformer fold 5/5 epoch 59/80: validation macro-F1=0.9651
+[2026-10-31T15:51:41] FT-Transformer fold 5/5 epoch 60/80: validation macro-F1=0.9650
+[2026-10-31T15:51:41] FT-Transformer fold 5/5 epoch 61/80: validation macro-F1=0.9797
+[2026-10-31T15:51:42] FT-Transformer fold 5/5 epoch 62/80: validation macro-F1=0.9797
+[2026-10-31T15:51:42] FT-Transformer fold 5/5 epoch 63/80: validation macro-F1=0.9797
+[2026-10-31T15:51:42] FT-Transformer fold 5/5 epoch 64/80: validation macro-F1=0.9872
+[2026-10-31T15:51:42] FT-Transformer fold 5/5 epoch 65/80: validation macro-F1=0.9727
+[2026-10-31T15:51:42] FT-Transformer fold 5/5 epoch 66/80: validation macro-F1=0.9861
+[2026-10-31T15:51:42] FT-Transformer fold 5/5 epoch 67/80: validation macro-F1=0.9785
+[2026-10-31T15:51:42] FT-Transformer fold 5/5 epoch 68/80: validation macro-F1=0.9785
+[2026-10-31T15:51:42] FT-Transformer fold 5/5 epoch 69/80: validation macro-F1=0.9785
+[2026-10-31T15:51:42] FT-Transformer fold 5/5 epoch 70/80: validation macro-F1=0.9713
+[2026-10-31T15:51:43] FT-Transformer fold 5/5 epoch 71/80: validation macro-F1=0.9651
+[2026-10-31T15:51:43] FT-Transformer fold 5/5 epoch 72/80: validation macro-F1=0.9651
+[2026-10-31T15:51:43] FT-Transformer fold 5/5 epoch 73/80: validation macro-F1=0.9575
+[2026-10-31T15:51:43] FT-Transformer fold 5/5 epoch 74/80: validation macro-F1=0.9575
+[2026-10-31T15:51:43] FT-Transformer fold 5/5 epoch 75/80: validation macro-F1=0.9651
+[2026-10-31T15:51:43] FT-Transformer fold 5/5 epoch 76/80: validation macro-F1=0.9651
+[2026-10-31T15:51:43] FT-Transformer fold 5/5 epoch 77/80: validation macro-F1=0.9651
+[2026-10-31T15:51:43] FT-Transformer fold 5/5 epoch 78/80: validation macro-F1=0.9651
+[2026-10-31T15:51:44] FT-Transformer fold 5/5 epoch 79/80: validation macro-F1=0.9651
+[2026-10-31T15:51:44] FT-Transformer fold 5/5 epoch 80/80: validation macro-F1=0.9651
+[2026-10-31T15:51:44] FT-Transformer best validation macro-F1=0.9872 at epoch 64
+[2026-10-31T15:51:44] FT-Transformer epoch 1/80: validation macro-F1=0.3808
+[2026-10-31T15:51:44] FT-Transformer epoch 2/80: validation macro-F1=0.6355
+[2026-10-31T15:51:44] FT-Transformer epoch 3/80: validation macro-F1=0.6129
+[2026-10-31T15:51:45] FT-Transformer epoch 4/80: validation macro-F1=0.5673
+[2026-10-31T15:51:45] FT-Transformer epoch 5/80: validation macro-F1=0.6948
+[2026-10-31T15:51:45] FT-Transformer epoch 6/80: validation macro-F1=0.8119
+[2026-10-31T15:51:45] FT-Transformer epoch 7/80: validation macro-F1=0.8029
+[2026-10-31T15:51:45] FT-Transformer epoch 8/80: validation macro-F1=0.8339
+[2026-10-31T15:51:46] FT-Transformer epoch 9/80: validation macro-F1=0.7681
+[2026-10-31T15:51:46] FT-Transformer epoch 10/80: validation macro-F1=0.9154
+[2026-10-31T15:51:46] FT-Transformer epoch 11/80: validation macro-F1=0.8752
+[2026-10-31T15:51:47] FT-Transformer epoch 12/80: validation macro-F1=0.9012
+[2026-10-31T15:51:47] FT-Transformer epoch 13/80: validation macro-F1=0.8579
+[2026-10-31T15:51:47] FT-Transformer epoch 14/80: validation macro-F1=0.8459
+[2026-10-31T15:51:47] FT-Transformer epoch 15/80: validation macro-F1=0.9375
+[2026-10-31T15:51:47] FT-Transformer epoch 16/80: validation macro-F1=0.8847
+[2026-10-31T15:51:47] FT-Transformer epoch 17/80: validation macro-F1=0.9141
+[2026-10-31T15:51:48] FT-Transformer epoch 18/80: validation macro-F1=0.9348
+[2026-10-31T15:51:48] FT-Transformer epoch 19/80: validation macro-F1=0.9105
+[2026-10-31T15:51:48] FT-Transformer epoch 20/80: validation macro-F1=0.9302
+[2026-10-31T15:51:48] FT-Transformer epoch 21/80: validation macro-F1=0.9365
+[2026-10-31T15:51:49] FT-Transformer epoch 22/80: validation macro-F1=0.9090
+[2026-10-31T15:51:49] FT-Transformer epoch 23/80: validation macro-F1=0.9044
+[2026-10-31T15:51:49] FT-Transformer epoch 24/80: validation macro-F1=0.9121
+[2026-10-31T15:51:49] FT-Transformer epoch 25/80: validation macro-F1=0.9493
+[2026-10-31T15:51:50] FT-Transformer epoch 26/80: validation macro-F1=0.9296
+[2026-10-31T15:51:50] FT-Transformer epoch 27/80: validation macro-F1=0.9040
+[2026-10-31T15:51:50] FT-Transformer epoch 28/80: validation macro-F1=0.9404
+[2026-10-31T15:51:50] FT-Transformer epoch 29/80: validation macro-F1=0.9350
+[2026-10-31T15:51:51] FT-Transformer epoch 30/80: validation macro-F1=0.9385
+[2026-10-31T15:51:51] FT-Transformer epoch 31/80: validation macro-F1=0.9437
+[2026-10-31T15:51:51] FT-Transformer epoch 32/80: validation macro-F1=0.9061
+[2026-10-31T15:51:51] FT-Transformer epoch 33/80: validation macro-F1=0.9271
+[2026-10-31T15:51:51] FT-Transformer epoch 34/80: validation macro-F1=0.9422
+[2026-10-31T15:51:52] FT-Transformer epoch 35/80: validation macro-F1=0.9271
+[2026-10-31T15:51:52] FT-Transformer epoch 36/80: validation macro-F1=0.9282
+[2026-10-31T15:51:52] FT-Transformer epoch 37/80: validation macro-F1=0.9579
+[2026-10-31T15:51:52] FT-Transformer epoch 38/80: validation macro-F1=0.9424
+[2026-10-31T15:51:52] FT-Transformer epoch 39/80: validation macro-F1=0.9153
+[2026-10-31T15:51:53] FT-Transformer epoch 40/80: validation macro-F1=0.9545
+[2026-10-31T15:51:53] FT-Transformer epoch 41/80: validation macro-F1=0.9590
+[2026-10-31T15:51:53] FT-Transformer epoch 42/80: validation macro-F1=0.9661
+[2026-10-31T15:51:53] FT-Transformer epoch 43/80: validation macro-F1=0.9488
+[2026-10-31T15:51:54] FT-Transformer epoch 44/80: validation macro-F1=0.9335
+[2026-10-31T15:51:54] FT-Transformer epoch 45/80: validation macro-F1=0.9279
+[2026-10-31T15:51:54] FT-Transformer epoch 46/80: validation macro-F1=0.9450
+[2026-10-31T15:51:54] FT-Transformer epoch 47/80: validation macro-F1=0.9450
+[2026-10-31T15:51:55] FT-Transformer epoch 48/80: validation macro-F1=0.9529
+[2026-10-31T15:51:55] FT-Transformer epoch 49/80: validation macro-F1=0.9456
+[2026-10-31T15:51:55] FT-Transformer epoch 50/80: validation macro-F1=0.9389
+[2026-10-31T15:51:55] FT-Transformer epoch 51/80: validation macro-F1=0.9420
+[2026-10-31T15:51:56] FT-Transformer epoch 52/80: validation macro-F1=0.9274
+[2026-10-31T15:51:56] FT-Transformer epoch 53/80: validation macro-F1=0.9378
+[2026-10-31T15:51:56] FT-Transformer epoch 54/80: validation macro-F1=0.9489
+[2026-10-31T15:51:57] FT-Transformer epoch 55/80: validation macro-F1=0.9505
+[2026-10-31T15:51:57] FT-Transformer epoch 56/80: validation macro-F1=0.9500
+[2026-10-31T15:51:57] FT-Transformer epoch 57/80: validation macro-F1=0.9445
+[2026-10-31T15:51:58] FT-Transformer epoch 58/80: validation macro-F1=0.9564
+[2026-10-31T15:51:58] FT-Transformer epoch 59/80: validation macro-F1=0.9564
+[2026-10-31T15:51:58] FT-Transformer epoch 60/80: validation macro-F1=0.9611
+[2026-10-31T15:51:58] FT-Transformer epoch 61/80: validation macro-F1=0.9565
+[2026-10-31T15:51:59] FT-Transformer epoch 62/80: validation macro-F1=0.9503
+[2026-10-31T15:51:59] FT-Transformer epoch 63/80: validation macro-F1=0.9503
+[2026-10-31T15:51:59] FT-Transformer epoch 64/80: validation macro-F1=0.9503
+[2026-10-31T15:51:59] FT-Transformer epoch 65/80: validation macro-F1=0.9503
+[2026-10-31T15:52:00] FT-Transformer epoch 66/80: validation macro-F1=0.9503
+[2026-10-31T15:52:00] FT-Transformer epoch 67/80: validation macro-F1=0.9500
+[2026-10-31T15:52:00] FT-Transformer epoch 68/80: validation macro-F1=0.9503
+[2026-10-31T15:52:01] FT-Transformer epoch 69/80: validation macro-F1=0.9440
+[2026-10-31T15:52:01] FT-Transformer epoch 70/80: validation macro-F1=0.9500
+[2026-10-31T15:52:01] FT-Transformer epoch 71/80: validation macro-F1=0.9500
+[2026-10-31T15:52:01] FT-Transformer epoch 72/80: validation macro-F1=0.9500
+[2026-10-31T15:52:01] FT-Transformer best validation macro-F1=0.9661 at epoch 42
+[2026-10-31T15:52:01] FT-Transformer: evaluating train
+[2026-10-31T15:52:01] FT-Transformer: evaluating validation
+[2026-10-31T15:52:01] FT-Transformer: evaluating test
+[2026-10-31T15:52:08] FT-Transformer saved output path: D:\TXST\OneDrive - Texas State University\Hackathon_Monzurul\Papers\AVISTA\examples\obesity\outputs\training\FT-Transformer
+[2026-10-31T15:52:08] Training workflow complete
+[2026-10-31T15:52:09] Training curve saved to D:\TXST\OneDrive - Texas State University\Hackathon_Monzurul\Papers\AVISTA\examples\obesity\outputs\training\FT-Transformer\training_curves.png
+[2026-10-31T15:52:11] Model result updated: FT-Transformer
+[2026-10-31T15:52:11] Starting TabPFN 2.5 with AVISTADeepWorker.exe (packaged mode). Worker log: D:\TXST\OneDrive - Texas State University\Hackathon_Monzurul\Papers\AVISTA\examples\obesity\logs\training\TabPFN_2_5_worker_20261031_155211_445306.log
+[2026-10-31T15:52:15] TabPFN 2.5 started in subprocess
+[2026-10-31T15:52:15] Training target diagnostics:
+current target column=NObeyesdad
+current task_type=auto
+saved target column=NObeyesdad
+saved task_type=unknown
+y_train dtype=int64
+unique target classes=7
+detected target type=classification
+[2026-10-31T15:52:15] Training target diagnostics:
+current target column=NObeyesdad
+current task_type=auto
+saved target column=NObeyesdad
+saved task_type=unknown
+y_train dtype=int64
+unique target classes=7
+detected target type=classification
+[2026-10-31T15:52:15] TabPFN 2.5 started
+[2026-10-31T15:52:16] TabPFN 2.5 package available; package version=8.0.8; package path=C:\Program Files\AVISTA\_internal\tabpfn\__init__.py; packaged=True; selected device=cuda; n_estimators=8; checkpoint exists=True; checkpoint size=42935499; user-cache checkpoint=C:\Users\monzu\AppData\Roaming\tabpfn\tabpfn-v2.5-classifier-v2.5_default.ckpt; supported maximum training samples=50000; input representation=raw pandas DataFrame; AVISTA external preprocessing/resampling=disabled; internal prediction batch size=500
+[2026-10-31T15:52:18] TabPFN 2.5 fold 1/5: available/effective training rows=1168/1168
+[2026-10-31T15:52:19] TabPFN 2.5 fold 2/5: available/effective training rows=1168/1168
+[2026-10-31T15:52:20] TabPFN 2.5 fold 3/5: available/effective training rows=1168/1168
+[2026-10-31T15:52:21] TabPFN 2.5 fold 4/5: available/effective training rows=1168/1168
+[2026-10-31T15:52:22] TabPFN 2.5 fold 5/5: available/effective training rows=1168/1168
+[2026-10-31T15:52:22] TabPFN 2.5 available/effective external-training rows=1460/1460
+[2026-10-31T15:52:29] TabPFN 2.5 saved output path: D:\TXST\OneDrive - Texas State University\Hackathon_Monzurul\Papers\AVISTA\examples\obesity\outputs\training\TabPFN_2_5
+[2026-10-31T15:52:29] Training workflow complete
+[2026-10-31T15:52:29] Training curve saved to D:\TXST\OneDrive - Texas State University\Hackathon_Monzurul\Papers\AVISTA\examples\obesity\outputs\training\TabPFN_2_5\training_curves.png
+[2026-10-31T15:52:30] Model result updated: TabPFN 2.5
+[2026-10-31T15:52:30] Training worker finished.

@@ -1,0 +1,7 @@
+Dataset,Model,Split,Metric,AVISTA,Python Corrected,Absolute Difference
+national-poll2,Logistic Regression,Train,accuracy,0.5175600739371534,0.5175600739371534,0.0
+national-poll2,Logistic Regression,Train,macro_f1,0.5168188648711132,0.5168188648711132,0.0
+national-poll2,Logistic Regression,Validation,accuracy,0.3611111111111111,0.3611111111111111,0.0
+national-poll2,Logistic Regression,Validation,macro_f1,0.3677345537757437,0.3677345537757437,0.0
+national-poll2,Logistic Regression,Test,accuracy,0.3986013986013986,0.3986013986013986,0.0
+national-poll2,Logistic Regression,Test,macro_f1,0.3763594885670327,0.3763594885670327,0.0

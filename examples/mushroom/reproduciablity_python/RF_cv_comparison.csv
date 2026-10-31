@@ -1,0 +1,6 @@
+Dataset,Model,Metric,AVISTA Mean,Python Mean,Mean Abs Diff,AVISTA Std,Python Std
+mushroom,Random Forest,accuracy,1.0,1.0,0.0,0.0,0.0
+mushroom,Random Forest,macro_f1,1.0,1.0,0.0,0.0,0.0
+mushroom,Random Forest,weighted_f1,1.0,1.0,0.0,0.0,0.0
+mushroom,Random Forest,balanced_accuracy,1.0,1.0,0.0,0.0,0.0
+mushroom,Random Forest,roc_auc,1.0,1.0,0.0,0.0,4.965068306494546e-17

@@ -1,0 +1,2 @@
+Dataset,Model,Test Samples,Prediction Disagreements,Prediction Agreement,Max Coefficient Difference,Max Intercept Difference,AVISTA Iterations,Python Iterations
+mushroom,Logistic Regression,1625,0,1.0,3.999689468514589e-12,1.318112285986217e-13,35,35

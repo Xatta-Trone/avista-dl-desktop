@@ -1,0 +1,64 @@
+Dataset,Model,Split,Metric,AVISTA,Orange,Absolute Difference,Signed Difference
+mushroom,Logistic Regression,Train,accuracy,0.9850510024621878,0.9850510024621878,0.0,
+mushroom,Logistic Regression,Train,macro_f1,0.9850401707830521,0.9850401707830521,0.0,
+mushroom,Logistic Regression,Train,weighted_f1,0.985054329840746,0.985054329840746,0.0,
+mushroom,Logistic Regression,Train,balanced_accuracy,0.9853235908064379,0.9853235908064379,0.0,
+mushroom,Logistic Regression,Train,macro_precision,0.9848916562704212,0.9848916562704212,0.0,
+mushroom,Logistic Regression,Train,macro_recall,0.9853235908064379,0.9853235908064379,0.0,
+mushroom,Logistic Regression,Train,roc_auc,0.9994891391908653,0.9994891391908653,0.0,
+mushroom,Logistic Regression,Validation,accuracy,0.986469864698647,0.986469864698647,0.0,
+mushroom,Logistic Regression,Validation,macro_f1,0.9864488707392283,0.9864488707392283,0.0,
+mushroom,Logistic Regression,Validation,weighted_f1,0.9864692086374152,0.9864692086374152,0.0,
+mushroom,Logistic Regression,Validation,balanced_accuracy,0.9864031951127865,0.9864031951127865,0.0,
+mushroom,Logistic Regression,Validation,macro_precision,0.9864975450081833,0.9864975450081833,0.0,
+mushroom,Logistic Regression,Validation,macro_recall,0.9864031951127865,0.9864031951127865,0.0,
+mushroom,Logistic Regression,Validation,roc_auc,0.9993212203488442,0.9993212203488442,0.0,
+mushroom,Logistic Regression,Test,accuracy,0.976,0.976,0.0,
+mushroom,Logistic Regression,Test,macro_f1,0.9759882151865114,0.9759882151865114,0.0,
+mushroom,Logistic Regression,Test,weighted_f1,0.9760081838982559,0.9760081838982559,0.0,
+mushroom,Logistic Regression,Test,balanced_accuracy,0.9765444627487387,0.9765444627487387,0.0,
+mushroom,Logistic Regression,Test,macro_precision,0.9758947534258611,0.9758947534258611,0.0,
+mushroom,Logistic Regression,Test,macro_recall,0.9765444627487387,0.9765444627487387,0.0,
+mushroom,Logistic Regression,Test,roc_auc,0.9992733903092414,0.9992733903092414,0.0,
+mushroom,Random Forest,Train,accuracy,1.0,1.0,0.0,
+mushroom,Random Forest,Train,macro_f1,1.0,1.0,0.0,
+mushroom,Random Forest,Train,weighted_f1,1.0,1.0,0.0,
+mushroom,Random Forest,Train,balanced_accuracy,1.0,1.0,0.0,
+mushroom,Random Forest,Train,macro_precision,1.0,1.0,0.0,
+mushroom,Random Forest,Train,macro_recall,1.0,1.0,0.0,
+mushroom,Random Forest,Train,roc_auc,1.0,1.0,0.0,
+mushroom,Random Forest,Validation,accuracy,1.0,1.0,0.0,
+mushroom,Random Forest,Validation,macro_f1,1.0,1.0,0.0,
+mushroom,Random Forest,Validation,weighted_f1,1.0,1.0,0.0,
+mushroom,Random Forest,Validation,balanced_accuracy,1.0,1.0,0.0,
+mushroom,Random Forest,Validation,macro_precision,1.0,1.0,0.0,
+mushroom,Random Forest,Validation,macro_recall,1.0,1.0,0.0,
+mushroom,Random Forest,Validation,roc_auc,1.0,1.0,0.0,
+mushroom,Random Forest,Test,accuracy,1.0,1.0,0.0,
+mushroom,Random Forest,Test,macro_f1,1.0,1.0,0.0,
+mushroom,Random Forest,Test,weighted_f1,1.0,1.0,0.0,
+mushroom,Random Forest,Test,balanced_accuracy,1.0,1.0,0.0,
+mushroom,Random Forest,Test,macro_precision,1.0,1.0,0.0,
+mushroom,Random Forest,Test,macro_recall,1.0,1.0,0.0,
+mushroom,Random Forest,Test,roc_auc,1.0,1.0,0.0,
+mushroom,XGBoost,Train,accuracy,1.0,1.0,0.0,0.0
+mushroom,XGBoost,Train,macro_f1,1.0,1.0,0.0,0.0
+mushroom,XGBoost,Train,weighted_f1,1.0,1.0,0.0,0.0
+mushroom,XGBoost,Train,balanced_accuracy,1.0,1.0,0.0,0.0
+mushroom,XGBoost,Train,macro_precision,1.0,1.0,0.0,0.0
+mushroom,XGBoost,Train,macro_recall,1.0,1.0,0.0,0.0
+mushroom,XGBoost,Train,roc_auc,1.0,1.0,0.0,0.0
+mushroom,XGBoost,Validation,accuracy,1.0,1.0,0.0,0.0
+mushroom,XGBoost,Validation,macro_f1,1.0,1.0,0.0,0.0
+mushroom,XGBoost,Validation,weighted_f1,1.0,1.0,0.0,0.0
+mushroom,XGBoost,Validation,balanced_accuracy,1.0,1.0,0.0,0.0
+mushroom,XGBoost,Validation,macro_precision,1.0,1.0,0.0,0.0
+mushroom,XGBoost,Validation,macro_recall,1.0,1.0,0.0,0.0
+mushroom,XGBoost,Validation,roc_auc,1.0,1.0,0.0,0.0
+mushroom,XGBoost,Test,accuracy,1.0,1.0,0.0,0.0
+mushroom,XGBoost,Test,macro_f1,1.0,1.0,0.0,0.0
+mushroom,XGBoost,Test,weighted_f1,1.0,1.0,0.0,0.0
+mushroom,XGBoost,Test,balanced_accuracy,1.0,1.0,0.0,0.0
+mushroom,XGBoost,Test,macro_precision,1.0,1.0,0.0,0.0
+mushroom,XGBoost,Test,macro_recall,1.0,1.0,0.0,0.0
+mushroom,XGBoost,Test,roc_auc,0.9999999999999999,0.9999999999999999,0.0,0.0

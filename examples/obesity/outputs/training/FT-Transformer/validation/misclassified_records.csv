@@ -1,0 +1,8 @@
+row_identifier,actual_class,predicted_class,probability_confidence
+337,Obesity_Type_III,Obesity_Type_II,0.9531216
+341,Normal_Weight,Overweight_Level_I,0.727922
+942,Overweight_Level_I,Overweight_Level_II,0.8790669
+1506,Obesity_Type_II,Obesity_Type_I,0.9094519
+166,Overweight_Level_I,Overweight_Level_II,0.85551965
+113,Normal_Weight,Insufficient_Weight,0.9511786
+82,Obesity_Type_I,Overweight_Level_II,0.66349965
